@@ -1,0 +1,364 @@
+"""Capture every README figure from the real game.
+
+The principle the sibling projects settled on: a figure is generated from the
+running artifact or it is not shipped. Nothing here is drawn, mocked, or
+hand-edited. Each figure is produced by loading the committed `index.html`
+in headless Chrome with a scenario script appended, driving the page through
+its own event handlers, and photographing the result.
+
+Two consequences worth stating, both learned the expensive way:
+
+* A screenshot embeds text that no repository-wide grep can read. Three times
+  across the sibling repos the worst instance of a leaked real-world
+  identifier was inside a committed image. `--audit` re-extracts what the
+  figures show and checks it; a human still has to LOOK at them.
+* A figure must not spoil the game. Report and reveal states are captured
+  from later shifts and cropped to their aggregate sections, so no reader
+  learns shift 1's answer key from the README.
+
+Usage:
+    python3 scripts/make_figures.py              # every figure + the GIF
+    python3 scripts/make_figures.py --only ban   # one figure
+    python3 scripts/make_figures.py --list
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+PAGE = ROOT / "index.html"
+OUT = ROOT / "docs" / "figures"
+
+CHROME_CANDIDATES = [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium",
+]
+
+# Every scenario runs at window load, synchronously, through the page's own
+# handlers. Synchronous is what makes the capture race-free: by the time
+# Chrome paints, the state is final. `Game.loadShift` is the dev entry point
+# the harness uses; it bypasses the career unlock gate on purpose.
+PRELUDE = """
+function press(k){ document.dispatchEvent(new KeyboardEvent('keydown',{key:k,bubbles:true})); }
+function start(shift){ Game.loadShift(shift); document.getElementById('btn-start').click(); }
+function openNth(n){
+  var items = document.querySelectorAll('#queue-list li');
+  var el = items[n]; (el.querySelector('button') || el).click();
+}
+function openById(id){
+  var items = [].slice.call(document.querySelectorAll('#queue-list li'));
+  for (var i=0;i<items.length;i++){
+    if (items[i].textContent.indexOf(id) === 0 || items[i].textContent.trim().indexOf(id) === 0){
+      (items[i].querySelector('button') || items[i]).click(); return true;
+    }
+  }
+  return false;
+}
+function boxes(){
+  return [].slice.call(document.querySelectorAll('input[type=checkbox]'))
+           .filter(function(c){ return c.offsetParent !== null; });
+}
+function citeFirst(n){ var b = boxes(); for (var i=0;i<n && i<b.length;i++) b[i].click(); }
+/* Figures must show a deliberate account, not whatever sorts first. Selection
+   uses only what the player can see for free (categories on the Content tab)
+   or what the figure is explicitly about (the pipeline read it depicts) —
+   never the reveal. */
+function shiftData(){
+  var d = JSON.parse(document.getElementById('game-data').textContent);
+  return d.shifts.filter(function(s){ return s.id === CAPTURE_SHIFT; })[0];
+}
+function queueIds(){
+  return [].slice.call(document.querySelectorAll('#queue-list li')).map(function(li){
+    return (li.textContent.trim().match(/^acct_[0-9a-f]{4}/) || [''])[0];
+  });
+}
+function openMatching(pred, label){
+  var byId = {}; shiftData().accounts.forEach(function(a){ byId[a.id] = a; });
+  var ids = queueIds();
+  for (var i = 0; i < ids.length; i++){
+    var a = byId[ids[i]];
+    if (a && pred(a)) { openById(ids[i]); return ids[i]; }
+  }
+  throw new Error('no account matches ' + (label || 'predicate'));
+}
+function hasCategory(){
+  var want = [].slice.call(arguments);
+  return function(a){
+    return a.sessions.some(function(s){ return want.indexOf(s.category) >= 0; });
+  };
+}
+function waitHours(n){ for (var i=0;i<n;i++) press('w'); }
+function arrivedIds(){ return queueIds().filter(Boolean); }
+/* Two accounts the player could legitimately join into a case: both arrived,
+   and sharing a target — the link reason the policy accepts. */
+function openLinkablePair(){
+  var byId = {}; shiftData().accounts.forEach(function(a){ byId[a.id] = a; });
+  var ids = arrivedIds();
+  for (var i=0;i<ids.length;i++){
+    var a = byId[ids[i]]; if (!a || !a.network) continue;
+    var mates = (a.network.shared_target || []).filter(function(m){ return ids.indexOf(m) >= 0; });
+    if (mates.length){
+      openById(ids[i]); press('a');
+      openById(mates[0]); press('a');
+      return [ids[i], mates[0]];
+    }
+  }
+  throw new Error('no arrived pair shares a target yet');
+}
+function openMatchingOn(shift, hours){
+  start(shift); waitHours(hours);
+  return openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'),
+                      'offensive content');
+}
+function monitoredCluster(a){
+  return a.pipeline && a.pipeline.cluster && a.pipeline.cluster.decision === 'monitor';
+}
+"""
+
+SCENARIOS: dict[str, dict] = {
+    # ---- stills -----------------------------------------------------------
+    "shift_select": dict(
+        caption="The five shifts, in the order the job gets harder.",
+        size=(1180, 1500), js="/* the landing is the boot state */",
+    ),
+    "refusal": dict(
+        caption="Banning on content alone is refused by the policy, not by the score.",
+        size=(1400, 900),
+        js="""
+        start('s2');
+        waitHours(12);           // a live queue: the subject has to arrive first
+        openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content');
+        citeFirst(1);            // a content row: the worst-looking evidence there is
+        press('b');              // the policy reads the citations and declines
+        """,
+    ),
+    "pipeline_read": dict(
+        caption="The scorer's own read: what fired, what did not, and what the policy did with it.",
+        size=(1400, 1000),
+        js="""
+        /* Shift 1 carries the real model assessments from the research run;
+           the generated rosters have linkage clusters but no model verdict,
+           so this figure has to come from s1. */
+        start('s1');
+        openMatching(monitoredCluster, 'an account the policy held to monitor');
+        press('5');              // Pipeline read
+        """,
+    ),
+    "band_picker": dict(
+        caption="A ban has to say how sure it is. Below the floor, it is refused.",
+        size=(1400, 800),
+        js="""
+        start('s2');
+        waitHours(12);           // a live queue: the subject has to arrive first
+        openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content');
+        press('3'); citeFirst(2);   // Behavior, two rows cited
+        press('b');
+        """,
+    ),
+    "case_board": dict(
+        caption="Accounts that belong to one operator are one case, banned once.",
+        size=(1500, 900),
+        js="""
+        start('s3');
+        waitHours(9);            // let the queue arrive; a case needs two members
+        openLinkablePair();
+        """,
+    ),
+    # ---- GIF frames -------------------------------------------------------
+    # One scenario per frame, each a superset of the previous: the GIF is the
+    # ban rule, start to finish.
+    "gif_1_content": dict(gif=1, size=(1300, 760), js="""
+        start('s2'); waitHours(6); openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content');
+    """),
+    "gif_2_refused": dict(gif=2, size=(1300, 760), js="""
+        start('s2'); waitHours(6); openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content'); citeFirst(1); press('b');
+    """),
+    "gif_3_behavior": dict(gif=3, size=(1300, 760), js="""
+        start('s2'); waitHours(6); openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content'); citeFirst(1); press('b'); press('3');
+    """),
+    "gif_4_cited": dict(gif=4, size=(1300, 760), js="""
+        start('s2'); waitHours(6); openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content'); citeFirst(1); press('b'); press('3'); citeFirst(2);
+    """),
+    "gif_5_band": dict(gif=5, size=(1300, 760), js="""
+        start('s2'); waitHours(6); openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content'); citeFirst(1); press('b'); press('3'); citeFirst(2); press('b');
+    """),
+    "gif_6_verdict": dict(gif=6, size=(1300, 760), js="""
+        var subject = openMatchingOn('s2', 6);
+        citeFirst(1); press('b'); press('3'); citeFirst(2); press('b');
+        press('6');            // very likely
+        openById(subject);     // the payoff is the verdict, not the next account
+    """),
+}
+
+GIF_NAME = "ban_rule.gif"
+GIF_FRAME_MS = 1500
+GIF_LAST_MS = 2600
+GIF_MAX_WIDTH = 900
+
+
+def chrome() -> str:
+    for c in CHROME_CANDIDATES:
+        if Path(c).exists():
+            return c
+    print("no Chrome/Chromium found; tried:\n  " + "\n  ".join(CHROME_CANDIDATES))
+    sys.exit(2)
+
+
+def build_page(tmp: Path, name: str, js: str, shift_hint: str) -> Path:
+    src = PAGE.read_text(encoding="utf-8")
+    harness = (
+        "\n<script>\nvar CAPTURE_SHIFT = " + repr(shift_hint).replace("'", '"') + ";\n"
+        + PRELUDE
+        + "window.addEventListener('load', function(){ try {\n" + js
+        + "\n} catch (e) { document.title = 'CAPTURE ERROR: ' + e.message;\n"
+        "  var p = document.createElement('pre');\n"
+        "  p.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#300;color:#fff;padding:20px;font:14px monospace';\n"
+        "  p.textContent = 'CAPTURE ERROR\\n' + e.stack; document.body.appendChild(p); } });\n</script>\n"
+    )
+    out = tmp / f"{name}.html"
+    out.write_text(src.replace("</body>", harness + "</body>"), encoding="utf-8")
+    return out
+
+
+def shot(exe: str, page: Path, png: Path, size: tuple[int, int]) -> None:
+    subprocess.run(
+        [exe, "--headless", "--disable-gpu", "--hide-scrollbars",
+         f"--window-size={size[0]},{size[1]}", "--virtual-time-budget=5000",
+         f"--screenshot={png}", f"file://{page}"],
+        check=True, capture_output=True,
+    )
+
+
+def autocrop(png: Path, pad: int = 16) -> tuple[int, int]:
+    """Trim uniform page background from the bottom and right."""
+    from PIL import Image
+
+    im = Image.open(png).convert("RGB")
+    w, h = im.size
+    bg = im.getpixel((w - 2, h - 2))
+    px = im.load()
+
+    bottom = h
+    while bottom > 40:
+        row = bottom - 1
+        if any(px[x, row] != bg for x in range(0, w, 7)):
+            break
+        bottom -= 1
+    right = w
+    while right > 40:
+        col = right - 1
+        if any(px[col, y] != bg for y in range(0, min(bottom, h), 7)):
+            break
+        right -= 1
+
+    im.crop((0, 0, min(w, right + pad), min(h, bottom + pad))).save(png)
+    return Image.open(png).size
+
+
+def make_gif(frames: list[Path], out: Path) -> None:
+    from PIL import Image
+
+    ims = [Image.open(f).convert("RGB") for f in frames]
+    w = min(GIF_MAX_WIDTH, min(i.width for i in ims))
+    h = min(i.height for i in ims)
+    ims = [i.crop((0, 0, min(i.width, w * i.width // max(w, 1)), h)) if False else i for i in ims]
+    ims = [i.crop((0, 0, min(i.width, i.width), h)).resize(
+        (w, int(h * w / i.width)), Image.LANCZOS) for i in ims]
+    h2 = min(i.height for i in ims)
+    ims = [i.crop((0, 0, w, h2)) for i in ims]
+    pal = [i.quantize(colors=128, method=Image.MEDIANCUT, dither=Image.NONE) for i in ims]
+    durations = [GIF_FRAME_MS] * (len(pal) - 1) + [GIF_LAST_MS]
+    pal[0].save(out, save_all=True, append_images=pal[1:], loop=0,
+                duration=durations, optimize=True, disposal=2)
+
+
+def audit(pngs: list[Path]) -> int:
+    """What the figures show, as text, checked for real-world identifiers.
+
+    Chrome renders text; this cannot read it back. What it CAN do is verify
+    that the data those figures were drawn from is clean, and say plainly
+    that the remaining check is human.
+    """
+    import json
+
+    data = json.loads(
+        re.search(r'<script id="game-data" type="application/json">(.*?)</script>',
+                  PAGE.read_text(encoding="utf-8"), re.S).group(1))
+    blob = json.dumps(data)
+    bad = []
+    for ip in set(re.findall(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", blob)):
+        if not re.match(r"^(192\.0\.2\.|198\.51\.100\.|203\.0\.113\.)", ip):
+            bad.append(f"non-RFC-5737 address in the data: {ip}")
+    for asn in set(re.findall(r"\bAS(\d+)\b", blob)):
+        n = int(asn)
+        if not (64496 <= n <= 64511 or 65536 <= n <= 65551):
+            bad.append(f"non-documentation ASN in the data: AS{asn}")
+    for f in bad:
+        print(f"  AUDIT FAILURE: {f}")
+    print(f"audit: {len(pngs)} figures; data behind them "
+          f"{'FAILED' if bad else 'clean'}. "
+          "Text inside an image is invisible to this check — open them and look.")
+    return 1 if bad else 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--only", action="append", help="capture just these scenarios")
+    ap.add_argument("--list", action="store_true")
+    ap.add_argument("--no-gif", action="store_true")
+    args = ap.parse_args()
+
+    if args.list:
+        for k, v in SCENARIOS.items():
+            print(f"  {k:16s} {'(gif frame %s)' % v['gif'] if 'gif' in v else v.get('caption','')}")
+        return 0
+
+    if not PAGE.exists():
+        print(f"missing {PAGE}")
+        return 1
+    exe = chrome()
+    OUT.mkdir(parents=True, exist_ok=True)
+    wanted = args.only or list(SCENARIOS)
+
+    made: list[Path] = []
+    frames: dict[int, Path] = {}
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        for name in wanted:
+            spec = SCENARIOS[name]
+            hint = next((s for s in ("s5", "s4", "s3", "s2") if f"'{s}'" in spec["js"]), "s1")
+            page = build_page(tmp, name, spec["js"], hint)
+            png = OUT / f"{name}.png"
+            shot(exe, page, png, spec["size"])
+            w, h = autocrop(png)
+            kb = png.stat().st_size / 1024
+            print(f"  {name:16s} {w}x{h}  {kb:5.0f} KB")
+            made.append(png)
+            if "gif" in spec:
+                frames[spec["gif"]] = png
+
+        if frames and not args.no_gif and len(frames) == sum(
+                1 for s in SCENARIOS.values() if "gif" in s):
+            gif = OUT / GIF_NAME
+            make_gif([frames[i] for i in sorted(frames)], gif)
+            print(f"  {GIF_NAME:16s} {gif.stat().st_size / 1024:.0f} KB "
+                  f"({len(frames)} frames)")
+            # the frames are scaffolding for the GIF, not figures themselves
+            for p in frames.values():
+                p.unlink()
+                made.remove(p)
+
+    return audit(made)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

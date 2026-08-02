@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>trigger-discipline</title>
+<style>
+<!--PART:CSS-->
+</style>
+</head>
+<body>
+
+<header id="topbar">
+  <span class="brand">trigger-discipline</span>
+  <span id="hud" hidden>
+    <span id="hud-hours" title="The shift clock"></span>
+    <span id="hud-progress" title="Accounts decided"></span>
+    <span id="hud-score" title="Running score"></span>
+  </span>
+  <span class="spacer"></span>
+  <button id="btn-endshift" hidden>End shift early</button>
+  <button id="btn-theme" aria-label="Cycle color theme">Theme: auto</button>
+</header>
+
+<main>
+
+<section id="screen-career" hidden></section>
+
+<section id="screen-intro">
+  <h1>trigger-discipline</h1>
+  <p class="dim">The pipeline flags. You decide.</p>
+  <p class="small dim" id="intro-shift"></p>
+
+  <div id="intro-fiction">
+  <p>You are the enforcement reviewer at an AI platform's trust and safety desk.
+  <span id="intro-counts"></span> Each archetype in this queue is grounded in a published
+  threat report, and each innocent look-alike — a pentester, a phishing-awareness trainer,
+  a CTF student, a detection engineer, a journalist, an SRE, a novelist, a user who merely
+  shares a VPN with an actor — was written to be indistinguishable from an actor on content.</p>
+
+  <p class="small dim">Trigger discipline is the rule that keeps a finger off the trigger
+  until the decision has actually been made. The trigger here is BAN, and this queue is
+  built to make you reach for it early: most of the innocents were written to look exactly
+  like the people you are looking for.</p>
+
+  <p>For each account you make one call: <strong>BAN</strong>, <strong>MONITOR</strong>,
+  or <strong>CLEAR</strong>. Content is free to look at and misleading — what someone asks
+  an AI tells you almost nothing; how they behave tells you almost everything. Behavioral
+  and infrastructure evidence takes time to open, and from the second shift on that time
+  runs on the shift clock.</p>
+  </div>
+
+  <div class="rule"><strong>Nothing here is auto-banned. The pipeline flags; you decide.</strong>
+  The actor you miss comes back tomorrow. The innocent you ban has no easy way back.</div>
+
+  <h2>The policy</h2>
+  <p>The policy here is the instrument's own, and it refuses two things. A ban that cites
+  nothing beyond content is bounced: tick the evidence rows that carry your accusation, and
+  at least one must come from a tab that is not content — behavior, infrastructure, or
+  the scorer. A ban below the confidence floor is bounced the same way: every ban carries a confidence band,
+  and the floor is &ldquo;likely&rdquo;. A refusal costs nothing. The desk hands the file
+  back and waits.</p>
+
+  <h2>Scoring</h2>
+  <table>
+    <tbody>
+      <tr><td>Ban a threat-actor account</td><td class="mono">+10</td></tr>
+      <tr><td>Clear a benign account</td><td class="mono">+5</td></tr>
+      <tr><td>Monitor a threat-actor account</td><td class="mono">+2</td></tr>
+      <tr><td>Monitor a benign account</td><td class="mono">&minus;2</td></tr>
+      <tr><td>Miss an actor (clear or leave undecided)</td><td class="mono">&minus;10</td></tr>
+      <tr><td><strong>Ban a benign account</strong></td><td class="mono"><strong>&minus;25</strong></td></tr>
+    </tbody>
+  </table>
+  <p class="small dim">Maximum here: <span id="intro-max" class="mono"></span>. The asymmetry
+  is the point: a missed actor returns, and a wrongly banned person mostly cannot argue
+  their way back in. Monitor is the hedge — it keeps an actor in sight and puts an innocent
+  under watch. The hedge is never the winning play, by design.
+  Time is not part of the score.</p>
+
+  <h2>Evidence, and how long it takes</h2>
+  <table>
+    <tbody>
+      <tr><td>Content</td><td class="mono">instant</td><td class="dim small">prompt excerpts, category, refused or completed — what a content filter sees</td></tr>
+      <tr><td>Account file</td><td class="mono">1h</td><td class="dim small">signup age, email kind, payment, phone verification</td></tr>
+      <tr><td>Behavior</td><td class="mono">2h</td><td class="dim small">session timeline, cadence, volume, refusal rate, category mix</td></tr>
+      <tr><td>Network</td><td class="mono">2h</td><td class="dim small">infrastructure per session, plus which other queue accounts share it</td></tr>
+      <tr><td>Pipeline read</td><td class="mono">2h</td><td class="dim small">the scorer's risk breakdown; cluster assessment and policy decision if one exists</td></tr>
+    </tbody>
+  </table>
+  <p class="small dim"><span id="intro-clock"></span> Each tab opens once per account and
+  stays open. Every evidence row in an open tab can be cited; a ban stands on its
+  citations.</p>
+
+  <p class="small dim">Keyboard: <kbd>B</kbd> ban &middot; <kbd>M</kbd> monitor &middot;
+  <kbd>C</kbd> clear &middot; <kbd>1</kbd>&ndash;<kbd>5</kbd> evidence tabs &middot;
+  <kbd>Enter</kbd> continue &middot; arrow keys move through the queue. While the band
+  picker is open, number keys choose a band and <kbd>Esc</kbd> cancels.</p>
+
+  <p class="small dim">Seed <span class="mono" id="intro-seed"></span>. Add
+  <span class="mono">?seed=N</span> to the URL to reorder the queue.</p>
+
+  <p><button id="btn-start" class="btn-clear">Start the shift</button></p>
+</section>
+
+<section id="screen-play" hidden>
+  <aside id="queue" aria-label="Review queue">
+    <h2>Queue</h2>
+    <ol id="queue-list"></ol>
+  </aside>
+  <section id="dossier" aria-label="Account dossier">
+    <div id="dossier-head"></div>
+    <div id="band-picker" hidden></div>
+    <nav id="tabbar" aria-label="Evidence tabs"></nav>
+    <p id="notice" aria-live="polite"></p>
+    <div id="tabpanel"></div>
+  </section>
+  <aside id="casebar" hidden aria-label="Case board"></aside>
+</section>
+
+<section id="screen-report" hidden></section>
+
+<section id="screen-appeals" hidden></section>
+
+</main>
+
+<div id="overlay" hidden>
+  <div id="interstitial" role="dialog" aria-modal="true" aria-labelledby="int-title">
+    <div id="int-body" aria-live="polite"></div>
+    <div id="int-actions"><button id="btn-continue">Continue <kbd>Enter</kbd></button></div>
+  </div>
+</div>
+
+<div id="overlay-end" hidden>
+  <div id="interstitial" role="dialog" aria-modal="true" aria-labelledby="end-title" style="max-width:460px">
+    <h2 id="end-title">End the shift early</h2>
+    <p id="end-msg"></p>
+    <div id="int-actions">
+      <button id="btn-end-cancel">Back to the queue <kbd>Esc</kbd></button>
+      <button id="btn-end-confirm" class="btn-ban" style="margin-left:8px">End shift</button>
+    </div>
+  </div>
+</div>
+
+<footer>Every account here is a synthetic fixture from
+<a href="https://github.com/abognar-git/model-abuse-hunt">model-abuse-hunt</a>;
+identifiers are RFC-reserved. MIT.</footer>
+
+<!-- ==========================================================================
+     GAME DATA — contract v2. scripts/build_data.py replaces this entire block
+     (build_page.py preserves whatever block the committed index.html carries).
+     Below: a minimal hand-written sample — one shift, three accounts, enough
+     citable rows to exercise citation, bands, and both policy refusals.
+     All data lives inside this block; no code does.
+     SPEC-2 §8: a shift's "budget" is its LENGTH in hours, not a spend cap,
+     and it is inert on a shift whose flags.live is false — that shift has
+     no clock at all.
+=========================================================================== -->
+<script id="game-data" type="application/json">
+{
+  "meta": {
+    "contract": 2,
+    "source_repo": "github.com/abognar-git/model-abuse-hunt",
+    "source_commit": "PLACEHOLDER",
+    "built": "PLACEHOLDER",
+    "generator": "hand-written contract v2 sample; scripts/build_data.py replaces this block",
+    "counts": {"accounts": 3, "malicious": 1, "benign": 2, "sessions": 8},
+    "bands": {"roughly_even_chance": 0.50, "likely": 0.70, "very_likely": 0.85, "almost_certain": 0.95},
+    "policy": {"floor_band": "likely"}
+  },
+  "shifts": [
+    {
+      "id": "s1",
+      "title": "First day",
+      "subtitle": "sample roster — rebuild with scripts/build_data.py",
+      "budget": 32,
+      "flags": {"live": false, "cases": false, "appeals": false},
+      "briefing": [],
+      "accounts": [
+        {
+          "id": "acct_0a1b",
+          "appears_at": 0,
+          "profile": {
+            "created_at": "2026-07-18T09:00:00Z", "email_kind": "disposable",
+            "payment": "none", "phone_verified": false, "signup_country": "RO",
+            "signup_asn": "AS64500", "signup_ip": "203.0.113.7", "primary_channel": "api"
+          },
+          "sessions": [
+            {"ts": "2026-07-20T08:00:00Z", "appears_at": 0, "channel": "api", "category": "phishing_content",
+             "prompt_excerpt": "write a password-expiry notice from the helios-post IT desk; urgent tone, link placeholder",
+             "disposition": "completed", "src_ip": "203.0.113.7", "asn": "AS64500", "country": "RO", "target_ref": "helios-post"},
+            {"ts": "2026-07-21T08:30:00Z", "appears_at": 0, "channel": "api", "category": "phishing_content",
+             "prompt_excerpt": "make the sender look like the payroll system of helios-post and add a login form",
+             "disposition": "refused", "src_ip": "203.0.113.7", "asn": "AS64500", "country": "RO", "target_ref": "helios-post"},
+            {"ts": "2026-07-22T09:00:00Z", "appears_at": 0, "channel": "api", "category": "recon",
+             "prompt_excerpt": "list which departments at a mid-size postal operator handle invoice approvals",
+             "disposition": "completed", "src_ip": "203.0.113.7", "asn": "AS64500", "country": "RO", "target_ref": "helios-post"}
+          ],
+          "pipeline": {
+            "risk": 0.41, "lead": true, "lead_threshold": 0.25,
+            "content_only_score": 0.06, "topic_derived_score": 0.06,
+            "signals": [
+              {"name": "target_fixation", "value": 0.16, "note": "3/3 sessions reference one org (helios-post)", "intensity": 1.0, "weight": 0.16, "n_observations": 3, "fired": true},
+              {"name": "burner_infra", "value": 0.14, "note": "disposable email, no payment, no phone, 4-day-old account", "intensity": 0.9, "weight": 0.16, "n_observations": 1, "fired": true},
+              {"name": "content_category_risk", "value": 0.06, "note": "3/3 sessions in high-risk topics", "intensity": 1.0, "weight": 0.06, "n_observations": 3, "fired": true},
+              {"name": "refusal_farming", "value": 0.05, "note": "1 refusal followed by a rephrase of the same ask", "intensity": 0.33, "weight": 0.14, "n_observations": 1, "fired": true},
+              {"name": "capability_trajectory", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.22, "n_observations": null, "fired": false},
+              {"name": "baseline_drift", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.2, "n_observations": null, "fired": false},
+              {"name": "automation_cadence", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.16, "n_observations": null, "fired": false}
+            ],
+            "cluster": {
+              "assessment": "malicious_abuse", "confidence_band": "very likely",
+              "decision": "enforce",
+              "summary": "Single-operator credential-lure development against helios-post; volume kept low, objective fixed.",
+              "members": ["acct_0a1b"]
+            }
+          },
+          "network": {"shared_asn": [], "shared_ip": [], "shared_target": ["acct_2c3d"], "shared_cadence": []},
+          "respawn": null,
+          "reveal": {
+            "truth": "malicious", "actor": "lure_factory", "persona": null,
+            "original_id": "acct_SAMPLE_LF",
+            "notes": "sample stand-in for the lure-factory archetype",
+            "tell": "Three sessions, one objective: a credential lure aimed at helios-post. Disposable email, no payment, no phone, a burner ASN — the account is four days old and exists for this. Content said interest; the account file and the scorer said intent.",
+            "provenance": {"source": "hand-written contract sample", "case": "replaced by scripts/build_data.py"},
+            "respawn_of": null,
+            "appeal": null
+          }
+        },
+        {
+          "id": "acct_2c3d",
+          "appears_at": 0,
+          "profile": {
+            "created_at": "2026-03-02T10:00:00Z", "email_kind": "corporate",
+            "payment": "card_verified", "phone_verified": true, "signup_country": "DE",
+            "signup_asn": "AS64502", "signup_ip": "198.51.100.23", "primary_channel": "chatgpt"
+          },
+          "sessions": [
+            {"ts": "2026-07-08T11:00:00Z", "appears_at": 0, "channel": "chatgpt", "category": "phishing_content",
+             "prompt_excerpt": "draft three phishing emails in the style of a helios-post parcel notice for our security awareness training",
+             "disposition": "completed", "src_ip": "198.51.100.23", "asn": "AS64502", "country": "DE", "target_ref": "helios-post"},
+            {"ts": "2026-07-12T15:30:00Z", "appears_at": 0, "channel": "chatgpt", "category": "phishing_content",
+             "prompt_excerpt": "same exercise as a password-expiry notice from IT; employees keep falling for these",
+             "disposition": "completed", "src_ip": "198.51.100.23", "asn": "AS64502", "country": "DE", "target_ref": "our-company"},
+            {"ts": "2026-07-15T10:00:00Z", "appears_at": 0, "channel": "chatgpt", "category": "benign_code",
+             "prompt_excerpt": "python script to anonymize click-through results from the last awareness campaign",
+             "disposition": "completed", "src_ip": "198.51.100.23", "asn": "AS64502", "country": "DE", "target_ref": null}
+          ],
+          "pipeline": {
+            "risk": 0.11, "lead": false, "lead_threshold": 0.25,
+            "content_only_score": 0.04, "topic_derived_score": 0.04,
+            "signals": [
+              {"name": "content_category_risk", "value": 0.04, "note": "2/3 sessions in high-risk topics", "intensity": 0.67, "weight": 0.06, "n_observations": 3, "fired": true},
+              {"name": "target_fixation", "value": 0.07, "note": "2/3 sessions reference one org (helios-post, our-company)", "intensity": 0.45, "weight": 0.16, "n_observations": 3, "fired": true},
+              {"name": "capability_trajectory", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.22, "n_observations": null, "fired": false},
+              {"name": "baseline_drift", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.2, "n_observations": null, "fired": false},
+              {"name": "automation_cadence", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.16, "n_observations": null, "fired": false},
+              {"name": "burner_infra", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.16, "n_observations": null, "fired": false},
+              {"name": "refusal_farming", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.14, "n_observations": null, "fired": false}
+            ],
+            "cluster": null
+          },
+          "network": {"shared_asn": [], "shared_ip": [], "shared_target": ["acct_0a1b"], "shared_cadence": []},
+          "respawn": null,
+          "reveal": {
+            "truth": "benign", "actor": null, "persona": "trainer",
+            "original_id": "acct_SAMPLE_TRAINER",
+            "notes": "sample stand-in for the phishing-awareness trainer",
+            "tell": "Same lure vocabulary as the actor, same target org in one prompt — on content they are twins. The account file is where they diverge: corporate email, verified card, phone, months of history. Framing this account costs an attacker nothing; the evidence tabs are the only place the difference shows.",
+            "provenance": {"source": "hand-written contract sample", "case": "replaced by scripts/build_data.py"},
+            "respawn_of": null,
+            "appeal": null
+          }
+        },
+        {
+          "id": "acct_4e5f",
+          "appears_at": 0,
+          "profile": {
+            "created_at": "2026-05-11T18:00:00Z", "email_kind": "freemail",
+            "payment": "none", "phone_verified": false, "signup_country": "US",
+            "signup_asn": "AS64509", "signup_ip": "192.0.2.61", "primary_channel": "chatgpt"
+          },
+          "sessions": [
+            {"ts": "2026-07-10T19:00:00Z", "appears_at": 0, "channel": "chatgpt", "category": "benign_code",
+             "prompt_excerpt": "why does my flask app return 404 for routes defined in a blueprint",
+             "disposition": "completed", "src_ip": "192.0.2.61", "asn": "AS64509", "country": "US", "target_ref": null},
+            {"ts": "2026-07-19T20:15:00Z", "appears_at": 0, "channel": "chatgpt", "category": "translation",
+             "prompt_excerpt": "translate this product changelog into german, keep the markdown",
+             "disposition": "completed", "src_ip": "192.0.2.61", "asn": "AS64509", "country": "US", "target_ref": null}
+          ],
+          "pipeline": {
+            "risk": 0.0, "lead": false, "lead_threshold": 0.25,
+            "content_only_score": 0.0, "topic_derived_score": 0.0,
+            "signals": [
+              {"name": "content_category_risk", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.06, "n_observations": null, "fired": false},
+              {"name": "capability_trajectory", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.22, "n_observations": null, "fired": false},
+              {"name": "baseline_drift", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.2, "n_observations": null, "fired": false},
+              {"name": "automation_cadence", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.16, "n_observations": null, "fired": false},
+              {"name": "burner_infra", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.16, "n_observations": null, "fired": false},
+              {"name": "refusal_farming", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.14, "n_observations": null, "fired": false},
+              {"name": "target_fixation", "value": 0.0, "note": "", "intensity": 0.0, "weight": 0.16, "n_observations": null, "fired": false}
+            ],
+            "cluster": null
+          },
+          "network": {"shared_asn": [], "shared_ip": [], "shared_target": [], "shared_cadence": []},
+          "respawn": null,
+          "reveal": {
+            "truth": "benign", "actor": null, "persona": null,
+            "original_id": "acct_SAMPLE_BG",
+            "notes": "sample background user",
+            "tell": "A flask routing bug and a changelog translation. If you read every tab here, that was the price of not trusting the free view.",
+            "provenance": null,
+            "respawn_of": null,
+            "appeal": null
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+<!-- ====================== end of game-data block ========================== -->
+
+<script>
+<!--PART:CORE-->
+</script>
+<script>
+<!--PART:LIVE-->
+</script>
+<script>
+<!--PART:CASES-->
+</script>
+<script>
+<!--PART:CAREER-->
+</script>
+</body>
+</html>
