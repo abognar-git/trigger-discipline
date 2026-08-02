@@ -9,6 +9,11 @@ five minutes, everything you need to play. The rest is where the game comes
 from: every mechanic in it is a measured finding from a sibling research
 project, and the table at the bottom says which.</sub>
 
+> ### ▶ [Play it in the browser](https://abognar-git.github.io/trigger-discipline/)
+>
+> No install, no account, nothing to run. One file, five shifts, about fifteen
+> minutes for the first one.
+
 ---
 
 ## What this is
