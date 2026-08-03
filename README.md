@@ -196,7 +196,7 @@ Each mechanic is a measured finding there, not a game-design invention:
 
 The trilogy behind it: [`triage`](https://github.com/abognar-git/alert-triage-copilot)
 (the defender's pipeline under attack), `hunt` (the platform hunting for
-misuse), [`assay`](https://github.com/abognar-git/assay) (what a refusal is
+misuse), [`pyrite`](https://github.com/abognar-git/pyrite-assay) (what a refusal is
 actually worth). This game is the fourth angle: the human the other three
 keep concluding you need.
 
