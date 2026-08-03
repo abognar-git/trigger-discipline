@@ -19,7 +19,11 @@ if (!window.Game) { return; }
 
 var live = false;             /* is the current shift live? set at shiftStart */
 var ui = null, clock = null, st = null;
+var accounts = [];            /* this shift's sealed account objects */
 var updatedCounts = {};       /* id -> unseen-session count behind the badge */
+var bannedAt = {};            /* id -> elapsed hour of a standing ban; a banned
+                                 account's telemetry is frozen there, so its
+                                 later session hours are not events */
 
 function fmtPts(n) { return (n >= 0 ? '+' : '−') + Math.abs(n); }
 function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
@@ -40,6 +44,47 @@ function doWait() {
   clock.endIfOver();
 }
 
+/* The next hour at which anything happens, computed from the same
+   player-visible data the arrival engine runs on: static arrivals and
+   session hours for scheduled accounts, and the dynamic-arrival map for
+   respawns (whose session hours are relative to their arrival). Returns
+   null when nothing is left. No reveal access anywhere. */
+function nextEventHour() {
+  var h = st.elapsed;
+  var best = null;
+  accounts.forEach(function (a) {
+    var dyn = st.dynamicArrivals.get(a.id);
+    var arr = (dyn !== undefined) ? dyn : a.appears_at;
+    if (arr === null || arr === undefined) { return; }   /* respawn never scheduled */
+    if (arr > h && (best === null || arr < best)) { best = arr; }
+    /* a standing ban freezes the account's telemetry at the ban hour: its
+       later session hours land nowhere the player can observe, so the jump
+       must not stop there */
+    var frozen = Object.prototype.hasOwnProperty.call(bannedAt, a.id)
+      ? bannedAt[a.id] : null;
+    (a.sessions || []).forEach(function (s) {
+      var sh = a.respawn ? arr + s.appears_at : s.appears_at;
+      if (frozen !== null && sh > frozen) { return; }
+      if (sh > h && (best === null || sh < best)) { best = sh; }
+    });
+  });
+  return best;
+}
+
+/* SPEC-3 §11 — the pacing control. Jump the clock to the next event, or to
+   the end of the shift when nothing is left. The hours cost exactly what
+   pressing W that many times would cost; the control removes keypresses,
+   never information. */
+function doWaitNext() {
+  if (!live || !st || st.phase !== 'play') { return; }
+  var target = nextEventHour();
+  var stop = (target === null) ? st.length : Math.min(target, st.length);
+  var delta = stop - st.elapsed;
+  if (delta < 1) { delta = 1; }
+  clock.spend(delta, 'wait');
+  clock.endIfOver();
+}
+
 function ensureWaitButton() {
   var btn = ui.$('btn-wait');
   if (!btn) {
@@ -51,6 +96,17 @@ function ensureWaitButton() {
     ui.$('hud').appendChild(btn);
   }
   btn.hidden = !live;
+  var jump = ui.$('btn-waitnext');
+  if (!jump) {
+    jump = ui.el('button', null, 'Next event ');
+    jump.id = 'btn-waitnext';
+    jump.title = 'Run the clock forward to the next arrival or new session — ' +
+      'or to the end of the shift if nothing is left. Costs exactly the hours it skips.';
+    jump.appendChild(ui.el('kbd', null, '⇧W'));
+    jump.addEventListener('click', doWaitNext);
+    ui.$('hud').appendChild(jump);
+  }
+  jump.hidden = !live;
 }
 
 function onArrival(ev) {
@@ -87,6 +143,10 @@ function onNewSessions(ev) {
 
 function onVerdict(ev) {
   delete updatedCounts[ev.id];
+  /* track standing bans for the next-event jump; a re-verdict away from ban
+     unfreezes the account again */
+  if (ev.verdict === 'ban') { bannedAt[ev.id] = st.elapsed; }
+  else { delete bannedAt[ev.id]; }
   if (st.queueFlags.has(ev.id)) {
     st.queueFlags.delete(ev.id);
     ui.renderQueue();
@@ -216,7 +276,7 @@ window.Game.registerMode('live', {
       if (e.metaKey || e.ctrlKey || e.altKey) { return; }
       if ((e.key === 'w' || e.key === 'W') && live && st.phase === 'play') {
         e.preventDefault();
-        doWait();
+        if (e.shiftKey) { doWaitNext(); } else { doWait(); }
       }
     });
   },
@@ -226,7 +286,14 @@ window.Game.registerMode('live', {
     st = ctx.state;
     if (ev.type === 'shiftStart') {
       live = !!(ev.shift && ev.shift.flags && ev.shift.flags.live);
+      /* the shiftStart event carries no account list; look the shift up in
+         ctx.data the same way the case board does */
+      accounts = [];
+      ((ctx.data && ctx.data.shifts) || []).forEach(function (sh) {
+        if (ev.shift && sh.id === ev.shift.id) { accounts = sh.accounts || []; }
+      });
       updatedCounts = {};
+      bannedAt = {};
       ensureWaitButton();
       return;
     }

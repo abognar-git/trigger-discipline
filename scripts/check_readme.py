@@ -28,7 +28,22 @@ def fail(msg: str) -> None:
 def main() -> int:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     flat = " ".join(readme.split())
-    meta = json.loads((ROOT / "data" / "game_data.json").read_text(encoding="utf-8"))["meta"]
+    payload = json.loads((ROOT / "data" / "game_data.json").read_text(encoding="utf-8"))
+    meta = payload["meta"]
+
+    # --- shift count -------------------------------------------------------
+    # The staleness class this gate exists for: the career grew a shift and
+    # the README kept saying five. The count must be stated in words, and no
+    # WRONG word-form may survive anywhere in the prose.
+    n_shifts = len(payload["shifts"])
+    words = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight"}
+    right = words.get(n_shifts, str(n_shifts))
+    low = flat.lower()
+    if f"{right} shifts" not in low:
+        fail(f"README never states the shift count in words ('{right} shifts')")
+    for n, w in words.items():
+        if n != n_shifts and f"{w} shifts" in low:
+            fail(f"README says '{w} shifts' but the data ships {n_shifts}")
 
     # --- scoring table -----------------------------------------------------
     want = {
@@ -85,9 +100,36 @@ def main() -> int:
     if overlap not in meta["policy"]["refusals"]["infra_only_case"] or overlap not in flat:
         fail("case-link refusal fragment missing or drifted")
 
+    # --- the newer gates, same discipline: fragment in the emitted copy AND
+    # the story stated in the README -----------------------------------------
+    for key, frag in (("topic_only", "topic in disguise"),
+                      ("style_link", "links every account here or none"),
+                      ("below_strength_floor", "Presence is not strength."),
+                      ("thin_rate", "Strength is not sample size.")):
+        if frag not in meta["policy"]["refusals"][key]:
+            fail(f"refusal fragment {frag!r} drifted out of the emitted {key} copy")
+    for story in ("presence is not strength", "strength is not sample size",
+                  "topic in disguise"):
+        if story not in low:
+            fail(f"README no longer tells the story: {story!r}")
+    mc = meta["policy"]["corroboration_min_contribution"]
+    mo = meta["policy"]["corroboration_min_observations"]
+    if f"corroboration floor of {mc}" not in flat:
+        fail(f"README should quote the imported corroboration floor {mc}")
+    if f"at least {mo} observations" not in flat:
+        fail(f"README should quote the imported observation minimum {mo}")
+    t = meta["topic"]
+    if f"{t['content_weight']} or {t['policy_share']}" not in flat:
+        fail("README should state the two topic shares as the data ships them")
+    jm = str(meta["judge"]["margin"]).replace("-", "−")
+    if jm not in flat:
+        fail(f"README should quote the judge's measured margin {jm}")
+
     # --- answer-key leak guard --------------------------------------------
     for tok in ("acct_LF", "acct_CD", "acct_RA", "acct_SK", "acct_NEG", "acct_BG",
+                "acct_s6", "acct_FR", "acct_RSP",
                 "lure_factory", "capability_dev", "recon_automation", "stolen_key",
+                "framer",
                 "zero actors", "no actors"):
         if tok in readme:
             fail(f"answer-key/spoiler token in README: {tok!r}")
@@ -108,7 +150,7 @@ def main() -> int:
     # --- cross-links -------------------------------------------------------
     for url in ("github.com/abognar-git/model-abuse-hunt",
                 "github.com/abognar-git/alert-triage-copilot",
-                "github.com/abognar-git/assay"):
+                "github.com/abognar-git/pyrite-assay"):
         if url not in readme:
             fail(f"missing sibling link: {url}")
 
@@ -117,7 +159,8 @@ def main() -> int:
         for f in FAILURES:
             print(f"  - {f}")
         return 1
-    print("check_readme: OK (scoring, tabs, bands, refusal copy, leak guard, links)")
+    print("check_readme: OK (shift count, scoring, tabs, bands, refusal copy, "
+          "bulletin stories, leak guard, figures, links)")
     return 0
 
 

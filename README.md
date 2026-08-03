@@ -11,7 +11,7 @@ project, and the table at the bottom says which.</sub>
 
 > ### ▶ [Play it in the browser](https://abognar-git.github.io/trigger-discipline/)
 >
-> No install, no account, nothing to run. One file, five shifts, about fifteen
+> No install, no account, nothing to run. One file, six shifts, about fifteen
 > minutes for the first one.
 
 ---
@@ -39,11 +39,12 @@ indistinguishable from the actors. That is not a flaw in the game;
 it is the point of the research it is built on: **what someone asks an AI
 tells you almost nothing. How they behave tells you almost everything.**
 
-You play five shifts, in the order the job gets harder. The queue starts
+You play six shifts, in the order the job gets harder. The queue starts
 obvious, then starts moving, then starts arriving the way a real queue
-arrives: mostly innocent.
+arrives: mostly innocent. On the last day the attack points the other way:
+one account in the queue is there to get someone else banned.
 
-![The shift select screen: five shifts, each unlocking the next.](docs/figures/shift_select.png)
+![The shift select screen: six shifts, each unlocking the next.](docs/figures/shift_select.png)
 
 ## The rules
 
@@ -80,6 +81,13 @@ pipeline's real enforcement rules:
     bad is exactly why the rule exists: another account in the same queue
     asks for the same thing and runs a staff awareness campaign.</sub>
 
+    Two of the scorer's own rows do not satisfy the rule either. The signal
+    table marks them `topic-derived`, because that is what they are — topic
+    in disguise, in a different column — and a ban whose only non-content
+    citation is one of them is refused the same way. The research's own policy excludes
+    exactly those two signals from corroboration; the game's gate now does
+    what the instrument's does.
+
 2. **A ban must state how sure you are, and "not very" is not enough.**
     After citing, you pick a confidence band on the intelligence-community
     scale the pipeline itself uses (likely = 0.70, very likely = 0.85, almost
@@ -91,6 +99,19 @@ pipeline's real enforcement rules:
 
 MONITOR and CLEAR need no justification. The asymmetry is deliberate: a
 no-action decision is cheap to be wrong about, a ban is not.
+
+### And the rules change under you
+
+Twice in the career a policy bulletin lands on a shift briefing and the ban
+gate tightens behind it. From the third shift, a scorer signal below the
+corroboration floor of 0.06 no longer carries a ban — *presence is not
+strength*, and the floor exists because a 0.04 automation blip once counted
+as corroboration. From the fourth, a rate-derived signal needs at least 4
+observations — *strength is not sample size*, and that floor exists because
+one refusal in one session once scored at full strength. Both numbers are
+the research pipeline's own fixes, imported. The same citation that carries
+a ban on an early shift bounces on a later one, which is how policy fixes
+arrive in the real job: mid-career, against your trained instincts.
 
 ### Scoring
 
@@ -127,13 +148,24 @@ and the actors keep operating.
 ![The Pipeline read tab: the scorer's risk breakdown, the signals that did not fire, and the policy's own decision.](docs/figures/pipeline_read.png)
 
 <sub>The most expensive tab, and the one that argues with itself: the model
-called this account malicious abuse, and the policy held it to monitor. Signals
-that did not fire are shown too — silence is evidence about an account.</sub>
+called this account malicious abuse, and the policy held it to monitor — and
+the line under the assessment says what twelve repeat runs did to it: the
+decision held every time, the confidence band flipped a coin. Signals that
+did not fire are shown too — silence is evidence about an account. The strip
+above the table prices "topic" under both of the research's own definitions,
+and every rate-derived row carries its denominator on its face.</sub>
+
+Where a cluster carries a model assessment, the desk also offers a free
+**second opinion** — an automated review of that assessment, served verbatim
+from the research's own judge experiment. Nothing obliges you to agree with
+it. If you use it, the shift report will show you what it was worth.
 
 Each tab opens once per account and stays open; refreshes are free. On the
 first shift the clock is off entirely — read everything, learn what each tab
 is worth. From the second shift on, time is the only pressure the game ever
-applies. The end-of-shift report shows *what ran while you read*: the
+applies. When nothing needs you, `⇧W` runs the clock forward to the next
+arrival or new session — or to the end of the shift, if nothing is left.
+The hours cost the same either way; only the keypresses go away. The end-of-shift report shows *what ran while you read*: the
 malicious sessions that landed between an actor's arrival and your ban. It
 is not scored. It is just true.
 
@@ -141,7 +173,7 @@ is not scored. It is just true.
 
 - **A live queue.** Accounts and sessions arrive over the shift. A decided
   account that receives new evidence reopens, and you may change that verdict
-  once. Some accounts are clean for the first twenty hours.
+  once. Some accounts are clean until hour 19.
 - **Cases.** Accounts that belong to one operator are one case (`A` adds an
   account to a case). A case with two or more members is banned once — one
   link reason, one band, every member. The policy refuses a case linked only
@@ -156,16 +188,38 @@ is not scored. It is just true.
 what holds between these two members, and a case linked by infrastructure
 alone is refused.</sub>
 
-- **Appeals.** On the last shift, everyone you banned files an appeal
+- **Two link reasons the research measured and adopted neither.** *Same
+  writing style* is offered for every case and always refused, with the
+  queue's own numbers: on prompts this short, every pair of accounts scores
+  alike, and a channel that links every pair links none. *Same active hours*
+  the desk accepts — and accepting it is how you find out why the research
+  did not.
+- **Between cases.** With two open cases, the board says which members of
+  one touch which members of the other, on what channel, and what a merge
+  would actually leave on the picker — and when every cross-edge runs
+  through a single account, it names it. One click folds a case into
+  another; no click manufactures a link reason.
+- **Appeals.** On the fifth shift, everyone you banned files an appeal
   nominating a fact for independent verification. Some appeals verify and
   are lies anyway. One cannot be resolved in either direction — and the
   round will show you why that is the worst outcome on the board.
+- **The aimed link.** The sixth shift stages the research's framing
+  experiment as a queue: an account built after everyone else, copying an
+  actor cell's infrastructure and an innocent's target, topic and working
+  hours — so the pipeline's own linker puts the innocent in the actors'
+  cluster, because every overlap genuinely holds. What decides the day is
+  the network tab's first-seen column, there since the first shift: an
+  overlap says two accounts touched the same thing; the order says who
+  touched it first. The overlap is real. The order is the tell. No figure
+  of this shift appears here on purpose — a screenshot of the frame would
+  be its answer key.
 
 ### Keys
 
 `B` ban · `M` monitor · `C` clear · `1`–`5` evidence tabs · `A` case
-add/remove · `W` wait 1h · `Enter` continue · arrows move through the queue ·
-`?seed=N` in the URL reorders a shift's queue.
+add/remove · `G` flag a policy gap (an annotation, never scored) · `W` wait
+1h · `⇧W` wait until the next event · `Enter` continue · arrows move through
+the queue · `?seed=N` in the URL reorders a shift's queue.
 
 ## Where the game comes from
 
@@ -188,11 +242,25 @@ Each mechanic is a measured finding there, not a game-design invention:
 | Confidence bands, the 0.70 floor, Brier scoring | the pipeline's own band on its hardest account was a 50/50 coin flip across 12 reps |
 | −25 for a false ban | false-accusation rate is the metric that matters, and 0/14 is a sample, not a rate |
 | MONITOR as the pressured hedge | the model called the detection engineer malicious; the policy held it to monitor |
-| The account that is clean until hour 18 | a stolen key is detectable only as divergence from the account's own baseline |
+| The account that is clean until hour 19 | a stolen key is detectable only as divergence from the account's own baseline |
 | "An overlap is an observation, not a link" | the false-merge guard: two strangers behind one VPN are not one actor |
 | Respawn with new infrastructure, same objective | the evasion cost frontier: ~$101 buys anonymity; objective and history are unbuyable |
 | The appeal that cannot be resolved | `coordination` is not a fact you can produce a document against |
 | The career dashboard's base-rate section | at realistic prevalence, an enforce queue with a small false-positive rate is mostly innocent people |
+| The "what counts as topic?" strip, and the `G` flag | the score's topic share is 0.06 or 0.28 depending on which of the research's own files you read; the alternatives were measured, published, and deliberately not adopted |
+| Topic-derived scorer rows cannot carry a ban | the research's policy excludes exactly those two signals from corroboration; the larger of them carries 6 of 8 malicious leads while reading no timestamp |
+| The "across 12 runs" line on a cluster | every enforcement decision held all 12 runs; the confidence band on the hardest account was a 50/50 coin flip |
+| The strength-floor bulletin (shift 3) | a 0.04 automation blip once counted as corroboration; the fix is the imported 0.06 floor — presence is not strength |
+| The rate-denominator bulletin (shift 4) | one refusal in one session once scored at full strength; the fix is the imported 4-observation minimum — strength is not sample size |
+| "Same writing style", always offered, always refused | every pairwise style score in the queue sits between ~0.97 and 1.00; the median account holds 38 words against an authorship floor near 1,000 |
+| "Same active hours", accepted — and it merges innocents | the timing channel closed the research's linkage gap and false-merged the planted look-alikes at every threshold it was swept at |
+| The free second opinion | the decorrelated judge's discrimination margin is −0.75 — inverted; it rated the one wrong assessment sound and found fault with three of the four real ones |
+| The report's designed pair | two accounts the cadence signal scores identically at full strength; everything that separates them lives in the tabs that cost time |
+| The sixth shift, and the first-seen column | five of fourteen innocents could be attached to an actor by reproducing what they already share; the cheapest victim needed no capability barrier at all |
+
+The between-cases readout and the one-click fold are desk affordances, not
+findings — they only surface what the link machinery already computes, and
+every refusal they funnel into is a measured one.
 
 The trilogy behind it: [`triage`](https://github.com/abognar-git/alert-triage-copilot)
 (the defender's pipeline under attack), `hunt` (the platform hunting for
@@ -207,6 +275,12 @@ that. Session `category` labels are given, not derived — the same caveat
 `hunt` states about itself up front. Your score measures your play against
 this dataset, not your competence as an analyst; twenty-three accounts is a
 queue, not a benchmark.
+
+One rule here is deliberately not the research's: the case board accepts
+*same active hours* as a link reason, which `hunt` measured and adopted
+nowhere. The desk lets you make the mistake the research declined to,
+because the −25 teaches what the finding number cannot. The briefing says
+so before you can use it.
 
 ## Running it yourself
 

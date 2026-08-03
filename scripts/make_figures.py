@@ -96,6 +96,19 @@ function hasCategory(){
     return a.sessions.some(function(s){ return want.indexOf(s.category) >= 0; });
   };
 }
+/* Figures about content must show the content they claim AT CAPTURE TIME.
+   hasCategory() reads the whole session list, future sessions included, and
+   on a live shift that once selected the stolen key while its visible
+   sessions were still the benign translation baseline - a published figure
+   contradicted its own caption and no text gate could see it. This
+   predicate reads only what has arrived. */
+function visiblePhishing(hour, minN){
+  return function(a){
+    var vis = a.sessions.filter(function(s){ return s.appears_at <= hour; });
+    if (vis.length < (minN || 3)) { return false; }
+    return vis.every(function(s){ return s.category === 'phishing_content'; });
+  };
+}
 function waitHours(n){ for (var i=0;i<n;i++) press('w'); }
 function arrivedIds(){ return queueIds().filter(Boolean); }
 /* Two accounts the player could legitimately join into a case: both arrived,
@@ -116,8 +129,7 @@ function openLinkablePair(){
 }
 function openMatchingOn(shift, hours){
   start(shift); waitHours(hours);
-  return openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'),
-                      'offensive content');
+  return openMatching(visiblePhishing(hours), 'three visible phishing drafts');
 }
 function monitoredCluster(a){
   return a.pipeline && a.pipeline.cluster && a.pipeline.cluster.decision === 'monitor';
@@ -127,8 +139,8 @@ function monitoredCluster(a){
 SCENARIOS: dict[str, dict] = {
     # ---- stills -----------------------------------------------------------
     "shift_select": dict(
-        caption="The five shifts, in the order the job gets harder.",
-        size=(1180, 1500), js="/* the landing is the boot state */",
+        caption="The six shifts, in the order the job gets harder.",
+        size=(1180, 1080), js="/* the landing is the boot state */",
     ),
     "refusal": dict(
         caption="Banning on content alone is refused by the policy, not by the score.",
@@ -136,7 +148,7 @@ SCENARIOS: dict[str, dict] = {
         js="""
         start('s2');
         waitHours(12);           // a live queue: the subject has to arrive first
-        openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content');
+        openMatching(visiblePhishing(12), 'three visible phishing drafts');
         citeFirst(1);            // a content row: the worst-looking evidence there is
         press('b');              // the policy reads the citations and declines
         """,
@@ -159,7 +171,7 @@ SCENARIOS: dict[str, dict] = {
         js="""
         start('s2');
         waitHours(12);           // a live queue: the subject has to arrive first
-        openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content');
+        openMatching(visiblePhishing(12), 'three visible phishing drafts');
         press('3'); citeFirst(2);   // Behavior, two rows cited
         press('b');
         """,
@@ -177,19 +189,19 @@ SCENARIOS: dict[str, dict] = {
     # One scenario per frame, each a superset of the previous: the GIF is the
     # ban rule, start to finish.
     "gif_1_content": dict(gif=1, size=(1300, 760), js="""
-        start('s2'); waitHours(6); openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content');
+        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts');
     """),
     "gif_2_refused": dict(gif=2, size=(1300, 760), js="""
-        start('s2'); waitHours(6); openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content'); citeFirst(1); press('b');
+        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1); press('b');
     """),
     "gif_3_behavior": dict(gif=3, size=(1300, 760), js="""
-        start('s2'); waitHours(6); openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content'); citeFirst(1); press('b'); press('3');
+        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1); press('b'); press('3');
     """),
     "gif_4_cited": dict(gif=4, size=(1300, 760), js="""
-        start('s2'); waitHours(6); openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content'); citeFirst(1); press('b'); press('3'); citeFirst(2);
+        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1); press('b'); press('3'); citeFirst(2);
     """),
     "gif_5_band": dict(gif=5, size=(1300, 760), js="""
-        start('s2'); waitHours(6); openMatching(hasCategory('malware_dev','exploit_help','phishing_content','spam_content'), 'offensive content'); citeFirst(1); press('b'); press('3'); citeFirst(2); press('b');
+        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1); press('b'); press('3'); citeFirst(2); press('b');
     """),
     "gif_6_verdict": dict(gif=6, size=(1300, 760), js="""
         var subject = openMatchingOn('s2', 6);
@@ -335,7 +347,8 @@ def main() -> int:
         tmp = Path(td)
         for name in wanted:
             spec = SCENARIOS[name]
-            hint = next((s for s in ("s5", "s4", "s3", "s2") if f"'{s}'" in spec["js"]), "s1")
+            hint = next((s for s in ("s6", "s5", "s4", "s3", "s2")
+                         if f"'{s}'" in spec["js"]), "s1")
             page = build_page(tmp, name, spec["js"], hint)
             png = OUT / f"{name}.png"
             shot(exe, page, png, spec["size"])

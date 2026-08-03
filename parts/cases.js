@@ -24,18 +24,29 @@ if (!window.Game) { return; }
 var REFUSE_CASE_LINK = 'Refused: an overlap is an observation, not a link. ' +
   'A link needs a reason — shared infrastructure is how the VPN user died.';
 var REFUSE_FLOOR = 'Refused: below the confidence floor.';
+/* Finding #17 — the style channel has no resolution on prompts this short:
+   every pair in the queue scores alike, so the policy refuses it outright.
+   Static skeleton here; the queue's own measured numbers are appended from
+   the shift's style block when the refusal fires. */
+var REFUSE_STYLE = 'Refused: writing style links every account here or none.';
 
 var KINDS = [
   ['shared_asn', 'same ASN'],
   ['shared_ip', 'same IP'],
   ['shared_target', 'same target org'],
-  ['shared_cadence', 'same automation cadence']
+  ['shared_cadence', 'same automation cadence'],
+  /* finding #17: hunt measured this channel and adopted it nowhere; the desk
+     here accepts it, because letting the player merge on it is the only way
+     to teach why the research did not */
+  ['shared_hours', 'same active hours']
 ];
 
 var casesOn = false;
 var ui = null, st = null, meta = null;
+var styleBlock = null;      /* the shift's pairwise style matrix (finding #17) */
 var acctById = new Map();   /* sealed account objects for the current shift */
-var cases = [];             /* {name, members:[ids], selected:{kind:bool}, banned:null|{...}} */
+var cases = [];             /* {name, members:[ids], selected:{kind:bool}, banned:null|{...}, absorbed:[str]} */
+var nextCaseNum = 1;        /* monotonic: a folded case's number is never reissued */
 var activeIdx = -1;
 var verdictOf = new Map();  /* id -> verdict, tracked from events only */
 var pendingBand = false;    /* band row open for the active case */
@@ -60,6 +71,40 @@ function floorP() {
   return Number(((meta && meta.bands) || {})[floorBand()]);
 }
 function activeCase() { return activeIdx >= 0 ? cases[activeIdx] : null; }
+
+/* Finding #17 — pairwise style scores among the case members, read from the
+   shift's emitted matrix (hunt src/linkage.py computed it; nothing here
+   restates a feature). Returns null when the matrix cannot answer. */
+function stylePairRange(members) {
+  if (!styleBlock || members.length < 2) { return null; }
+  var order = styleBlock.order || [];
+  var n = order.length;
+  var idx = {};
+  order.forEach(function (id, i) { idx[id] = i; });
+  var lo = null, hi = null;
+  for (var i = 0; i < members.length; i++) {
+    for (var j = i + 1; j < members.length; j++) {
+      var a = idx[members[i]], b = idx[members[j]];
+      if (a === undefined || b === undefined) { return null; }
+      var r = Math.min(a, b), c = Math.max(a, b);
+      var v = styleBlock.pairs[r * n - r * (r + 1) / 2 + (c - r - 1)];
+      if (lo === null || v < lo) { lo = v; }
+      if (hi === null || v > hi) { hi = v; }
+    }
+  }
+  return { min: lo, max: hi };
+}
+
+function styleRefusal() {
+  var msg = REFUSE_STYLE;
+  if (styleBlock) {
+    msg += ' Every pair in this queue scores between ' +
+      styleBlock.min.toFixed(3) + ' and ' + styleBlock.max.toFixed(3) +
+      '; the median account holds ' + styleBlock.median_words +
+      ' words against an authorship floor of ' + styleBlock.word_floor + '.';
+  }
+  return msg;
+}
 
 /* A link reason holds when its overlap edges connect every member.
    Edges are undirected: a respawn lists its parents, but the parents'
@@ -98,10 +143,84 @@ function setCaseNotice(msg) {
 }
 
 function newCase() {
-  cases.push({ name: 'Case ' + (cases.length + 1), members: [], selected: {}, banned: null });
+  cases.push({ name: 'Case ' + nextCaseNum, members: [], selected: {},
+               banned: null, absorbed: [] });
+  nextCaseNum += 1;
   activeIdx = cases.length - 1;
   pendingBand = false;
   noticeText = '';
+}
+
+function kindLabel(kind) {
+  var label = kind;
+  KINDS.forEach(function (kk) { if (kk[0] === kind) { label = kk[1]; } });
+  return label;
+}
+
+/* -------------------------------------------------------------- between cases
+   Exception-tier readout over the existing computed reasons, at the picker's
+   exact disclosure level (player-visible network lists; no reveal, no
+   scoring, no policy change). A real desk consolidates clusters by reading
+   which members of one touch which members of the other, on what channel -
+   so the line leads with the cross-edges, names the account every edge runs
+   through when there is one (single-point linkage is the weakest attribution
+   a desk accepts, and it is the entire s6 frame), and ends with what a merge
+   would actually leave on the picker. */
+function crossEdges(aMembers, bMembers) {
+  var aSet = {}, bSet = {};
+  aMembers.forEach(function (id) { aSet[id] = true; });
+  bMembers.forEach(function (id) { bSet[id] = true; });
+  var out = {};
+  KINDS.forEach(function (k) {
+    var seen = {};
+    var edges = [];
+    function scan(fromIds, toSet, flip) {
+      fromIds.forEach(function (id) {
+        var acct = acctById.get(id);
+        ((((acct || {}).network) || {})[k[0]] || []).forEach(function (o) {
+          if (!toSet[o]) { return; }
+          var a = flip ? o : id, b = flip ? id : o;
+          if (seen[a + '|' + b]) { return; }
+          seen[a + '|' + b] = true;
+          edges.push([a, b]);
+        });
+      });
+    }
+    /* both directions: a respawn's edges are one-directional in the data */
+    scan(aMembers, bSet, false);
+    scan(bMembers, aSet, true);
+    if (edges.length) { out[k[0]] = edges; }
+  });
+  return out;
+}
+
+function foldCase(j) {
+  if (!casesOn || !st || st.phase !== 'play') { return; }
+  var c = activeCase();
+  var o = cases[j];
+  if (!c || c.banned || !c.members.length) { return; }
+  if (!o || o === c || o.banned || !o.members.length) { return; }
+  var moved = 0;
+  o.members.forEach(function (id) {
+    if (c.members.indexOf(id) < 0) { c.members.push(id); moved += 1; }
+  });
+  c.absorbed.push('Absorbed ' + o.name + ' (' + plural(moved, 'member') +
+    ') at hour ' + st.elapsed + '.');
+  cases.splice(j, 1);
+  if (j < activeIdx) { activeIdx -= 1; }
+  /* prune selections against the union here, not in a render branch;
+     shared_style stays exempt (finding #17: always offerable) */
+  var holdNow = { shared_style: true };
+  holdingReasons(c.members).forEach(function (k) { holdNow[k[0]] = true; });
+  Object.keys(c.selected).forEach(function (k) {
+    if (!holdNow[k]) { delete c.selected[k]; }
+  });
+  pendingBand = false;
+  noticeText = o.name + ' folded into ' + c.name + ' — ' +
+    plural(c.members.length, 'member') + ' now. Only what holds across all ' +
+    'of them is offered.';
+  renderBoard();
+  ui.renderDossier();
 }
 
 function inAnotherCase(id) {
@@ -160,20 +279,21 @@ function requestCaseBan() {
     return;
   }
   var holding = holdingReasons(c.members).map(function (k) { return k[0]; });
-  if (!holding.length) {
-    setCaseNotice('No overlap holds across every member. There is no case to ban.');
-    return;
-  }
   var chosen = chosenReasons(c);
-  if (!chosen.length) {
-    setCaseNotice('Pick the link reason the ban stands on.');
+  var styleChosen = !!c.selected.shared_style;
+  if (!chosen.length && !styleChosen) {
+    setCaseNotice(holding.length
+      ? 'Pick the link reason the ban stands on.'
+      : 'No overlap holds across every member. There is no case to ban.');
     return;
   }
   var suff = sufficientKinds();
   if (!chosen.some(function (k) { return suff.indexOf(k) >= 0; })) {
-    /* §3: shared_asn / shared_ip alone never carry a case ban */
+    /* §3: shared_asn / shared_ip alone never carry a case ban — and style
+       (finding #17) never carries anything: a channel with no resolution is
+       refused with its own measured numbers, the more specific lesson */
     pendingBand = false;
-    noticeText = REFUSE_CASE_LINK;
+    noticeText = styleChosen ? styleRefusal() : REFUSE_CASE_LINK;
     renderBoard();
     return;
   }
@@ -272,6 +392,11 @@ function renderBoard() {
       }
       bar.appendChild(row);
     });
+    /* fold provenance is a record, not a notice: a wrong merge must be
+       reversible by hand without memory, and memory is what a notice is not */
+    (c.absorbed || []).forEach(function (lineTxt) {
+      bar.appendChild(ui.el('p', 'small dim', lineTxt));
+    });
 
     if (c.banned) {
       var enf = ui.el('div', 'case-enforced');
@@ -290,18 +415,17 @@ function renderBoard() {
     } else if (c.members.length >= minMembers()) {
       bar.appendChild(ui.el('h3', null, 'Link reason'));
       var holding = holdingReasons(c.members);
-      /* drop selections that no longer hold — membership changed under them */
-      var holdSet = {};
+      /* drop selections that no longer hold — membership changed under them.
+         shared_style is exempt: it is always offerable, which is finding #17. */
+      var holdSet = { shared_style: true };
       holding.forEach(function (k) { holdSet[k[0]] = true; });
       Object.keys(c.selected).forEach(function (k) {
         if (!holdSet[k]) { delete c.selected[k]; }
       });
-      if (!holding.length) {
-        bar.appendChild(ui.el('p', 'dim small',
-          'No overlap holds across every member. There is no case to ban.'));
-      } else {
-        bar.appendChild(ui.el('p', 'small dim',
-          'Computed from the members’ own overlaps; only what holds is offered.'));
+      {
+        bar.appendChild(ui.el('p', 'small dim', holding.length
+          ? 'Computed from the members’ own overlaps; only what holds is offered.'
+          : 'No overlap holds across every member.'));
         holding.forEach(function (k) {
           var row = ui.el('label', 'case-reason');
           var cb = ui.el('input');
@@ -318,6 +442,32 @@ function renderBoard() {
           row.appendChild(body);
           bar.appendChild(row);
         });
+        /* finding #17 — the style row is offered for EVERY case, because on
+           prompts this short the channel matches every pair; the number
+           beside it is the point, and selecting it gets the refusal */
+        var srow = ui.el('label', 'case-reason');
+        var scb = ui.el('input');
+        scb.type = 'checkbox';
+        scb.setAttribute('data-kind', 'shared_style');
+        scb.checked = !!c.selected.shared_style;
+        scb.addEventListener('change', function () {
+          c.selected.shared_style = scb.checked;
+          if (pendingBand) { pendingBand = false; renderBoard(); }
+        });
+        srow.appendChild(scb);
+        var sbody = ui.el('span', null, 'same writing style ');
+        sbody.appendChild(ui.el('span', 'kind', 'shared_style'));
+        var range = stylePairRange(c.members);
+        if (range && styleBlock) {
+          var caseTxt = range.min === range.max
+            ? range.min.toFixed(3)
+            : range.min.toFixed(3) + '–' + range.max.toFixed(3);
+          sbody.appendChild(ui.el('span', 'dim small',
+            ' — this case ' + caseTxt + ' · the whole queue ' +
+            styleBlock.min.toFixed(3) + '–' + styleBlock.max.toFixed(3)));
+        }
+        srow.appendChild(sbody);
+        bar.appendChild(srow);
         var banBtn = ui.el('button', 'btn-ban', 'BAN CASE — ' + plural(c.members.length, 'member'));
         banBtn.id = 'btn-bancase';
         banBtn.addEventListener('click', requestCaseBan);
@@ -349,6 +499,69 @@ function renderBoard() {
       bar.appendChild(ui.el('p', 'small dim',
         'Add at least ' + (minMembers() - c.members.length) + ' more; a case needs ' +
         minMembers() + '.'));
+    }
+
+    /* -- between cases: observations, never advice. Rendered only when the
+       ACTIVE case is open and non-empty, so every union has two sides. No
+       checkboxes here - the picker owns citations; this block only reads. -- */
+    var others = [];
+    cases.forEach(function (o, j) {
+      if (j === activeIdx || o.banned || !o.members.length) { return; }
+      others.push([o, j]);
+    });
+    if (!c.banned && c.members.length && others.length) {
+      var bt = ui.el('div', 'case-between');
+      bt.appendChild(ui.el('h3', null, 'Between cases'));
+      others.forEach(function (pair) {
+        var o = pair[0], j = pair[1];
+        var edges = crossEdges(c.members, o.members);
+        var kindsTouching = KINDS.map(function (k) { return k[0]; })
+          .filter(function (kk) { return edges[kk]; });
+        var unionHolding = holdingReasons(c.members.concat(o.members))
+          .map(function (k) { return k[1]; });
+        var txt = o.name + ' (' + plural(o.members.length, 'member') + ') — ';
+        if (!kindsTouching.length) {
+          txt += 'no member touches this case.';
+        } else {
+          /* the bridge: an account every cross-edge runs through */
+          var counts = {};
+          var total = 0;
+          kindsTouching.forEach(function (kk) {
+            edges[kk].forEach(function (e) {
+              total += 1;
+              counts[e[0]] = (counts[e[0]] || 0) + 1;
+              counts[e[1]] = (counts[e[1]] || 0) + 1;
+            });
+          });
+          var bridges = Object.keys(counts).filter(function (id) {
+            return counts[id] === total;
+          });
+          var channels = kindsTouching.map(kindLabel).join(', ');
+          if (bridges.length === 1) {
+            txt += 'touches this case only through ' + bridges[0] + ': ' +
+              channels + '. ';
+          } else if (bridges.length === 2 && total === 1) {
+            txt += 'touches this case through ' + bridges.join(' · ') +
+              ' only: ' + channels + '. ';
+          } else {
+            txt += 'touches this case: ' + channels + '. ';
+          }
+          txt += unionHolding.length
+            ? 'Merged, ' + unionHolding.join(' + ') + ' would hold across every member.'
+            : 'Merged, no reason would hold.';
+        }
+        var line = ui.el('p', 'small');
+        line.appendChild(document.createTextNode(txt + ' '));
+        var fb = ui.el('button', null, 'Fold ' + o.name.toLowerCase() + ' in');
+        fb.setAttribute('data-merge', String(j));
+        fb.addEventListener('click', function () { foldCase(j); });
+        line.appendChild(fb);
+        bt.appendChild(line);
+      });
+      bt.appendChild(ui.el('p', 'small dim',
+        'The pipeline chains overlaps pair by pair; a case ban stands on one ' +
+        'reason that holds across every member.'));
+      bar.appendChild(bt);
     }
   }
 
@@ -403,14 +616,17 @@ window.Game.registerMode('cases', {
     if (ev.type === 'shiftStart') {
       casesOn = !!(ev.shift && ev.shift.flags && ev.shift.flags.cases);
       cases = [];
+      nextCaseNum = 1;
       activeIdx = -1;
       verdictOf = new Map();
       pendingBand = false;
       noticeText = '';
       acctById = new Map();
+      styleBlock = null;
       (ctx.data.shifts || []).forEach(function (sh) {
         if (sh.id === ev.shift.id) {
           (sh.accounts || []).forEach(function (a) { acctById.set(a.id, a); });
+          styleBlock = sh.style || null;
         }
       });
       var bar = ui.$('casebar');

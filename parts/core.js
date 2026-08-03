@@ -62,6 +62,37 @@ var FLOOR_P = Number(BANDS[FLOOR_BAND]);
 var REFUSE_CONTENT = 'Refused: no enforcement on content alone. What they ' +
   'asked proves interest, not abuse. Cite behavior, infrastructure, or the scorer.';
 var REFUSE_FLOOR = 'Refused: below the confidence floor.';
+/* Finding #20 — hunt's own policy excludes the topic-derived scorer rows
+   from corroboration; the game's gate was looser than the instrument's rule
+   until this closed the gap. Which rows those are comes from META.topic,
+   imported from hunt's signals module by build_data. */
+var REFUSE_TOPIC = 'Refused: that scorer row is topic in disguise — the ' +
+  'policy’s corroboration rule excludes it. Cite behavior, infrastructure, ' +
+  'or a non-topic signal.';
+/* Findings #5 and #21 — the policy bulletins. Each is a measured hunt fix;
+   the constants come from meta (imported from hunt policy.py), the patch
+   activates on the shift meta names, and earlier shifts run the pre-patch
+   world on purpose. Skeletons static; the gate appends the cited row's own
+   numbers. */
+var REFUSE_WEAK = 'Refused: that signal is below the corroboration floor. ' +
+  'Presence is not strength.';
+var REFUSE_THIN = 'Refused: a rate from that few observations is not ' +
+  'corroboration. Strength is not sample size.';
+var PATCHES = POLICY.patches || [];
+var MIN_CONTRIB = Number(POLICY.corroboration_min_contribution);
+var MIN_OBS = Number(POLICY.corroboration_min_observations);
+
+function shiftIdx(id) {
+  var i = -1;
+  SHIFTS.forEach(function (s, n) { if (s.id === id) { i = n; } });
+  return i;
+}
+function patchActive(pid) {
+  if (!SHIFT) { return false; }
+  var from = null;
+  PATCHES.forEach(function (p) { if (p.id === pid) { from = p.active_from; } });
+  return from !== null && shiftIdx(SHIFT.id) >= shiftIdx(from);
+}
 
 /* Per-tab DURATIONS (SPEC-2 §8): how long opening the tab takes when a
    clock is running. Not a price — nothing is ever refused for lack of
@@ -271,6 +302,8 @@ function initShift(shift) {
   state.autoCleared = 0;
   state.queueFlags = new Map();
   state.dynamicArrivals = new Map();
+  state.policyFlags = new Set();   /* finding #20 — annotations, never scored */
+  state.secondOpinions = new Set(); /* finding #18 — who took the bait */
   arrivalAt = new Map();
   seenCount = new Map();
   reopenGrants = new Map();
@@ -556,6 +589,31 @@ function renderIntro() {
     if (box) {
       box.textContent = '';
       brief.forEach(function (para) { box.appendChild(el('p', null, para)); });
+      /* Findings #5/#21 — a policy bulletin lands between shifts, on the
+         briefing of the shift it activates on. The constants are meta's
+         (imported from hunt policy.py); the stories are the measured bugs
+         the patches fixed. */
+      PATCHES.forEach(function (p) {
+        if (p.active_from !== SHIFT.id) { return; }
+        var bb = el('div', 'bulletin-box');
+        var made = false;
+        if (p.id === 'strength_floor') {
+          bb.appendChild(el('p', 'bulletin-title', 'Policy bulletin — corroboration floor'));
+          bb.appendChild(el('p', 'small',
+            'Effective this shift: a scorer signal below ' + MIN_CONTRIB +
+            ' no longer carries a ban on its own. A 0.04 automation blip once ' +
+            'counted as corroboration. Presence is not strength.'));
+          made = true;
+        } else if (p.id === 'min_observations') {
+          bb.appendChild(el('p', 'bulletin-title', 'Policy bulletin — rate denominators'));
+          bb.appendChild(el('p', 'small',
+            'Effective this shift: a rate-derived signal needs at least ' +
+            plural(MIN_OBS, 'observation') + ' to carry a ban. One refusal in ' +
+            'one session once scored full strength. Strength is not sample size.'));
+          made = true;
+        }
+        if (made) { box.appendChild(bb); }
+      });
     }
   }
   setText('intro-shift', (SHIFT.title || '') +
@@ -661,6 +719,21 @@ function citationList(id) {
   m.forEach(function (v, k) { out.push({ key: k, tab: v.tab, label: v.label }); });
   return out;
 }
+/* Finding #20 — paid citations that hunt's policy would accept as
+   corroboration: everything non-content EXCEPT a pipeline signal row whose
+   signal is topic-derived. Topic in a different column is still topic. */
+function nonTopicPaidCiteCount(id) {
+  var names = (META.topic && META.topic.signals) || [];
+  var n = 0;
+  (state.citations.get(id) || new Map()).forEach(function (v, k) {
+    if (v.tab === 'content') { return; }
+    var m = /^pipeline:signal:(.+)$/.exec(k);
+    if (m && names.indexOf(m[1]) >= 0) { return; }
+    n += 1;
+  });
+  return n;
+}
+
 function paidCiteCount(id) {
   var n = 0;
   (state.citations.get(id) || new Map()).forEach(function (v) {
@@ -694,13 +767,25 @@ function renderCiteCount() {
   var total = id ? (state.citations.get(id) || new Map()).size : 0;
   var paid = id ? paidCiteCount(id) : 0;
   n.textContent = total
-    ? (total + ' cited · ' + paid + ' non-content')
+    ? (total + ' cited · ' + paid + ' non-content' +
+       (paid > 0 && nonTopicPaidCiteCount(id) === 0 ? ' — all topic-derived' : ''))
     : 'nothing cited';
 }
 
 /* =========================================================================
    dossier
 ========================================================================= */
+/* Finding #20 — FLAG POLICY GAP. An annotation, not a verdict: sometimes the
+   ambiguous object is the policy itself, and the honest move is to put that
+   on the record instead of pretending a verdict resolves it. Never scored,
+   never gates anything; the report lists it and stops there. */
+function togglePolicyFlag(id) {
+  if (!byId.has(id) || !arrived.has(id)) { return; }
+  if (state.policyFlags.has(id)) { state.policyFlags.delete(id); }
+  else { state.policyFlags.add(id); }
+  renderDossier();
+}
+
 function openAccount(id) {
   if (!byId.has(id) || !arrived.has(id)) { return; }
   var qf = state.queueFlags.get(id);
@@ -769,6 +854,25 @@ function renderDossier() {
     bar.appendChild(clearBtn);
   }
   head.appendChild(bar);
+
+  /* finding #20 — the annotation row renders for every account, decided or
+     not: a flag that only appeared on borderline accounts would be a tell. */
+  var fRow = el('div');
+  fRow.id = 'flag-row';
+  var isFlagged = state.policyFlags.has(a.id);
+  var fBtn = el('button', 'btn-flag' + (isFlagged ? ' on' : ''),
+    isFlagged ? 'POLICY GAP ON RECORD' : 'FLAG POLICY GAP');
+  fBtn.title = 'Sometimes the ambiguous thing is the policy, not the account — ' +
+    'the scorer itself ships two definitions of "topic". Flagging puts that ' +
+    'ambiguity on the record for the shift report. It never scores, never ' +
+    'gates, and the verdict is still yours to make.';
+  fBtn.appendChild(el('kbd', null, 'G'));
+  fBtn.addEventListener('click', function () { togglePolicyFlag(a.id); });
+  fRow.appendChild(fBtn);
+  fRow.appendChild(el('span', 'meta', isFlagged
+    ? 'on the record — the verdict is still yours'
+    : 'annotation, not a verdict; never scored'));
+  head.appendChild(fRow);
 
   renderBandPicker();
   renderCiteCount();
@@ -1006,7 +1110,8 @@ function tabNetwork(a) {
     ['shared_asn', 'same ASN'],
     ['shared_ip', 'same IP'],
     ['shared_target', 'same target org'],
-    ['shared_cadence', 'same automation cadence']
+    ['shared_cadence', 'same automation cadence'],
+    ['shared_hours', 'same active hours']
   ];
   var any = false;
   kinds.forEach(function (k) {
@@ -1021,6 +1126,19 @@ function tabNetwork(a) {
     line.appendChild(el('span', 'dim small', k[1] + ': '));
     ids.forEach(function (id) { line.appendChild(acctChip(id)); line.appendChild(document.createTextNode(' ')); });
     body.appendChild(line);
+    /* Finding #25 — the first-seen column. An overlap says two accounts
+       touched the same thing; the order says who touched it first. Derived
+       from timestamps already in the rows; identifier kinds only. */
+    var fsAll = (net.first_seen || {})[k[0]];
+    if (fsAll) {
+      ids.forEach(function (id) {
+        var fs = fsAll[id];
+        if (!fs) { return; }
+        body.appendChild(el('p', 'small dim',
+          'first seen with the shared token — this account ' + fmtTs(fs[0]) +
+          ' · ' + id + ' ' + fmtTs(fs[1])));
+      });
+    }
     row.appendChild(body);
     f.appendChild(row);
   });
@@ -1048,6 +1166,55 @@ function tabPipeline(a) {
   f.appendChild(riskRow);
   f.appendChild(el('p', 'small dim', 'A lead is a queue entry, never a verdict.'));
 
+  /* Finding #20 — the two shipped definitions of "topic". Both accountings
+     recompute from numbers already on this screen; META.topic carries hunt's
+     own signal set and weight shares, imported by build_data — the strip
+     renders on every account, because a strip that only appeared where the
+     definitions disagree would be a tell. */
+  if (META.topic) {
+    var tp = META.topic;
+    var risk = Number(pl.risk || 0);
+    var lthr = Number(pl.lead_threshold || 0);
+    var defs = [
+      { label: 'content only — the headline’s definition',
+        share: Number(tp.content_weight),
+        own: Number(pl.content_only_score || 0) },
+      { label: 'content + capability trajectory — the policy’s list',
+        share: Number(tp.policy_share),
+        own: Number(pl.topic_derived_score || 0) }
+    ];
+    var tbox = el('div', 'topic-box');
+    tbox.appendChild(el('p', 'small dim',
+      'What counts as topic? The research ships two answers, and they are not the same number.'));
+    var tt = el('table');
+    var thd = el('tr');
+    ['definition', 'of the weight vector', 'this account', 'without it'].forEach(function (h) {
+      thd.appendChild(el('th', null, h));
+    });
+    tt.appendChild(thd);
+    var leadsWithout = [];
+    defs.forEach(function (d) {
+      var rest = Math.max(0, risk - d.own);
+      var still = rest >= lthr;
+      leadsWithout.push(still);
+      var tr = el('tr');
+      tr.appendChild(el('td', 'small', d.label));
+      tr.appendChild(el('td', 'mono small', d.share.toFixed(2)));
+      tr.appendChild(el('td', 'mono small', d.own.toFixed(3)));
+      tr.appendChild(el('td', 'mono small',
+        rest.toFixed(3) + (still ? ' — still a lead' : ' — below the line')));
+      tt.appendChild(tr);
+    });
+    tbox.appendChild(tt);
+    if (leadsWithout[0] !== leadsWithout[1]) {
+      tbox.appendChild(el('p', 'small',
+        'The two definitions disagree about whether this account leads without its ' +
+        'topic signals. The headline uses the first, the policy’s corroboration rule ' +
+        'the second; which number you quote depends on which file you read.'));
+    }
+    f.appendChild(tbox);
+  }
+
   var sigs = pl.signals || [];
   if (sigs.length) {
     var t = el('table');
@@ -1062,8 +1229,19 @@ function tabPipeline(a) {
         'pipeline — signal ' + s.name + ' ' + Number(s.value).toFixed(3) + ': ' +
         (s.note || 'did not fire')));
       tr.appendChild(tdc);
-      tr.appendChild(el('td', quiet ? 'mono small dim' : 'mono small', s.name));
-      tr.appendChild(el('td', quiet ? 'mono small dim' : 'mono small', Number(s.value).toFixed(3)));
+      var tdName = el('td', quiet ? 'mono small dim' : 'mono small', s.name);
+      if (META.topic && (META.topic.signals || []).indexOf(s.name) >= 0) {
+        /* finding #20 — the row the citation gate will not accept alone */
+        tdName.appendChild(el('span', 'dim small', ' · topic-derived'));
+      }
+      tr.appendChild(tdName);
+      var tdVal = el('td', quiet ? 'mono small dim' : 'mono small', Number(s.value).toFixed(3));
+      if (s.n_observations !== null && s.n_observations !== undefined) {
+        /* finding #21 — a rate carries its denominator on its face. Reading
+           it is the craft the bulletin later enforces. */
+        tdVal.appendChild(el('span', 'dim small', ' n=' + s.n_observations));
+      }
+      tr.appendChild(tdVal);
       /* A signal that did not fire is evidence too: it is the scorer saying it looked
          and found nothing. Rendering the whole vector makes the silence visible. */
       tr.appendChild(el('td', quiet ? 'small dim' : 'small', s.note || 'did not fire'));
@@ -1088,9 +1266,54 @@ function tabPipeline(a) {
     head.appendChild(el('span', cl.decision === 'enforce' ? 'dec-enforce' : 'dec-monitor',
       String(cl.decision || '').toUpperCase()));
     headBody.appendChild(head);
+    /* Finding #24 — the same assessment, run 12 times. The decision column
+       held every run on every cluster; the band is the part that moves, and
+       on the hardest account it was a coin flip. The histogram is measured
+       (hunt data/reps.json); the band in the line above is one draw from it. */
+    if (cl.stability) {
+      var st = cl.stability;
+      var bandTxt = Object.keys(st.bands).sort(function (x, y) {
+        return st.bands[y] - st.bands[x];
+      }).map(function (k) { return k + ' ×' + st.bands[k]; }).join(', ');
+      var decTxt = Object.keys(st.decisions).map(function (k) {
+        return k + ' ×' + st.decisions[k];
+      }).join(', ');
+      var wobbles = Object.keys(st.bands).length > 1;
+      headBody.appendChild(el('p', 'small dim',
+        'across ' + st.reps + ' runs — band: ' + bandTxt + ' · decision: ' + decTxt +
+        (wobbles
+          ? '. The decision is the stable column; the band above is one draw.'
+          : '. Both columns held every run.')));
+    }
     headRow.appendChild(headBody);
     box.appendChild(headRow);
     if (cl.summary) { box.appendChild(el('p', 'small', cl.summary)); }
+    /* Finding #18 — the second opinion. Free, never scored, never blocking:
+       the verdict shown is the measured artifact's own (hunt data/judge.json,
+       decorrelated run), and the report is where its margin gets quoted. The
+       UI endorses nothing; the offer IS the mechanic. */
+    if (cl.second_opinion) {
+      var so = cl.second_opinion;
+      if (state.secondOpinions.has(a.id)) {
+        box.appendChild(el('p', 'advisor-line small',
+          'Advisor (' + so.judge_model + ', decorrelated, ' +
+          plural(so.reps, 'run') + '): ' + so.overall +
+          (so.failed && so.failed.length
+            ? ' — failed: ' + so.failed.join(', ')
+            : ' — 0 failures')));
+      } else {
+        var sop = el('p', 'small');
+        var sob = el('button', 'btn-advisor', 'Request a second opinion');
+        sob.addEventListener('click', function () {
+          state.secondOpinions.add(a.id);
+          renderTabPanel();
+        });
+        sop.appendChild(sob);
+        sop.appendChild(el('span', 'dim small',
+          ' free — an automated review of this assessment'));
+        box.appendChild(sop);
+      }
+    }
     var mem = el('p');
     mem.appendChild(el('span', 'dim small', 'cluster members: '));
     (cl.members || []).forEach(function (id) { mem.appendChild(acctChip(id)); mem.appendChild(document.createTextNode(' ')); });
@@ -1105,9 +1328,64 @@ function tabPipeline(a) {
 /* =========================================================================
    the ban flow — §1: citation gate, then band, then commit
 ========================================================================= */
+/* The cited non-content rows, with each pipeline SIGNAL row resolved against
+   the account's own breakdown so the gate can read its strength and its
+   denominator. Non-signal rows (account file, behavior, network, the risk
+   and cluster rows) carry no value and are not what #5/#21 patched. */
+function citedPaidRows(id) {
+  var a = byId.get(id);
+  var sigs = ((a && a.pipeline) || {}).signals || [];
+  var rows = [];
+  (state.citations.get(id) || new Map()).forEach(function (v, k) {
+    if (v.tab === 'content') { return; }
+    var m = /^pipeline:signal:(.+)$/.exec(k);
+    var row = { signal: m ? m[1] : null, value: null, nObs: null };
+    if (row.signal) {
+      sigs.forEach(function (s) {
+        if (s.name === row.signal) {
+          row.value = Number(s.value);
+          row.nObs = (s.n_observations === null || s.n_observations === undefined)
+            ? null : Number(s.n_observations);
+        }
+      });
+    }
+    rows.push(row);
+  });
+  return rows;
+}
+
 function requestBan(id) {
   if (!decidable(id)) { return; }
   if (paidCiteCount(id) < 1) { setNotice(REFUSE_CONTENT); return; }
+  /* finding #20: a ban whose only non-content evidence is a topic-derived
+     scorer row is topic-only enforcement with extra steps */
+  if (nonTopicPaidCiteCount(id) < 1) { setNotice(REFUSE_TOPIC); return; }
+  /* findings #5/#21: under the active bulletins, a cited signal row must
+     clear the strength floor, and a rate row must clear its denominator.
+     One valid non-topic row anywhere carries the ban. */
+  var topicNames = (META.topic && META.topic.signals) || [];
+  var weakFail = null, thinFail = null;
+  var valid = citedPaidRows(id).some(function (r) {
+    if (!r.signal) { return true; }
+    if (topicNames.indexOf(r.signal) >= 0) { return false; }
+    if (patchActive('strength_floor') && r.value !== null && r.value < MIN_CONTRIB) {
+      weakFail = r;
+      return false;
+    }
+    if (patchActive('min_observations') && r.nObs !== null && r.nObs < MIN_OBS) {
+      thinFail = r;
+      return false;
+    }
+    return true;
+  });
+  if (!valid) {
+    setNotice(weakFail
+      ? REFUSE_WEAK + ' Cited: ' + weakFail.signal + ' at ' +
+        weakFail.value.toFixed(3) + '; the floor is ' + MIN_CONTRIB + '.'
+      : REFUSE_THIN + ' Cited: ' + thinFail.signal + ' over ' +
+        plural(thinFail.nObs, 'observation') + '; the floor is ' + MIN_OBS + '.');
+    return;
+  }
   setNotice('');
   state.pendingBanId = id;
   renderBandPicker();
@@ -1265,7 +1543,9 @@ function caseBan(ids, bandName, reasons) {
      a full-cluster case ban leaves no member unbanned and never triggers
      a respawn (SPEC-2 §3). */
   var kindLabels = { shared_asn: 'same ASN', shared_ip: 'same IP',
-                     shared_target: 'same target org', shared_cadence: 'same automation cadence' };
+                     shared_target: 'same target org',
+                     shared_cadence: 'same automation cadence',
+                     shared_hours: 'same active hours' };
   var linkLabel = 'case link — ' +
     reasons.map(function (r) { return kindLabels[r] || r; }).join(' + ') +
     ' across ' + members.length + ' accounts';
@@ -1525,6 +1805,12 @@ function buildReport() {
     matrix: m,
     verdicts: rows,
     bannedBenign: bannedBenign,
+    policyFlags: state.order.filter(function (id) {
+      return state.policyFlags.has(id);
+    }),
+    secondOpinions: state.order.filter(function (id) {
+      return state.secondOpinions.has(id);
+    }),
     brier: { n: bans.length, score: brierScore, reliability: reliability }
   };
 }
@@ -1771,6 +2057,179 @@ function renderReport(rep) {
   }
   root.appendChild(sMis);
 
+  /* --- the designed pair — the thesis, personalized. Truth flows only
+     through the report token; the pair object lives reveal-side and was
+     composed from the emitted rows at build time, so these columns cannot
+     disagree with the tabs the player saw. --- */
+  (function () {
+    var all;
+    try { all = revealAllFor(rep); } catch (e) { return; }
+    var pair = null;
+    rep.verdicts.forEach(function (row) {
+      var rv = all[row.id];
+      if (rv && rv.twin && rv.twin.a === row.id) { pair = rv.twin; }
+    });
+    if (!pair) { return; }
+    var vBy = {};
+    rep.verdicts.forEach(function (row) { vBy[row.id] = row.verdict; });
+    var vA = vBy[pair.a], vB = vBy[pair.b];
+    if (!vA || !vB) { return; }
+    var sTwin = el('section');
+    sTwin.id = 'sec-twins';
+    sTwin.appendChild(el('h2', null, 'The designed pair'));
+    sTwin.appendChild(el('p', null, pair.shared));
+    var tt = el('table');
+    var hr2 = el('tr');
+    [['', ''], [pair.a, pair.sessions.a], [pair.b, pair.sessions.b]].forEach(function (h, i) {
+      var th = el('th', i ? 'mono' : null, h[0]);
+      hr2.appendChild(th);
+    });
+    tt.appendChild(hr2);
+    var trS = el('tr');
+    trS.appendChild(el('td', 'small dim', 'sessions'));
+    trS.appendChild(el('td', 'mono small', String(pair.sessions.a)));
+    trS.appendChild(el('td', 'mono small', String(pair.sessions.b)));
+    tt.appendChild(trS);
+    pair.rows.forEach(function (row) {
+      var tr = el('tr');
+      tr.appendChild(el('td', 'small dim', row.tab));
+      tr.appendChild(el('td', 'small', row.a));
+      tr.appendChild(el('td', 'small', row.b));
+      tt.appendChild(tr);
+    });
+    var trV = el('tr');
+    trV.appendChild(el('td', 'small dim', 'your verdict'));
+    trV.appendChild(el('td', 'mono small', verdictLabel(vA)));
+    trV.appendChild(el('td', 'mono small', verdictLabel(vB)));
+    tt.appendChild(trV);
+    var trT = el('tr');
+    trT.appendChild(el('td', 'small dim', 'the truth'));
+    trT.appendChild(el('td', 'mono small', 'threat actor'));
+    trT.appendChild(el('td', 'mono small', 'benign'));
+    tt.appendChild(trT);
+    sTwin.appendChild(tt);
+    /* Column a is the actor, column b the innocent (asserted at build time),
+       so severity order is the honest grading: harsher on a = told apart. */
+    var sev = { ban: 2, monitor: 1, clear: 0 };
+    var verdictLine;
+    if (vA !== 'clear' && vB === 'clear') {
+      verdictLine = 'Split. The difference was real and you found it.';
+    } else if (sev[vA] > sev[vB]) {
+      verdictLine = 'You ranked them the right way around — and the innocent ' +
+        'still paid the hedge.';
+    } else {
+      var tabList = pair.rows.map(function (row) { return row.tab; }).join(', ');
+      var unopened = [];
+      [pair.a, pair.b].forEach(function (id) {
+        var owned = state.unlocked.get(id) || new Set();
+        pair.rows.forEach(function (row) {
+          if (row.tab !== 'content' && !owned.has(row.tab)
+              && unopened.indexOf(row.tab + ' on ' + id) < 0) {
+            unopened.push(row.tab + ' on ' + id);
+          }
+        });
+      });
+      var clause = unopened.length
+        ? ' — and you never opened ' + unopened[0] + '.'
+        : ' — every diverging tab was open; the verdict ignored them.';
+      verdictLine = (sev[vA] === sev[vB]
+        ? 'Same verdict, opposite truths.'
+        : 'You split them the wrong way around.')
+        + ' The difference lived in ' + tabList + clause;
+    }
+    sTwin.appendChild(el('p', null, verdictLine));
+    root.appendChild(sTwin);
+  })();
+
+  /* --- you vs the advisor (finding #18) — only if the bait was taken. The
+     counts in the closing line are computed from the judged clusters and the
+     reveal, never typed. --- */
+  if (rep.secondOpinions && rep.secondOpinions.length && META.judge) {
+    var allJ = null;
+    try { allJ = revealAllFor(rep); } catch (e) { allJ = null; }
+    if (allJ) {
+      var sAdv = el('section');
+      sAdv.id = 'sec-advisor';
+      sAdv.appendChild(el('h2', null, 'You vs the advisor'));
+      var vByJ = {};
+      rep.verdicts.forEach(function (row) { vByJ[row.id] = row.verdict; });
+      var at = el('table');
+      var ahr = el('tr');
+      ['account', 'the advisor said', 'the assessment', 'your verdict', 'the truth']
+        .forEach(function (h) { ahr.appendChild(el('th', null, h)); });
+      at.appendChild(ahr);
+      rep.secondOpinions.forEach(function (id) {
+        var acct = byId.get(id) || {};
+        var clJ = (acct.pipeline || {}).cluster || {};
+        var soJ = clJ.second_opinion;
+        if (!soJ) { return; }
+        var tr = el('tr');
+        tr.appendChild(el('td', 'mono small', id));
+        tr.appendChild(el('td', 'small', soJ.overall +
+          (soJ.failed && soJ.failed.length ? ' (failed: ' + soJ.failed.join(', ') + ')' : '')));
+        tr.appendChild(el('td', 'small',
+          (clJ.assessment || '—') + ' → ' + String(clJ.decision || '—').toUpperCase()));
+        tr.appendChild(el('td', 'mono small', verdictLabel(vByJ[id] || '—')));
+        tr.appendChild(el('td', 'mono small',
+          (allJ[id] && allJ[id].truth === 'malicious') ? 'threat actor' : 'benign'));
+        at.appendChild(tr);
+      });
+      sAdv.appendChild(at);
+      var actorWeak = 0, actorTotal = 0, wrongSound = false;
+      var seenCl = {};
+      state.order.forEach(function (idJ) {
+        var acctJ = byId.get(idJ);
+        var cJ = acctJ && acctJ.pipeline ? acctJ.pipeline.cluster : null;
+        if (!cJ || !cJ.second_opinion) { return; }
+        var keyJ = (cJ.members || []).join(',');
+        if (seenCl[keyJ]) { return; }
+        seenCl[keyJ] = true;
+        var isActor = (cJ.members || []).some(function (m) {
+          return allJ[m] && allJ[m].truth === 'malicious';
+        });
+        if (isActor) {
+          actorTotal += 1;
+          if (cJ.second_opinion.overall === 'weak') { actorWeak += 1; }
+        } else if (cJ.second_opinion.overall === 'sound') {
+          wrongSound = true;
+        }
+      });
+      var J = META.judge;
+      sAdv.appendChild(el('p', 'small',
+        'Measured (' + J.model + ', decorrelated, ' + plural(J.reps, 'rep') +
+        '): the known-wrong assessment drew ' + Number(J.known_error_failures).toFixed(1) +
+        ' failures; the true positives drew ' + Number(J.true_positive_failures).toFixed(2) +
+        '. Margin ' + String(J.margin).replace('-', '−') + ' — ' + J.verdict +
+        '. It found fault with ' + actorWeak + ' of the ' + actorTotal +
+        ' actor assessments' + (wrongSound ? ' and rated the wrong one sound.' : '.')));
+      sAdv.appendChild(el('p', 'small dim',
+        'What protected the engineer was the corroboration floor, not a model checking a model.'));
+      root.appendChild(sAdv);
+    }
+  }
+
+  /* --- the policy, on the record (finding #20) — rendered only when used;
+     an empty section would nag, and the flag is an offer, not a duty --- */
+  if (rep.policyFlags && rep.policyFlags.length) {
+    var sFlag = el('section');
+    sFlag.id = 'sec-flags';
+    sFlag.appendChild(el('h2', null, 'The policy, on the record'));
+    var pf = el('p');
+    pf.appendChild(document.createTextNode(
+      'You flagged ' + plural(rep.policyFlags.length, 'account') +
+      ' as a policy gap rather than pretending a verdict resolved it: '));
+    rep.policyFlags.forEach(function (id) {
+      pf.appendChild(el('span', 'mono', id));
+      pf.appendChild(document.createTextNode(' '));
+    });
+    sFlag.appendChild(pf);
+    sFlag.appendChild(el('p', 'small dim',
+      'The research did the same. Its second topic definition, its better-scoring ' +
+      'thresholds and its escalation-arc variant were measured, published, and ' +
+      'deliberately not adopted.'));
+    root.appendChild(sFlag);
+  }
+
   /* --- play again --- */
   var sEnd = el('section');
   sEnd.appendChild(el('h2', null, 'Again'));
@@ -1915,6 +2374,12 @@ document.addEventListener('keydown', function (e) {
       closeBandPicker();
       commitVerdict(state.currentId, kl === 'm' ? 'monitor' : 'clear');
     }
+    return;
+  }
+  if (kl === 'g') {
+    /* finding #20 — annotation, so no decidable() gate: the record is open
+       even on an account whose verdict already stands */
+    if (state.currentId) { e.preventDefault(); togglePolicyFlag(state.currentId); }
     return;
   }
   if (k >= '1' && k <= '5') {

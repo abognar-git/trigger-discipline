@@ -126,6 +126,32 @@ main { flex: 1; display: flex; flex-direction: column; }
 .verdict-chip.v-clear { color: var(--clear); background: var(--clear-dim); }
 #cite-count { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 
+/* finding #20 — the annotation row and the topic strip */
+#flag-row { flex-basis: 100%; display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+.btn-flag { font-size: 12px; }
+.btn-flag.on { border-color: var(--warn); color: var(--warn); background: var(--warn-dim); }
+.topic-box { border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px 10px; margin: 10px 0; }
+.topic-box table { margin: 6px 0 0; }
+
+/* SPEC-3 §11 — the clock controls drive a live shift; they must not read as
+   chrome. Accent border, bolder face, and a filled Next event. */
+#btn-wait, #btn-waitnext {
+  border-color: var(--accent); color: var(--text);
+  font-weight: 700; font-size: 14px; padding: 5px 14px;
+}
+#btn-waitnext { background: var(--panel-2); color: var(--accent); }
+#btn-wait:hover, #btn-waitnext:hover { border-color: var(--text); }
+
+/* finding #18 — the advisor line on a cluster box */
+.advisor-line { color: var(--muted); font-style: normal; }
+.btn-advisor { font-size: 12px; }
+
+/* findings #5/#21 — the policy bulletin on a briefing */
+.bulletin-box { border: 1px solid var(--warn); background: var(--warn-dim);
+  border-radius: 8px; padding: 8px 14px; margin: 12px 0 0; }
+.bulletin-box .bulletin-title { font-weight: 700; margin: 0 0 4px; }
+.bulletin-box p { margin: 0; }
+
 #tabbar { display: flex; gap: 6px; margin: 14px 0 0; flex-wrap: wrap; }
 #tabbar button { font-size: 13px; }
 #tabbar button[aria-current="true"] { border-color: var(--accent); background: var(--panel); }
@@ -256,6 +282,8 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
 .case-reason { display: flex; gap: 8px; align-items: flex-start; margin: 4px 0; font-size: 13px; }
 .case-reason .kind { font-family: var(--mono); font-size: 11px; color: var(--muted); }
 #btn-bancase { margin-top: 10px; }
+.case-between { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 6px; }
+.case-between button { font-size: 12px; }
 .case-bands { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .case-bands button { font-size: 12px; }
 #case-notice { min-height: 18px; color: var(--warn); font-size: 12px; margin: 8px 0 0; }

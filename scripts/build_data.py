@@ -109,9 +109,11 @@ REMAP_RE = re.compile(r"^acct_[0-9a-f]{4}$")
 # the player-visible view - including inside prose the model wrote.
 ANY_ACCT_RE = re.compile(r"acct_[A-Za-z0-9_]+")
 
-# Names of the planted archetypes. Present in `reveal.actor` only.
+# Names of the planted archetypes. Present in `reveal.actor` only. `framer`
+# is not a threat-report archetype: it is stress_framing's measured attacker
+# construction (finding #25), and its provenance says so.
 ACTOR_NAMES = ("lure_factory", "capability_dev", "recon_automation",
-               "stolen_key")
+               "stolen_key", "framer")
 
 # Identifier shapes, same regexes hunt's repo-wide gate uses.
 ASN_RE = re.compile(r"\bAS\d{3,6}\b")
@@ -132,7 +134,17 @@ PROFILE_FIELDS = ("created_at", "email_kind", "payment", "phone_verified",
 ACCOUNT_FIELDS = {"id", "appears_at", "profile", "sessions", "pipeline",
                   "network", "respawn", "reveal"}
 REVEAL_FIELDS = {"truth", "actor", "persona", "original_id", "notes", "tell",
-                 "provenance", "respawn_of", "appeal"}
+                 "provenance", "respawn_of", "appeal", "twin"}
+
+# Finding #17's hour-of-day channel, on the case-board menu at ONE threshold.
+# hunt swept the channel and adopted no threshold - it false-merges the
+# planted hard negatives at every one - so there is no constant to import;
+# the desk here has to pick a number to put the reason on the menu at all,
+# and the only honest defense of the number is a property check: check()
+# asserts that at this cut the offered pairs on a case shift include
+# strangers who merely keep the same hours (the trap the sweep predicts),
+# and that the channel stays sparse rather than linking the whole queue.
+TIME_LINK_THRESHOLD = 0.90
 
 
 # ===========================================================================
@@ -563,11 +575,12 @@ class Hunt:
         if str(root) not in sys.path:
             sys.path.insert(0, str(root))
 
-        from src import signals, attribute, policy, calibration
+        from src import signals, attribute, policy, calibration, linkage
         self.signals = signals
         self.attribute = attribute
         self.policy = policy
         self.calibration = calibration
+        self.linkage = linkage
 
         # SPEC-2 §1: "Use hunt's own band -> probability mapping - read it from
         # hunt/src/calibration.py and restate NOTHING." calibration.py's
@@ -847,6 +860,11 @@ S1_BRIEFING = [
     "behave tells you almost everything. Behavioral and infrastructure "
     "evidence is where the difference shows. Today the clock is off. Read "
     "everything; learn what each tab is worth.",
+
+    # Finding #18 - the offer, without endorsement. The button is bait and
+    # the report is the reveal; the briefing merely says it exists.
+    "Where an assessment exists, the desk can also fetch an automated second "
+    "opinion on it. It is free, and nothing obliges you to agree with it.",
 ]
 
 S1_RULE = ("Nothing here is auto-banned. The pipeline flags; you decide. The "
@@ -1173,6 +1191,12 @@ S3_BRIEFING = [
 
     "Enforcement that removes half a cluster is a purchase order for new "
     "burners.",
+
+    "Two link reasons are new on the menu, and the research measured both and "
+    "adopted neither. Writing style the policy refuses outright: on prompts "
+    "this short it scores every pair alike, and a channel that links every "
+    "pair links none. Shared hours it accepts — and accepting it is how a "
+    "desk finds out why the research did not.",
 
     "A merged account is scored like any other. If the person you swept in was "
     "innocent, the case ban cost you twenty-five points and them their "
@@ -1833,6 +1857,164 @@ def _s5_background(r: Roster, hunt: Hunt, count: int) -> None:
 
 
 # ===========================================================================
+# SHIFT 6 - the aimed link: finding #25 staged as a queue
+#
+# framing.json's actor-clone construction, restaged on a fresh roster: a real
+# lure cell, an awareness trainer with weeks of history, and a framer account
+# built AFTER both - copying the cell's infrastructure and the trainer's
+# target, topic and working hours. hunt's offline linker (imported, not
+# restated) then does exactly what the measurement says it does: it puts the
+# trainer in the actors' cluster, because every overlap genuinely holds.
+# Only the direction was chosen, and the direction is what the new
+# first-seen column shows.
+# ===========================================================================
+
+S6_BRIEFING = [
+    "Attribution points both ways. Everything the pipeline links on - shared "
+    "infrastructure, shared victims, shared topics - is something an attacker "
+    "can also manufacture, and manufacturing it against someone is cheap: the "
+    "research measured five of its fourteen innocents attachable to an actor, "
+    "and one of them needed no capability barrier at all.",
+
+    "The network tab's first-seen column is today's tell: it dates when each "
+    "side of an overlap was first seen with the shared token. An overlap "
+    "says two accounts touched the same thing. The order says who touched "
+    "it first. A frame is real work - every overlap holds; only the "
+    "direction was chosen.",
+
+    "Nothing else changes. A case still needs a link reason, and the policy "
+    "still accepts what it accepted yesterday. Whether the cluster in front "
+    "of you is one operator, or one operator plus their target, is not a "
+    "question the scorer answers.",
+]
+
+
+def roster_s6(hunt: Hunt) -> Roster:
+    r = Roster(shift_id="s6", title="The aimed link",
+               subtitle="Fifteen accounts, thirty-six hours. One of them is "
+                        "here to get someone else banned.",
+               budget=36,
+               flags={"live": True, "cases": True, "appeals": False},
+               briefing=S6_BRIEFING, rule=S1_RULE,
+               report_lead="The cluster was real. The direction was chosen.",
+               base_day=20, live=True)
+    P = hunt.provenance
+
+    # -- the victim: an awareness trainer with weeks of history --------------
+    victim_org = EMPLOYERS[4]
+    v_asn = hunt.benign_asns[12]
+    v_ip = r.ips.take()
+    r.account("acct_s6_NEG_trainer", hunt=hunt, created_min=-40300,
+              email_kind="corporate", ip=v_ip, asn=v_asn, country="US",
+              payment="card_verified", phone=True, channel="chatgpt",
+              label="benign", persona="awareness_trainer",
+              notes="internal awareness campaign for its own employer",
+              tell=None)
+    for i in range(3):
+        r.sess("acct_s6_NEG_trainer", hunt=hunt, at_min=540 + 60 * i,
+               channel="chatgpt", category="phishing_content",
+               excerpt=PROMPTS[("phishing_content", "benign")][i]
+               .format(org=victim_org),
+               disposition="completed", ip=v_ip, asn=v_asn, country="US",
+               target_ref=victim_org)
+
+    # -- the lure cell: three burners on one egress --------------------------
+    lure_ip = "192.0.2.201"
+    lure_asn = "AS64497"
+    cell_brands = [BRANDS[2], BRANDS[6]]
+    for k in range(3):
+        aid = f"acct_s6_LF{k + 1:02d}"
+        r.account(aid, hunt=hunt, created_min=-520 - 60 * k,
+                  email_kind="freemail", ip=lure_ip, asn=lure_asn,
+                  country="RO", payment="card_prepaid" if k == 1 else "none",
+                  phone=False, channel="chatgpt", label="malicious",
+                  actor="lure_factory", notes="burner in a three-account cell",
+                  provenance=P.get("lure_factory"), tell=None)
+        for j in range(3):
+            brand = cell_brands[(k + j) % 2]
+            r.sess(aid, hunt=hunt, at_min=120 + 120 * k + 55 * j,
+                   channel="chatgpt", category="phishing_content",
+                   excerpt=PROMPTS[("phishing_content", "actor")][(k + j) % 3]
+                   .format(lang=LANGS[(k + j) % len(LANGS)], brand=brand),
+                   disposition="refused" if j == 2 else "completed",
+                   ip=lure_ip, asn=lure_asn, country="RO", target_ref=brand)
+
+    # -- the framer: newest signup in the queue, nothing of its own ----------
+    # Copies the cell's egress, the trainer's target org and topic, and the
+    # trainer's working hours - a day later. Sessions sit at day-2 09:00 to
+    # 11:00 so the hour profile matches the victim's exactly, which also puts
+    # the pair on the #17 hour-channel menu: the frame offers you the merge.
+    r.account("acct_s6_FR01", hunt=hunt, created_min=-180,
+              email_kind="disposable", ip=lure_ip, asn=lure_asn,
+              country="RO", payment="none", phone=False, channel="chatgpt",
+              label="malicious", actor="framer",
+              notes="stress_framing's actor-clone construction, staged",
+              provenance={
+                  "source": "hunt stress_framing.py - finding #25 (the "
+                            "actor-clone construction)",
+                  "case": "five of fourteen innocents attachable to an "
+                          "actor; the trainer needed no capability barrier",
+              },
+              tell=None)
+    for i in range(3):
+        r.sess("acct_s6_FR01", hunt=hunt, at_min=1980 + 60 * i,
+               channel="chatgpt", category="phishing_content",
+               excerpt=PROMPTS[("phishing_content", "actor")][i]
+               .format(lang=LANGS[i], brand=victim_org),
+               disposition="refused" if i == 1 else "completed",
+               ip=lure_ip, asn=lure_asn, country="RO",
+               target_ref=victim_org)
+
+    # -- the cell's respawn burner (SPEC-2 §3: one per multi-account actor) --
+    # Session `appears_at` values are RELATIVE to arrival; arrival is decided
+    # by the partial-cluster ban that triggers it. New egress, verified
+    # identity, the same two brands: money buys anonymity, not an objective.
+    aid = "acct_s6_RSP_LF"
+    r.account(aid, hunt=hunt, created_min=-40, email_kind="corporate",
+              ip="203.0.113.221", asn="AS65545", country="PT",
+              payment="card_verified", phone=True, channel="chatgpt",
+              label="malicious", actor="lure_factory",
+              notes="respawn burner: new infrastructure, same job",
+              provenance=P.get("lure_factory"), tell=None,
+              respawn={"delay_h": 4}, respawn_of="lure_factory")
+    for j in range(3):
+        brand = cell_brands[j % 2]
+        r.sess(aid, hunt=hunt, at_min=10 + 45 * j, channel="chatgpt",
+               category="phishing_content",
+               excerpt=PROMPTS[("phishing_content", "actor")][(j + 1) % 3]
+               .format(lang=LANGS[(j + 3) % len(LANGS)], brand=brand),
+               disposition="completed", ip="203.0.113.221", asn="AS65545",
+               country="PT", target_ref=brand)
+
+    # -- ten ordinary accounts ----------------------------------------------
+    rows = [
+        ("acct_s6_BG01", "corporate", "chatgpt", "benign_code", 0, 60),
+        ("acct_s6_BG02", "freemail", "chatgpt", "translation", 1, 200),
+        ("acct_s6_BG03", "corporate", "api", "benign_code", 4, 380),
+        ("acct_s6_BG04", "freemail", "chatgpt", "creative_writing", 3, 560),
+        ("acct_s6_BG05", "corporate", "api", "benign_code", 2, 760),
+        ("acct_s6_BG06", "freemail", "chatgpt", "translation", 2, 940),
+        ("acct_s6_BG07", "corporate", "chatgpt", "creative_writing", 1, 1150),
+        ("acct_s6_BG08", "freemail", "api", "benign_code", 3, 1370),
+        ("acct_s6_BG09", "corporate", "chatgpt", "translation", 0, 1560),
+        ("acct_s6_BG10", "freemail", "chatgpt", "benign_code", 1, 1750),
+    ]
+    for k, (aid, kind, chan, cat, pidx, start) in enumerate(rows):
+        asn = hunt.benign_asns[k]
+        ip = r.ips.take()
+        r.account(aid, hunt=hunt, created_min=-2600 - 800 * k, email_kind=kind,
+                  ip=ip, asn=asn, country="US" if k % 2 else "DE",
+                  payment="card_verified", phone=True, channel=chan,
+                  label="benign", notes="ordinary low-risk usage", tell=None)
+        for i in range(2):
+            r.sess(aid, hunt=hunt, at_min=start + 45 * i, channel=chan,
+                   category=cat, excerpt=PROMPTS[(cat, "benign")][pidx],
+                   disposition="completed", ip=ip, asn=asn,
+                   country="US" if k % 2 else "DE")
+    return r
+
+
+# ===========================================================================
 # assembly: score, link, remap, emit
 # ===========================================================================
 
@@ -1890,7 +2072,8 @@ def cadence_interval(hunt: Hunt, row: dict, sess_rows: list[dict]) -> int | None
 
 
 def assemble(r: Roster, hunt: Hunt,
-             findings: list[dict] | None) -> tuple[dict, dict]:
+             findings: list[dict] | None,
+             stability: dict | None = None) -> tuple[dict, dict]:
     signals = hunt.signals
     ids = list(r.order)
     remap = build_remap(ids, r.shift_id)
@@ -1937,6 +2120,56 @@ def assemble(r: Roster, hunt: Hunt,
         return sorted(remap[o] for o in scheduled
                       if o != aid and cad_of[o] == mine)
 
+    # Finding #25 - direction evidence for the identifier overlaps: when each
+    # side was FIRST seen with any token the two accounts share. Derived
+    # entirely from timestamps already in the rows - the signup for signup
+    # identifiers, session timestamps for everything else - so the column
+    # adds no oracle, only order. Same visibility rule as the overlaps
+    # themselves: peers come from the scheduled roster.
+    def _first_seen_ts(aid: str, kind: str, tokens: set) -> str:
+        row, ss = r.rows[aid], r.sessions[aid]
+        best = None
+        if kind == "asn" and row["signup_asn"] in tokens:
+            best = row["created_at"]
+        if kind == "ip" and row["signup_ip"] in tokens:
+            best = row["created_at"]
+        field = {"asn": "asn", "ip": "src_ip", "target": "target_ref"}[kind]
+        for s in ss:
+            if s.get(field) in tokens and (best is None or s["ts"] < best):
+                best = s["ts"]
+        return best
+
+    def first_seen_for(aid: str) -> dict:
+        out_fs: dict[str, dict] = {}
+        for net_key, kname, table in (("shared_asn", "asn", asn_of),
+                                      ("shared_ip", "ip", ip_of),
+                                      ("shared_target", "target", tgt_of)):
+            entry = {}
+            mine = table[aid]
+            for o in scheduled:
+                if o == aid:
+                    continue
+                shared = mine & table[o]
+                if not shared:
+                    continue
+                entry[remap[o]] = [_first_seen_ts(aid, kname, shared),
+                                   _first_seen_ts(o, kname, shared)]
+            if entry:
+                out_fs[net_key] = entry
+        return out_fs
+
+    # Finding #17 - the hour-of-day channel, computed by hunt's own module.
+    # Same visibility rules as every other overlap: peers are drawn from the
+    # scheduled roster, so a pending respawn lists its matches but is listed
+    # by nobody before it arrives.
+    hour_vec = {aid: hunt.linkage.hour_vector(r.sessions[aid]) for aid in ids}
+
+    def hour_peers(aid: str) -> list[str]:
+        mine = hour_vec[aid]
+        return sorted(remap[o] for o in scheduled
+                      if o != aid and hunt.linkage.cosine(mine, hour_vec[o])
+                      >= TIME_LINK_THRESHOLD)
+
     # --- clusters -----------------------------------------------------------
     cluster_of: dict[str, dict] = {}
     if findings is not None:
@@ -1944,7 +2177,41 @@ def assemble(r: Roster, hunt: Hunt,
         # prose against these exact accounts.
         for row in findings:
             members = sorted(remap[m] for m in row["subject_ids"])
+            # Finding #24 — the measured stability of this exact cluster's
+            # fields across 12 repetitions (hunt data/reps.json). The band
+            # histogram and the decision histogram are the finding: every
+            # enforcement decision identical, the band a coin flip on the
+            # hardest subject. Attached ONLY where the subject set matches a
+            # measured one — a histogram against different accounts would be
+            # a caption on someone else's measurement.
+            stab = None
+            second_opinion = None
+            if stability:
+                rec = stability["map"].get(frozenset(row["subject_ids"]))
+                if rec is not None:
+                    fields = rec["fields"]
+                    stab = {
+                        "reps": stability["reps"],
+                        "bands": fields["confidence_band"]["values"],
+                        "decisions": fields["enforcement_decision"]["values"],
+                    }
+                # Finding #18 - the advisor's measured verdict on THIS
+                # assessment. Attached only where the subject set matches a
+                # judged one; the button exists only where this does.
+                jrec = stability["judge"]["map"].get(
+                    frozenset(row["subject_ids"]))
+                if jrec is not None:
+                    second_opinion = {
+                        "judge_model": stability["judge"]["model"],
+                        "decorrelated": True,
+                        "reps": jrec["reps"],
+                        "overall": jrec["overall"],
+                        "mean_failures": jrec["mean_failures"],
+                        "failed": jrec["failed"],
+                    }
             cluster = {
+                "stability": stab,
+                "second_opinion": second_opinion,
                 "kind": "assessment",
                 "assessment": row["assessment"],
                 "confidence_band": row["confidence_band"],
@@ -1983,6 +2250,11 @@ def assemble(r: Roster, hunt: Hunt,
                     {"cluster_size": len(members)},
                     [scored[m]["signals"] for m in members])
                 cluster = {
+                    # No assessment ran on a generated roster, so there is no
+                    # repetition measurement and no judged opinion either;
+                    # one shape across shifts.
+                    "stability": None,
+                    "second_opinion": None,
                     "kind": "linkage",
                     "assessment": None,
                     "confidence_band": None,
@@ -2085,6 +2357,8 @@ def assemble(r: Roster, hunt: Hunt,
                 "shared_ip": overlaps(aid, ip_of),
                 "shared_target": overlaps(aid, tgt_of),
                 "shared_cadence": cadence_peers(aid),
+                "shared_hours": hour_peers(aid),
+                "first_seen": first_seen_for(aid),
             },
             "respawn": meta["respawn"],
             "reveal": {
@@ -2118,10 +2392,92 @@ def assemble(r: Roster, hunt: Hunt,
         if r.flags["appeals"] and rec["reveal"]["appeal"] is None:
             rec["reveal"]["appeal"] = compose_appeal(r, aid, rec)
 
+    # --- the designed pair (report-only; reveal-side) -----------------------
+    # A twin pair is DERIVED, not declared: one malicious and one benign
+    # scheduled account whose automation cadence fires on the same interval -
+    # the pair the cadence signal scores identically, which is the thesis in
+    # two columns. Every fact in the pair object is read from the emitted
+    # rows, so the report section cannot disagree with the tabs the player
+    # saw. At most one pair per shift; a shift with no such pair (the quiet
+    # day has no actors) simply has no section.
+    def _twin_column(rec: dict) -> dict:
+        prof = rec["profile"]
+        cats = sorted({s["category"] for s in rec["sessions"]})
+        asns = {prof["signup_asn"]} | {s["asn"] for s in rec["sessions"]}
+        tgts = sorted({s["target_ref"] for s in rec["sessions"]
+                       if s.get("target_ref")})
+        return {
+            "sessions": len(rec["sessions"]),
+            "content": "categories: " + ", ".join(cats),
+            "account": (prof["email_kind"] + " email · "
+                        + _PAYMENT_PHRASE[prof["payment"]] + " · "
+                        + ("verified phone" if prof["phone_verified"]
+                           else "no phone")),
+            "network": (_count_phrase(len(asns), "ASN") + " · "
+                        + (_count_phrase(len(tgts), "named target")
+                           if tgts else "no target reference")),
+        }
+
+    twin_pairs = []
+    for a_orig in ids:
+        if r.meta[a_orig]["label"] != "malicious": continue
+        if r.meta[a_orig]["respawn"] is not None or cad_of[a_orig] is None:
+            continue
+        for b_orig in ids:
+            if r.meta[b_orig]["label"] != "benign": continue
+            if r.meta[b_orig]["respawn"] is not None: continue
+            if cad_of[b_orig] == cad_of[a_orig]:
+                twin_pairs.append((a_orig, b_orig))
+    if twin_pairs:
+        a_orig, b_orig = sorted(twin_pairs)[0]
+        col_a = _twin_column(by_local[a_orig])
+        col_b = _twin_column(by_local[b_orig])
+        rows_out = [{"tab": tab, "a": col_a[tab], "b": col_b[tab]}
+                    for tab in ("content", "account", "network")
+                    if col_a[tab] != col_b[tab]]
+        pair_obj = {
+            "a": remap[a_orig], "b": remap[b_orig],
+            "sessions": {"a": col_a["sessions"], "b": col_b["sessions"]},
+            "shared": (f"Both fire the automation signal on the same "
+                       f"{cad_of[a_orig]}-minute interval - the cadence "
+                       f"column cannot split them."),
+            "rows": rows_out,
+        }
+        by_local[a_orig]["reveal"]["twin"] = pair_obj
+        by_local[b_orig]["reveal"]["twin"] = pair_obj
+    for aid in ids:
+        by_local[aid]["reveal"].setdefault("twin", None)
+
     # Emitted in remapped-id order. Construction order groups the roster by
     # archetype (LF, CD, RA, NEG, BG), which is a leak on its own for anyone
     # who opens the file; the hash order is uncorrelated with truth.
     out.sort(key=lambda rec: rec["id"])
+
+    # Finding #17's other channel: every pairwise style score on THIS roster,
+    # computed by hunt's own module, so the case board can put a candidate
+    # link's number beside the queue-wide range it drowns in. The matrix is
+    # upper-triangle over `order`; scores include pending respawns because a
+    # respawn can be added to a case once it arrives. No resolution = no
+    # leak: that is the finding.
+    style_vecs = {aid: hunt.linkage.style_vector(r.sessions[aid])
+                  for aid in ids}
+    style_order = sorted(remap[aid] for aid in ids)
+    style_inv = {remap[aid]: aid for aid in ids}
+    style_vals = []
+    for i, ra in enumerate(style_order):
+        for rb in style_order[i + 1:]:
+            style_vals.append(round(hunt.linkage.cosine(
+                style_vecs[style_inv[ra]], style_vecs[style_inv[rb]]), 3))
+    wcounts = sorted(hunt.linkage.word_count(r.sessions[aid]) for aid in ids)
+    style_block = {
+        "source": "hunt src/linkage.py (imported, not restated)",
+        "order": style_order,
+        "pairs": style_vals,
+        "min": min(style_vals),
+        "max": max(style_vals),
+        "median_words": wcounts[len(wcounts) // 2],
+        "word_floor": hunt.linkage.STYLOMETRY_WORD_FLOOR,
+    }
 
     n_mal = sum(1 for rec in out if rec["reveal"]["truth"] == "malicious")
     scheduled = [rec for rec in out if rec["respawn"] is None]
@@ -2151,6 +2507,7 @@ def assemble(r: Roster, hunt: Hunt,
             "sessions": sum(len(rec["sessions"]) for rec in out),
             "prevalence": round(n_mal_sched / len(scheduled), 4),
         },
+        "style": style_block,
         "accounts": out,
     }
     return shift, tell_objs
@@ -2732,6 +3089,34 @@ def hand_authored() -> dict[str, Tell]:
         "is bought; the objective is not for sale.",
         sessions=3, payment="card_verified", phone=True,
         email_kind="corporate")
+
+    # ---- shift 6: the aimed link (finding #25) ----------------------------
+    t["acct_s6_FR01"] = Tell(
+        "Created hours before the shift, disposable identity, no payment, no "
+        "phone - and every one of its three sessions copies something that "
+        "already existed: the lure cell's egress, the trainer's employer, the "
+        "trainer's topic, the trainer's working hours, one day later. The "
+        "overlaps are real; the account exists to be overlapped. The "
+        "first-seen column was the tell: it arrived last on every token it "
+        "shares.",
+        sessions=3, email_kind="disposable", payment="none", phone=False,
+        asn="AS64497")
+    t["acct_s6_NEG_trainer"] = Tell(
+        "Three awareness-simulation drafts for its own employer, from a "
+        "corporate, card-and-phone-verified account with weeks of history. "
+        "The research measured this persona as the one innocent an attacker "
+        "can attach to an actor with no capability barrier at all - naming "
+        "your own org in an offensive category is the whole hook (finding "
+        "#25). The cluster you were shown is that measurement, staged.",
+        sessions=3, email_kind="corporate", payment="card_verified",
+        phone=True)
+    t["acct_s6_LF01"] = Tell(
+        "One of three burners pushing lure drafts at two brands from one "
+        "shared egress, freemail, no phone. The cell is real and bannable on "
+        "its own overlaps - target and infrastructure both hold inside it. "
+        "The company it never asked for is the one the queue's newest "
+        "account manufactured for it.",
+        sessions=3, email_kind="freemail", phone=False, asn="AS64497")
     return t
 
 
@@ -2890,11 +3275,12 @@ def hand_authored_appeals() -> dict[str, dict]:
 # build
 # ===========================================================================
 
-SHIFT_BUILDERS = (roster_s1, roster_s2, roster_s3, roster_s4, roster_s5)
+SHIFT_BUILDERS = (roster_s1, roster_s2, roster_s3, roster_s4, roster_s5,
+                  roster_s6)
 
 # The four-sentence framing on the shift-select screen (SPEC-2 §4).
 FRAMING = [
-    "Five shifts at an AI platform's enforcement desk, in the order the job "
+    "Six shifts at an AI platform's enforcement desk, in the order the job "
     "gets harder.",
     "The pipeline flags; you decide, and every ban has to cite something that "
     "is not content.",
@@ -2935,6 +3321,21 @@ REFUSALS = {
     "infra_only_case": ("Refused: an overlap is an observation, not a link. A "
                         "link needs a reason — shared infrastructure is how "
                         "the VPN user died."),
+    # Finding #17: the skeleton is static; the UI appends this queue's own
+    # measured range and word counts from the shift's style block.
+    "style_link": ("Refused: writing style links every account here or "
+                   "none."),
+    # Finding #20: the gate mirrors hunt policy.py's corroboration rule -
+    # topic-derived scorer rows cannot carry a ban on their own.
+    "topic_only": ("Refused: that scorer row is topic in disguise — the "
+                   "policy’s corroboration rule excludes it. Cite behavior, "
+                   "infrastructure, or a non-topic signal."),
+    # Findings #5 / #21, the policy bulletins: static skeletons; the UI
+    # appends the cited signal's own numbers and the imported floors.
+    "below_strength_floor": ("Refused: that signal is below the corroboration "
+                             "floor. Presence is not strength."),
+    "thin_rate": ("Refused: a rate from that few observations is not "
+                  "corroboration. Strength is not sample size."),
 }
 
 
@@ -2944,6 +3345,35 @@ def build(hunt_root: Path,
     is build-time only: the declared facts are checked, never emitted."""
     hunt = Hunt(hunt_root)
     findings = read_jsonl(hunt.root / "data" / "findings.jsonl")
+
+    # Finding #24 — hunt data/reps.json, the 12-rep stability measurement of
+    # the shipped assessments. Keyed by the subject-id set so a cluster only
+    # ever carries the histogram measured against its exact accounts.
+    reps_raw = json.loads(
+        (hunt.root / "data" / "reps.json").read_text(encoding="utf-8"))
+    stability = {
+        "reps": reps_raw["reps"],
+        "map": {frozenset(k.split(",")): v
+                for k, v in reps_raw["stability"].items()},
+    }
+
+    # Finding #18 — hunt data/judge.json, the decorrelated LLM judge run
+    # against the same five assessments. The advisor the game offers IS this
+    # artifact: per-cluster verdicts keyed by subject set, and the
+    # discrimination margin that makes the offer a trap (-0.75, inverted).
+    judge_raw = json.loads(
+        (hunt.root / "data" / "judge.json").read_text(encoding="utf-8"))
+    judge_dec = None
+    for rec in judge_raw.values():
+        if rec.get("decorrelated"):
+            judge_dec = rec
+    if judge_dec is None:
+        raise SystemExit("hunt data/judge.json has no decorrelated judge run")
+    stability["judge"] = {
+        "model": judge_dec["judge_model"],
+        "map": {frozenset(row["subject_ids"]): row
+                for row in judge_dec["rows"]},
+    }
 
     tells = hand_authored()
     appeals = hand_authored_appeals()
@@ -2958,7 +3388,8 @@ def build(hunt_root: Path,
             if r.flags["appeals"] and aid in appeals:
                 r.meta[aid]["appeal"] = appeals[aid]
         shift, tell_objs = assemble(
-            r, hunt, findings if r.shift_id == "s1" else None)
+            r, hunt, findings if r.shift_id == "s1" else None,
+            stability if r.shift_id == "s1" else None)
         shifts.append(shift)
         tell_index[r.shift_id] = tell_objs
 
@@ -2981,6 +3412,33 @@ def build(hunt_root: Path,
             "identifier_predicates": hunt.predicates_from,
             "bands": hunt.bands,
             "band_order": hunt.band_order,
+            # Finding #20 — the two shipped definitions of "topic". The set
+            # and both shares come from hunt's own module; the UI recomputes
+            # per-account numbers from the signal breakdown it already shows,
+            # so nothing below restates a weight.
+            "topic": {
+                "signals": sorted(hunt.signals.TOPIC_DERIVED_SIGNALS),
+                "content_weight":
+                    hunt.signals.WEIGHTS["content_category_risk"],
+                "policy_share": round(hunt.signals.topic_share(), 4),
+                "source": "hunt src/signals.py TOPIC_DERIVED_SIGNALS / "
+                          "topic_share() (imported, not restated)",
+            },
+            # Finding #18 - the advisor's measured discrimination, quoted by
+            # the report when the player took the bait. Every number is the
+            # artifact's own.
+            "judge": {
+                "source": "hunt data/judge.json (decorrelated judge run; "
+                          "imported, not restated)",
+                "model": judge_dec["judge_model"],
+                "margin": judge_dec["discrimination"]["margin"],
+                "verdict": judge_dec["discrimination"]["verdict"],
+                "reps": judge_dec["discrimination"]["reps"],
+                "known_error_failures":
+                    judge_dec["discrimination"]["known_error_failures"],
+                "true_positive_failures":
+                    judge_dec["discrimination"]["mean_true_positive_failures"],
+            },
             "policy": {
                 "floor_band": hunt.floor_band,
                 "floor_p": hunt.floor_p,
@@ -2989,11 +3447,27 @@ def build(hunt_root: Path,
                 "free_tab": "content",
                 "case_min_members": 2,
                 "insufficient_link_reasons": ["shared_asn", "shared_ip"],
-                "sufficient_link_reasons": ["shared_target", "shared_cadence"],
+                # shared_hours is finding #17's deliberate trap: hunt measured
+                # the channel and adopted it nowhere, and the desk here
+                # accepts it - letting the player use it is the only way to
+                # teach why the research did not. The briefing says so.
+                "sufficient_link_reasons": ["shared_target", "shared_cadence",
+                                            "shared_hours"],
+                "time_link_threshold": TIME_LINK_THRESHOLD,
                 "corroboration_min_contribution":
                     hunt.policy.CORROBORATION_MIN_CONTRIBUTION,
                 "corroboration_min_observations":
                     hunt.policy.CORROBORATION_MIN_OBSERVATIONS,
+                # Findings #5 and #21 as policy bulletins: each patch is a
+                # measured hunt fix whose constant is imported above; it
+                # activates on the named shift's briefing and stays on for
+                # the rest of the career. Earlier shifts are the pre-patch
+                # world on purpose - the same citation passing on s2 and
+                # bouncing on s5 is the fix made playable.
+                "patches": [
+                    {"id": "strength_floor", "active_from": "s3"},
+                    {"id": "min_observations", "active_from": "s4"},
+                ],
                 "refusals": REFUSALS,
             },
             "scoring": SCORING,
@@ -3125,9 +3599,31 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
          "meta.policy.floor_band is not hunt's confidence floor")
     want(meta["policy"]["floor_band"] in meta["bands"],
          "the floor band is not in the band table")
-    want([s["id"] for s in shifts] == ["s1", "s2", "s3", "s4", "s5"],
+    want([s["id"] for s in shifts] == ["s1", "s2", "s3", "s4", "s5", "s6"],
          "shift ids/order drifted")
     want(len(meta["framing"]) == 4, "the landing framing is not 4 sentences")
+    # Finding #20 — meta.topic must be hunt's own numbers, not a restatement
+    # that can drift. The set, the policy share and the content weight are
+    # all recomputed here from the imported module.
+    want(meta["topic"]["signals"] == sorted(signals.TOPIC_DERIVED_SIGNALS),
+         "meta.topic.signals is not hunt's TOPIC_DERIVED_SIGNALS")
+    want(abs(meta["topic"]["policy_share"] - signals.topic_share()) < 1e-9,
+         "meta.topic.policy_share is not hunt's topic_share()")
+    want(meta["topic"]["content_weight"]
+         == signals.WEIGHTS["content_category_risk"],
+         "meta.topic.content_weight is not the shipped content weight")
+    # Findings #5/#21 - the bulletins' constants are the imported ones, and
+    # each patch's activation shift actually contains an account the patch
+    # bounces (checked per shift below via _patch_bounce).
+    want([p["id"] for p in meta["policy"]["patches"]]
+         == ["strength_floor", "min_observations"],
+         "meta.policy.patches drifted")
+    want(meta["policy"]["corroboration_min_contribution"]
+         == hunt.policy.CORROBORATION_MIN_CONTRIBUTION,
+         "min_contribution is not hunt's constant")
+    want(meta["policy"]["corroboration_min_observations"]
+         == hunt.policy.CORROBORATION_MIN_OBSERVATIONS,
+         "min_observations is not hunt's constant")
     # SPEC-2 §5: the shift id is part of the salt, so a repeated archetype is
     # not recognisable by its id across shifts. Asserted directly rather than
     # inferred from the fact that the local ids happen to differ too.
@@ -3146,6 +3642,8 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
                "pending_respawns": 0, "budget": 16, "live": True},
         "s5": {"accounts": 54, "scheduled": 53, "pending_respawns": 1,
                "budget": 48, "live": True},
+        "s6": {"accounts": 16, "scheduled": 15, "malicious": 5, "benign": 11,
+               "pending_respawns": 1, "budget": 36, "live": True},
     }
     for shift in shifts:
         sid = shift["id"]
@@ -3251,6 +3749,20 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
             total = round(sum(s["value"] for s in p["signals"]), 4)
             want(abs(total - p["risk"]) < 5e-4,
                  f"{sid}/{aid} contributions {total} != risk {p['risk']}")
+            # Finding #20 — the emitted scalars must agree with the breakdown
+            # the player reads, under both definitions of "topic". The UI
+            # recomputes from the breakdown; a disagreement here would put
+            # two different numbers on one screen.
+            tds = round(sum(s["value"] for s in p["signals"]
+                            if s["name"] in signals.TOPIC_DERIVED_SIGNALS), 4)
+            want(abs(tds - p["topic_derived_score"]) < 5e-4,
+                 f"{sid}/{aid} topic_derived_score {p['topic_derived_score']} "
+                 f"disagrees with its own breakdown {tds}")
+            cos = round(sum(s["value"] for s in p["signals"]
+                            if s["name"] == "content_category_risk"), 4)
+            want(abs(cos - p["content_only_score"]) < 5e-4,
+                 f"{sid}/{aid} content_only_score {p['content_only_score']} "
+                 f"disagrees with its own breakdown {cos}")
             if p["cluster"]:
                 cl = p["cluster"]
                 want(cl["kind"] in ("assessment", "linkage"),
@@ -3265,6 +3777,47 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
                          f"{sid}/{aid} unknown enforcement decision")
                     want(cl["confidence_band"] in meta["bands"],
                          f"{sid}/{aid} cluster band is not an ICD-203 band")
+                    # Finding #24 — every assessment cluster must carry the
+                    # 12-rep stability histograms measured against its exact
+                    # subject set, the histograms must account for every rep,
+                    # and the decision column must be single-valued: that
+                    # stability IS the finding the display quotes.
+                    stab = cl.get("stability")
+                    want(stab is not None,
+                         f"{sid}/{aid} assessment cluster has no #24 stability")
+                    if stab is not None:
+                        want(sum(stab["bands"].values()) == stab["reps"],
+                             f"{sid}/{aid} band histogram does not sum to "
+                             f"{stab['reps']} reps")
+                        want(sum(stab["decisions"].values()) == stab["reps"],
+                             f"{sid}/{aid} decision histogram does not sum to "
+                             f"{stab['reps']} reps")
+                        want(len(stab["decisions"]) == 1,
+                             f"{sid}/{aid} enforcement decision varied across "
+                             f"reps; the display's stability claim is false")
+                        want(cl["confidence_band"] in stab["bands"],
+                             f"{sid}/{aid} shipped band is not in the measured "
+                             f"histogram")
+                    # Finding #18 - every assessed cluster carries the
+                    # advisor's measured verdict, in the artifact's own
+                    # vocabulary, with a failure list exactly when weak.
+                    so = cl.get("second_opinion")
+                    want(so is not None,
+                         f"{sid}/{aid} assessed cluster has no #18 opinion")
+                    if so is not None:
+                        want(so["overall"] in ("sound", "weak"),
+                             f"{sid}/{aid} unknown advisor verdict "
+                             f"{so['overall']!r}")
+                        want(bool(so["failed"]) == (so["overall"] == "weak"),
+                             f"{sid}/{aid} advisor failure list disagrees "
+                             f"with its verdict")
+                else:
+                    want(cl.get("stability") is None,
+                         f"{sid}/{aid} linkage cluster carries a stability "
+                         f"histogram no assessment produced")
+                    want(cl.get("second_opinion") is None,
+                         f"{sid}/{aid} linkage cluster carries an opinion no "
+                         f"judge produced")
 
             # --- reveal -----------------------------------------------------
             rv = a["reveal"]
@@ -3288,7 +3841,7 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
         pending = {a["id"] for a in accounts if a["respawn"] is not None}
         for a in accounts:
             for key in ("shared_asn", "shared_ip", "shared_target",
-                        "shared_cadence"):
+                        "shared_cadence", "shared_hours"):
                 for other in a["network"][key]:
                     want(other != a["id"], f"{sid}/{a['id']}.{key} includes self")
                     if other not in by_id:
@@ -3306,6 +3859,200 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
             if a["respawn"] is None and a["pipeline"]["cluster"]:
                 want(not (set(a["pipeline"]["cluster"]["members"]) & pending),
                      f"{sid}/{a['id']} cluster names a pending respawn")
+
+        # --- finding #25: the first-seen column re-derives from emitted rows -
+        # Token sets per kind are rebuilt from the emitted profiles/sessions,
+        # peers re-intersected over the scheduled roster, and every timestamp
+        # recomputed; the emitted map must match exactly.
+        sched_recs = [a for a in accounts if a["respawn"] is None]
+        tok = {}
+        for a in accounts:
+            prof, ss = a["profile"], a["sessions"]
+            tok[a["id"]] = {
+                "shared_asn": ({prof["signup_asn"]}
+                               | {s["asn"] for s in ss}),
+                "shared_ip": ({prof["signup_ip"]}
+                              | {s["src_ip"] for s in ss}),
+                "shared_target": {s["target_ref"] for s in ss
+                                  if s.get("target_ref")},
+            }
+
+        def fs_recompute(a: dict, kind: str, shared: set) -> str:
+            prof, ss = a["profile"], a["sessions"]
+            best = None
+            if kind == "shared_asn" and prof["signup_asn"] in shared:
+                best = prof["created_at"]
+            if kind == "shared_ip" and prof["signup_ip"] in shared:
+                best = prof["created_at"]
+            field = {"shared_asn": "asn", "shared_ip": "src_ip",
+                     "shared_target": "target_ref"}[kind]
+            for s in ss:
+                if s.get(field) in shared and (best is None
+                                               or s["ts"] < best):
+                    best = s["ts"]
+            return best
+
+        for a in accounts:
+            expect_fs = {}
+            for kind in ("shared_asn", "shared_ip", "shared_target"):
+                entry = {}
+                for o in sched_recs:
+                    if o["id"] == a["id"]:
+                        continue
+                    shared = tok[a["id"]][kind] & tok[o["id"]][kind]
+                    if not shared:
+                        continue
+                    entry[o["id"]] = [fs_recompute(a, kind, shared),
+                                      fs_recompute(o, kind, shared)]
+                if entry:
+                    expect_fs[kind] = entry
+            want(a["network"]["first_seen"] == expect_fs,
+                 f"{sid}/{a['id']} first_seen does not re-derive from the "
+                 f"emitted rows")
+
+        # --- shift 6: the frame actually stages finding #25 ------------------
+        if sid == "s6":
+            by_orig = {a["reveal"]["original_id"]: a for a in accounts}
+            victim = by_orig.get("acct_s6_NEG_trainer")
+            framer = by_orig.get("acct_s6_FR01")
+            want(victim is not None and framer is not None,
+                 "s6 is missing the victim or the framer")
+            if victim is not None and framer is not None:
+                want(victim["reveal"]["truth"] == "benign"
+                     and framer["reveal"]["truth"] == "malicious"
+                     and framer["reveal"]["actor"] == "framer",
+                     "s6 victim/framer labels drifted")
+                cl = victim["pipeline"]["cluster"]
+                want(cl is not None and framer["id"] in cl["members"],
+                     "s6: the linker did not put the victim in the framer's "
+                     "cluster - the frame failed to stage")
+                lf_ids = {a["id"] for a in accounts
+                          if a["reveal"]["actor"] == "lure_factory"}
+                want(cl is not None
+                     and bool(set(cl["members"]) & lf_ids),
+                     "s6: the victim's cluster contains no lure burner - the "
+                     "actor-clone construction did not reproduce")
+                fs = victim["network"]["first_seen"].get("shared_target", {})
+                pair = fs.get(framer["id"])
+                want(pair is not None and pair[0] < pair[1],
+                     "s6: the first-seen column does not show the victim "
+                     "ahead of the framer on the shared target")
+                want(framer["id"] in victim["network"]["shared_hours"],
+                     "s6: the framer does not share the victim's hours - the "
+                     "#17 menu should offer this merge")
+
+        # --- the designed pair (report-only, reveal-side) --------------------
+        # Derived at assemble time from cadence equality; re-derived here from
+        # the emitted network lists so the two cannot drift. One actor column,
+        # one innocent column, mutually in shared_cadence, facts non-empty.
+        twin_carriers = [a for a in accounts if a["reveal"].get("twin")]
+        TWIN_COUNTS = {"s1": 2, "s2": 2, "s3": 2, "s4": 0, "s5": 2, "s6": 0}
+        want(len(twin_carriers) == TWIN_COUNTS[sid],
+             f"{sid}: {len(twin_carriers)} twin carriers, designed "
+             f"{TWIN_COUNTS[sid]}")
+        if len(twin_carriers) == 2:
+            tw = twin_carriers[0]["reveal"]["twin"]
+            want(twin_carriers[1]["reveal"]["twin"] == tw,
+                 f"{sid}: the two twin carriers disagree about the pair")
+            want({twin_carriers[0]["id"], twin_carriers[1]["id"]}
+                 == {tw["a"], tw["b"]},
+                 f"{sid}: twin pair ids do not match their carriers")
+            a_rec, b_rec = by_id[tw["a"]], by_id[tw["b"]]
+            want(a_rec["reveal"]["truth"] == "malicious",
+                 f"{sid}: twin column a is not the actor")
+            want(b_rec["reveal"]["truth"] == "benign",
+                 f"{sid}: twin column b is not the innocent")
+            want(tw["b"] in a_rec["network"]["shared_cadence"],
+                 f"{sid}: twin pair is not in each other's shared_cadence")
+            want(bool(tw["rows"]),
+                 f"{sid}: twin pair has no diverging rows to show")
+            want(all(row["a"] != row["b"] for row in tw["rows"]),
+                 f"{sid}: a twin row does not actually diverge")
+            if sid == "s1":
+                want(a_rec["reveal"]["original_id"] == "acct_RA01"
+                     and b_rec["reveal"]["original_id"] == "acct_NEG_sre",
+                     "s1 twin pair is not the recon bot and the SRE")
+        if sid == "s4":
+            want(not twin_carriers,
+                 "s4 has no actors, so it can have no designed pair")
+
+        # --- findings #5/#21: the bulletins bounce something real ------------
+        # On its activation shift, each patch must have at least one account
+        # whose citation it actually refuses - a bulletin nothing enforces is
+        # decorative. Recomputed from the emitted rows and imported floors.
+        mc = meta["policy"]["corroboration_min_contribution"]
+        mo = meta["policy"]["corroboration_min_observations"]
+        topic_set = set(meta["topic"]["signals"])
+        if sid == "s3":
+            weak = [a["id"] for a in accounts
+                    for s in a["pipeline"]["signals"]
+                    if s["fired"] and s["name"] not in topic_set
+                    and s["value"] < mc]
+            want(bool(weak),
+                 "s3 activates the strength floor but no fired non-topic "
+                 "signal sits under it")
+        if sid == "s4":
+            thin = [a["id"] for a in accounts
+                    for s in a["pipeline"]["signals"]
+                    if s["fired"] and s["name"] not in topic_set
+                    and s["n_observations"] is not None
+                    and s["n_observations"] < mo]
+            want(bool(thin),
+                 "s4 activates the rate denominator but no fired non-topic "
+                 "rate row sits under it")
+
+        # --- finding #17: the two inadmissible link channels -----------------
+        # The style matrix must recompute exactly through hunt's own module,
+        # its range must show no resolution (that IS the finding), and the
+        # dataset must sit under the authorship floor or the lesson is false.
+        st_blk = shift["style"]
+        n_ids = len(accounts)
+        want(len(st_blk["order"]) == n_ids
+             and len(st_blk["pairs"]) == n_ids * (n_ids - 1) // 2,
+             f"{sid} style matrix shape is wrong")
+        want(st_blk["order"] == sorted(a["id"] for a in accounts),
+             f"{sid} style order is not the sorted roster")
+        vecs = {a["id"]: hunt.linkage.style_vector(a["sessions"])
+                for a in accounts}
+        k = 0
+        drift = 0
+        for i, ra in enumerate(st_blk["order"]):
+            for rb in st_blk["order"][i + 1:]:
+                v = round(hunt.linkage.cosine(vecs[ra], vecs[rb]), 3)
+                if abs(v - st_blk["pairs"][k]) > 1e-9:
+                    drift += 1
+                k += 1
+        want(drift == 0,
+             f"{sid} style matrix drifts from hunt.linkage on {drift} pairs")
+        want(st_blk["min"] == min(st_blk["pairs"])
+             and st_blk["max"] == max(st_blk["pairs"]),
+             f"{sid} style min/max disagree with the matrix")
+        want(st_blk["min"] >= 0.9,
+             f"{sid} style range has resolution ({st_blk['min']}) - "
+             f"the no-resolution lesson would be false on this roster")
+        want(st_blk["word_floor"] == hunt.linkage.STYLOMETRY_WORD_FLOOR,
+             f"{sid} word floor is not hunt's STYLOMETRY_WORD_FLOOR")
+        want(st_blk["median_words"] < st_blk["word_floor"],
+             f"{sid} median words at or over the authorship floor")
+        # The hour channel must stay sparse (a channel that links the whole
+        # queue is a different failure), and on a case shift with actors it
+        # must offer at least one mixed-truth pair - the trap the #17 sweep
+        # predicts, and the reason the threshold is defensible at all.
+        hour_pairs = {frozenset((a["id"], o)) for a in accounts
+                      for o in a["network"]["shared_hours"]}
+        # Bound = one sixth of all unordered pairs. The shipped rosters sit
+        # between 0% and ~12%; a channel past this line is on its way to
+        # linking the queue, which is the #17 failure this menu must not
+        # quietly reproduce.
+        want(len(hour_pairs) * 6 <= n_ids * (n_ids - 1),
+             f"{sid} hour channel links {len(hour_pairs)} pairs - not sparse")
+        if shift["flags"].get("cases") and c["malicious"]:
+            truth_of = {a["id"]: a["reveal"]["truth"] for a in accounts}
+            mixed = [p for p in hour_pairs
+                     if len({truth_of[x] for x in p}) == 2]
+            want(bool(mixed),
+                 f"{sid}: the hour channel offers no mixed-truth pair - "
+                 f"the #17 trap is missing at this threshold")
 
     # --- shift-specific design invariants ------------------------------------
     s = {sh["id"]: sh for sh in shifts}
