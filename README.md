@@ -263,10 +263,10 @@ findings — they only surface what the link machinery already computes, and
 every refusal they funnel into is a measured one.
 
 The trilogy behind it: [`triage`](https://github.com/abognar-git/alert-triage-copilot)
-(the defender's pipeline under attack), `hunt` (the platform hunting for
-misuse), [`pyrite`](https://github.com/abognar-git/pyrite-assay) (what a refusal is
-actually worth). This game is the fourth angle: the human the other three
-keep concluding you need.
+(the defender's pipeline under attack), [`hunt`](https://github.com/abognar-git/model-abuse-hunt)
+(the platform hunting for misuse), [`pyrite`](https://github.com/abognar-git/pyrite-assay)
+(what a refusal is actually worth). This game is the fourth angle: the human
+the other three keep concluding you need.
 
 ## What this is not
 
