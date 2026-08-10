@@ -1,6 +1,6 @@
 # trigger-discipline — game design spec (v1)
 
-**Name:** `trigger-discipline`. Sibling of `assay` / `triage` / `hunt` (same author, same craft rules).
+**Name:** `trigger-discipline`. Sibling of `pyrite` / `triage` / `hunt` (same author, same craft rules).
 The name is from hunt's finding #26 — "the gate that cannot see": a human reviewer shown only
 the queue card upholds 5/5 unsound enforcement cards. In this game **the player IS the human
 gate**, and gets what that reviewer never had: the evidence, at a price.

@@ -180,7 +180,7 @@ previous one has been completed once (any score). `?seed=` reorders within a shi
   hygiene predicates; the v1 §7 leak assertions extended to `respawn_of` and `appeal`
   (reveal-side only) and run over EVERY shift.
 - Determinism: same hunt checkout → byte-identical (fixed seeds per shift; no wall-clock).
-- Size budget: ≤ 900 KB injected JSON total (the assay explorer is 838 KB; stay in family).
+- Size budget: ≤ 900 KB injected JSON total (the pyrite explorer is 838 KB; stay in family).
 
 ## 6. Sim harness (integrator's teeth — extends v1 checks)
 

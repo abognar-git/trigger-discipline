@@ -290,11 +290,15 @@ requests, works from `file://`.
 To rebuild it from source:
 
 ```bash
-python3 scripts/build_data.py --hunt ../hunt --inject index.html   # data from hunt fixtures
-python3 scripts/build_page.py --check                              # page matches parts/
-python3 scripts/check_readme.py                                    # this file matches the data
-node scratch/harness.js                                            # full sim suite
+python3 scripts/build_data.py --hunt ../model-abuse-hunt --inject index.html   # data from hunt fixtures
+python3 scripts/build_page.py --check                                          # page matches parts/
+python3 scripts/check_readme.py                                                # this file matches the data
 ```
+
+There is also a headless sim suite (`scratch/harness.js`) that plays the full
+career through the page's own handlers; it lives in the author's unshipped
+scratch space, so it is not in this repository — the three checks above are
+the published gates.
 
 `build_data.py` requires a checkout of `model-abuse-hunt` beside this repo;
 it imports the scorer and predicates from there and refuses to restate them.
