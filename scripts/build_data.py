@@ -395,15 +395,15 @@ for _bg_id, _bg_activity in {
 # converting the instances you thought of is not a fix, so this is a registry
 # with an assertion over the emitted output rather than a habit.
 #
-# hunt's own fixture names (`northbridge-bank`, `acme-logistics`, ...) are
+# hunt's own fixture names (`brindlow-bank`, `dunmarle-logistics`, ...) are
 # inherited by shift 1 unchanged and are not this file's to relitigate; they
 # are listed under INHERITED so the scan can tell "hunt authored this" from
 # "trigger-discipline authored this".
 # ===========================================================================
 
 INHERITED_ENTITIES = {
-    "northbridge-bank", "meridian-pay", "helios-post", "civictax-gov",
-    "acme-logistics", "our-company",
+    "brindlow-bank", "quorline-pay", "helios-post", "civictax-gov",
+    "dunmarle-logistics", "our-company",
 }
 
 # Impersonated brands - the things a lure factory pretends to be.
