@@ -1968,7 +1968,7 @@ def roster_s6(hunt: Hunt) -> Roster:
                   provenance=P.get("lure_factory"), tell=None)
         for j in range(3):
             brand = cell_brands[(k + j) % 2]
-            r.sess(aid, hunt=hunt, at_min=120 + 120 * k + 55 * j,
+            r.sess(aid, hunt=hunt, at_min=20 + 120 * k + 55 * j,
                    channel="chatgpt", category="phishing_content",
                    excerpt=PROMPTS[("phishing_content", "actor")][(k + j) % 3]
                    .format(lang=LANGS[(k + j) % len(LANGS)], brand=brand),
