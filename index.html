@@ -31,38 +31,48 @@
    trigger-discipline — parts/page.css. Assembled into index.html by
    scripts/build_page.py; the built page stays one file, no external
    requests, works from file://. Dark is the default (SOC desk). Light via
-   prefers-color-scheme or the manual toggle. System sans only; no serif.
+   prefers-color-scheme or the manual toggle. System sans only; no serif -
+   the one-file rule means no web font can be loaded, so the redesign's
+   typography does not come across and its palette and layout do.
 --------------------------------------------------------------------------- */
 :root {
-  --bg: #0d1117;
-  --panel: #151b23;
-  --panel-2: #1b2430;
-  --line: #2a3441;
-  --text: #dce3ec;
-  --muted: #92a0af;
-  --accent: #58a6ff;
-  --ban: #e5534b;
-  --ban-dim: #3a1d1c;
-  --clear: #57ab5a;
-  --clear-dim: #1c3320;
-  --warn: #d29922;
-  --warn-dim: #3a2e14;
+  /* Near-black with neutral greys, not the blue-grey of a code host's dark
+     theme, which is what this palette used to be line for line and why the
+     desk read as an admin panel. The verdict triad is unchanged in meaning
+     and slightly warmed to sit on the darker ground. Every value below was
+     measured against WCAG AA on both the page and the panel before it went
+     in; the one deliberate loss is --muted in dark, 7.09 -> 5.86, which is
+     what puts air between primary and secondary text and is still AA.
+     --warn in LIGHT was 4.49 and failed AA outright; it is 4.96 now. */
+  --bg: #08080a;
+  --panel: #0e0e12;
+  --panel-2: #15151b;
+  --line: #232329;
+  --text: #e8e8ec;
+  --muted: #8a8a95;
+  --accent: #93a7cf;
+  --ban: #e0645c;
+  --ban-dim: #2a1817;
+  --clear: #5fae72;
+  --clear-dim: #14251a;
+  --warn: #d3a63a;
+  --warn-dim: #2b2413;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
-    --bg: #f4f6f8; --panel: #ffffff; --panel-2: #eef1f4; --line: #d0d7de;
-    --text: #1f2328; --muted: #57606a; --accent: #0969da;
-    --ban: #cf222e; --ban-dim: #ffe5e2; --clear: #1a7f37; --clear-dim: #dcf5e2;
-    --warn: #9a6700; --warn-dim: #fff1cc;
+    --bg: #f7f7f8; --panel: #ffffff; --panel-2: #f0f0f2; --line: #d8d8dc;
+    --text: #18181b; --muted: #5c5c66; --accent: #3c5a99;
+    --ban: #c0392f; --ban-dim: #fbe6e4; --clear: #1f7a45; --clear-dim: #e2f3e8;
+    --warn: #8a6512; --warn-dim: #f7efd9;
   }
 }
 :root[data-theme="light"] {
-  --bg: #f4f6f8; --panel: #ffffff; --panel-2: #eef1f4; --line: #d0d7de;
-  --text: #1f2328; --muted: #57606a; --accent: #0969da;
-  --ban: #cf222e; --ban-dim: #ffe5e2; --clear: #1a7f37; --clear-dim: #dcf5e2;
-  --warn: #9a6700; --warn-dim: #fff1cc;
+  --bg: #f7f7f8; --panel: #ffffff; --panel-2: #f0f0f2; --line: #d8d8dc;
+  --text: #18181b; --muted: #5c5c66; --accent: #3c5a99;
+  --ban: #c0392f; --ban-dim: #fbe6e4; --clear: #1f7a45; --clear-dim: #e2f3e8;
+  --warn: #8a6512; --warn-dim: #f7efd9;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
