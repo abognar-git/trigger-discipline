@@ -4,7 +4,12 @@
    policy checks, scoring, interstitials, the per-shift report, the case-ban
    commit path and the respawn trigger (SPEC-2 §3), and the mode registry
    (Game.registerMode). Assembled into index.html by scripts/build_page.py.
-   Reads data contract v2 (meta.contract === 2).
+   Reads data contract v3 (meta.contract === 3). v3 narrowed the pipeline
+   signal rows: `weight` and `intensity` were never read here and `weight`
+   is hunt's own constant per signal name, so shipping it on every row was
+   shipping a lookup table one entry at a time. A signal that did not fire
+   now carries its name and, where it has one, its denominator; an absent
+   `value` means zero, which is what a signal that did not fire contributes.
 
    SPEC-2 §8 (Amendment A1) — one clock, forward only. A shift's `budget`
    field is its LENGTH in hours: the clock runs 0 -> length and the shift
@@ -34,9 +39,9 @@ function bootError(msg) {
   if (intro) { intro.textContent = msg; }
   throw new Error(msg);
 }
-if (META.contract !== 2) {
+if (META.contract !== 3) {
   bootError('Data block is contract v' + (META.contract || 1) +
-    '; this build reads contract v2. Rebuild with scripts/build_data.py.');
+    '; this build reads contract v3. Rebuild with scripts/build_data.py.');
 }
 if (!SHIFTS.length || !(SHIFTS[0].accounts || []).length) {
   bootError('No shifts in the data block. Rebuild with scripts/build_data.py.');
@@ -1245,7 +1250,9 @@ function tabPipeline(a) {
         tdName.appendChild(el('span', 'dim small', ' · topic-derived'));
       }
       tr.appendChild(tdName);
-      var tdVal = el('td', quiet ? 'mono small dim' : 'mono small', Number(s.value).toFixed(3));
+      /* contract 3: a signal that did not fire ships its name and, where
+         it has one, its denominator. Absent value means zero. */
+      var tdVal = el('td', quiet ? 'mono small dim' : 'mono small', Number(s.value || 0).toFixed(3));
       if (s.n_observations !== null && s.n_observations !== undefined) {
         /* finding #21 — a rate carries its denominator on its face. Reading
            it is the craft the bulletin later enforces. */

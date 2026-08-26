@@ -96,7 +96,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 SOURCE_REPO = "github.com/abognar-git/model-abuse-hunt"
 GENERATOR = "scripts/build_data.py"
-CONTRACT = 2
+CONTRACT = 3
 
 # Remap salt. Changing it changes every player-visible id; it is versioned so a
 # later roster cannot silently collide with a published one. SPEC-2 §5 appends
@@ -2324,27 +2324,32 @@ def assemble(r: Roster, hunt: Hunt,
         # Full 7-signal breakdown: the ones that fired (score_account's own
         # order, descending contribution) then the ones that did not. What did
         # NOT fire is evidence too, and score_account only returns nonzero.
+        # Emitted narrowly, because this is the largest single object in the
+        # payload and most of it was constant. `weight` and `intensity` were
+        # never read by the page - grep parts/*.js - and `weight` is hunt's
+        # own constant per signal name, so shipping it 1,162 times was
+        # shipping a lookup table one row at a time. A signal that did NOT
+        # fire now carries its name and, where it has one, its denominator:
+        # everything else about it was zero by definition. `fired` goes too,
+        # and is derived below from the presence of `value`, which
+        # score_account only ever returns nonzero.
         fired = {x["signal"] for x in s["signals"]}
         breakdown = []
         for x in s["signals"]:
             breakdown.append({
                 "name": x["signal"], "value": x["contribution"],
-                "note": x["detail"], "intensity": x["intensity"],
-                "weight": x["weight"], "n_observations": x["n_observations"],
-                "fired": True,
+                "note": x["detail"], "n_observations": x["n_observations"],
             })
         for name in signals.WEIGHTS:
             if name in fired:
                 continue
             breakdown.append({
-                "name": name, "value": 0.0, "note": "", "intensity": 0.0,
-                "weight": signals.WEIGHTS[name],
+                "name": name,
                 # A rate-derived signal has a denominator whether or not it
                 # fired. hunt's own function decides which signals those are;
                 # restating "len(sessions) if name in RATE_DERIVED_SIGNALS"
                 # here is exactly the drift this file refuses to introduce.
                 "n_observations": signals._observations(name, ss),
-                "fired": False,
             })
 
         sessions_out = []
@@ -2599,7 +2604,7 @@ def compose_tell(r: Roster, aid: str, rec: dict) -> Tell:
         # the score came "from the account file", which is true for a missing
         # phone number and false for an automation cadence - and the composer
         # cannot know which without looking, so it looks.
-        fired = [s["name"] for s in rec["pipeline"]["signals"] if s["fired"]]
+        fired = [s["name"] for s in rec["pipeline"]["signals"] if "value" in s]
         only = "the only signal that fired was" if len(fired) == 1 \
             else "the signals that fired were"
         # Only claim "that is the account file talking" when it actually is.
@@ -2639,7 +2644,7 @@ def compose_appeal(r: Roster, aid: str, rec: dict) -> dict:
         record = (f"{_plural(len(rec['sessions']), 'session')} of ordinary use "
                   f"and not one signal above zero")
     else:
-        fired = [s["name"] for s in rec["pipeline"]["signals"] if s["fired"]]
+        fired = [s["name"] for s in rec["pipeline"]["signals"] if "value" in s]
         record = (f"{_plural(len(rec['sessions']), 'session')} of ordinary use "
                   f"and a risk of {risk:.4f}, all of it {', '.join(fired)}")
 
@@ -3729,7 +3734,8 @@ def visible_view(data: dict) -> dict:
     return stripped
 
 
-def check_tell(rec: dict, tell: Tell, shift_id: str, fail: list[str]) -> None:
+def check_tell(rec: dict, tell: Tell, shift_id: str, fail: list[str],
+               weights: dict[str, float]) -> None:
     """Verify a tell's declared claims against the row it ships beside."""
     p, ss = rec["profile"], rec["sessions"]
     where = f"{shift_id}/{rec['id']}"
@@ -3788,8 +3794,13 @@ def check_tell(rec: dict, tell: Tell, shift_id: str, fail: list[str]) -> None:
                round(abs(rec["pipeline"]["risk"]
                          - rec["pipeline"]["lead_threshold"]), 4)}
     for s in rec["pipeline"]["signals"]:
-        allowed |= {round(s["value"], 4), round(s["intensity"], 4),
-                    round(s["weight"], 4)}
+        # contract 3: `value` is absent on a signal that did not fire (it was
+        # zero by definition) and `weight` is no longer shipped per row, so it
+        # comes from hunt's own constant. `intensity` is gone entirely; if a
+        # tell ever cites one this gate will fail rather than wave it through,
+        # which is the direction this gate is supposed to fail in.
+        allowed |= {round(s.get("value", 0.0), 4),
+                    round(weights[s["name"]], 4)}
     allowed |= {round(x, 3) for x in list(allowed)}
     allowed |= {round(x, 2) for x in list(allowed)}
     for m in re.finditer(r"\b0\.\d{1,4}\b", tell.text):
@@ -3812,7 +3823,7 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
     meta = data["meta"]
 
     # --- meta ---------------------------------------------------------------
-    want(meta["contract"] == 2, "meta.contract is not 2")
+    want(meta["contract"] == CONTRACT, f"meta.contract is not {CONTRACT}")
     want(meta["bands"] == dict(hunt.calibration.inv.BAND_FLOOR),
          "meta.bands is not hunt's imported band mapping")
     want(meta["policy"]["floor_band"] == hunt.policy.CONFIDENCE_FLOOR_BAND,
@@ -3965,23 +3976,23 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
                  f"{sid}/{aid} lead flag disagrees with LEAD_THRESHOLD")
             want(len(p["signals"]) == len(signals.WEIGHTS),
                  f"{sid}/{aid} signal breakdown is not the full weight vector")
-            n_fired = sum(1 for s in p["signals"] if s["fired"])
-            want([s["name"] for s in p["signals"] if s["fired"]]
+            n_fired = sum(1 for s in p["signals"] if "value" in s)
+            want([s["name"] for s in p["signals"] if "value" in s]
                  == [s["name"] for s in p["signals"]][:n_fired],
                  f"{sid}/{aid} nonzero signals are not first")
-            total = round(sum(s["value"] for s in p["signals"]), 4)
+            total = round(sum(s.get("value", 0.0) for s in p["signals"]), 4)
             want(abs(total - p["risk"]) < 5e-4,
                  f"{sid}/{aid} contributions {total} != risk {p['risk']}")
             # Finding #20 — the emitted scalars must agree with the breakdown
             # the player reads, under both definitions of "topic". The UI
             # recomputes from the breakdown; a disagreement here would put
             # two different numbers on one screen.
-            tds = round(sum(s["value"] for s in p["signals"]
+            tds = round(sum(s.get("value", 0.0) for s in p["signals"]
                             if s["name"] in signals.TOPIC_DERIVED_SIGNALS), 4)
             want(abs(tds - p["topic_derived_score"]) < 5e-4,
                  f"{sid}/{aid} topic_derived_score {p['topic_derived_score']} "
                  f"disagrees with its own breakdown {tds}")
-            cos = round(sum(s["value"] for s in p["signals"]
+            cos = round(sum(s.get("value", 0.0) for s in p["signals"]
                             if s["name"] == "content_category_risk"), 4)
             want(abs(cos - p["content_only_score"]) < 5e-4,
                  f"{sid}/{aid} content_only_score {p['content_only_score']} "
@@ -4210,15 +4221,15 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
         if sid == "s3":
             weak = [a["id"] for a in accounts
                     for s in a["pipeline"]["signals"]
-                    if s["fired"] and s["name"] not in topic_set
-                    and s["value"] < mc]
+                    if "value" in s and s["name"] not in topic_set
+                    and s.get("value", 0.0) < mc]
             want(bool(weak),
                  "s3 activates the strength floor but no fired non-topic "
                  "signal sits under it")
         if sid == "s4":
             thin = [a["id"] for a in accounts
                     for s in a["pipeline"]["signals"]
-                    if s["fired"] and s["name"] not in topic_set
+                    if "value" in s and s["name"] not in topic_set
                     and s["n_observations"] is not None
                     and s["n_observations"] < mo]
             want(bool(thin),
@@ -4463,7 +4474,7 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
                 continue
             want(tell.text == a["reveal"]["tell"],
                  f"{sh['id']}/{a['id']} tell text and checked object disagree")
-            check_tell(a, tell, sh["id"], fail)
+            check_tell(a, tell, sh["id"], fail, hunt.signals.WEIGHTS)
 
     # --- embeddability -------------------------------------------------------
     want("</script" not in everything.lower(),
@@ -4524,7 +4535,7 @@ def print_facts(data: dict) -> None:
                         key=lambda x: x["reveal"]["original_id"]):
             p, rv = a["profile"], a["reveal"]
             fired = [f"{s['name']}={s['value']}"
-                     for s in a["pipeline"]["signals"] if s["fired"]]
+                     for s in a["pipeline"]["signals"] if "value" in s]
             api = sum(1 for s in a["sessions"] if s["channel"] == "api")
             ref = sum(1 for s in a["sessions"] if s["disposition"] == "refused")
             tgt = sum(1 for s in a["sessions"] if s["target_ref"])
