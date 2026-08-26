@@ -375,3 +375,11 @@ footer {
 #intro-reference > summary:hover, .brief-more > summary:hover { text-decoration: underline; }
 #intro-reference[open] > summary, .brief-more[open] > summary { margin-bottom: 6px; }
 #intro-reference > h2:first-of-type { margin-top: 10px; }
+
+/* --- risk against the population it came from -------------------------- */
+.risk-context { margin: 10px 0 4px; }
+.riskdist { display: flex; align-items: flex-end; gap: 2px; height: 18px; margin-bottom: 6px; }
+.riskdist i { width: 5px; background: var(--line); }
+.riskdist i.over { background: var(--muted); }
+.riskdist i.me { background: var(--warn); }
+.risk-context p { margin: 0; }

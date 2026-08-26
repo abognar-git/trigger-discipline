@@ -404,6 +404,14 @@ footer {
 #intro-reference > summary:hover, .brief-more > summary:hover { text-decoration: underline; }
 #intro-reference[open] > summary, .brief-more[open] > summary { margin-bottom: 6px; }
 #intro-reference > h2:first-of-type { margin-top: 10px; }
+
+/* --- risk against the population it came from -------------------------- */
+.risk-context { margin: 10px 0 4px; }
+.riskdist { display: flex; align-items: flex-end; gap: 2px; height: 18px; margin-bottom: 6px; }
+.riskdist i { width: 5px; background: var(--line); }
+.riskdist i.over { background: var(--muted); }
+.riskdist i.me { background: var(--warn); }
+.risk-context p { margin: 0; }
 </style>
 </head>
 <body>
@@ -1737,6 +1745,53 @@ function tabNetwork(a) {
   return f;
 }
 
+
+/* --- where this risk sits in the queue it came from ---------------------
+   The score has always been shown against the lead threshold and never
+   against the population, which is the one comparison this project argues
+   for everywhere else: a number without its base rate is not a finding.
+   Computed over the accounts that have ARRIVED, because the queue the
+   player is working is the only population they can actually see. */
+function riskContext(a) {
+  var mine = Number((a.pipeline || {}).risk || 0);
+  var thr = Number((a.pipeline || {}).lead_threshold || 0);
+  /* Rows, not bare numbers: several accounts in a quiet queue score exactly
+     the same, and marking the subject by value marks all of them. */
+  var pop = [];
+  ACCOUNTS.forEach(function (x) {
+    if (!arrived.has(x.id) || !inShiftScope(x.id)) { return; }
+    pop.push({ id: x.id, r: Number((x.pipeline || {}).risk || 0) });
+  });
+  if (pop.length < 2) { return null; }
+  pop.sort(function (x, y) { return x.r - y.r; });
+  var vals = pop.map(function (x) { return x.r; });
+  return {
+    n: pop.length,
+    pct: Math.round(100 * vals.filter(function (r) { return r < mine; }).length / pop.length),
+    over: vals.filter(function (r) { return r >= thr; }).length,
+    median: vals[Math.floor(vals.length / 2)],
+    max: vals[vals.length - 1],
+    pop: pop, id: a.id, mine: mine, thr: thr
+  };
+}
+
+function riskStrip(ctx) {
+  /* One tick per arrived account, ordered by risk. The subject is marked,
+     the lead line is drawn where it actually falls, and the whole thing is
+     a picture of the sentence beneath it. */
+  var wrap = el('div', 'riskdist');
+  var span = Math.max(ctx.max, ctx.thr) || 1;
+  ctx.pop.forEach(function (row) {
+    var i = el('i');
+    i.style.height = Math.max(2, Math.round(row.r / span * 16)) + 'px';
+    if (row.id === ctx.id) { i.className = 'me'; }
+    else if (row.r >= ctx.thr) { i.className = 'over'; }
+    i.title = row.id + ' — ' + row.r.toFixed(3);
+    wrap.appendChild(i);
+  });
+  return wrap;
+}
+
 function tabPipeline(a) {
   var f = frag();
   f.appendChild(el('h3', null, 'Pipeline read'));
@@ -1752,6 +1807,25 @@ function tabPipeline(a) {
   riskRow.appendChild(riskLine);
   f.appendChild(riskRow);
   f.appendChild(el('p', 'small dim', 'A lead is a queue entry, never a verdict.'));
+
+  /* The base rate, on the same screen as the score. */
+  var ctx = riskContext(a);
+  if (ctx) {
+    var ctxRow = el('div', 'risk-context');
+    ctxRow.appendChild(riskStrip(ctx));
+    var line = el('p', 'small dim');
+    line.appendChild(document.createTextNode('Percentile '));
+    line.appendChild(el('strong', null, String(ctx.pct)));
+    line.appendChild(document.createTextNode(
+      ' of the ' + plural(ctx.n, 'account') + ' that have arrived · '));
+    line.appendChild(el('strong', null, String(ctx.over)));
+    line.appendChild(document.createTextNode(
+      ' of them are already over the lead line · median '));
+    line.appendChild(el('strong', 'mono', ctx.median.toFixed(3)));
+    line.appendChild(document.createTextNode('.'));
+    ctxRow.appendChild(line);
+    f.appendChild(ctxRow);
+  }
 
   /* Finding #20 — the two shipped definitions of "topic". Both accountings
      recompute from numbers already on this screen; META.topic carries hunt's
