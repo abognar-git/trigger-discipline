@@ -64,7 +64,8 @@ def main() -> int:
     # the README kept saying five. The count must be stated in words, and no
     # WRONG word-form may survive anywhere in the prose.
     n_shifts = len(payload["shifts"])
-    words = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight"}
+    words = {4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight",
+             9: "nine", 10: "ten", 11: "eleven", 12: "twelve"}
     right = words.get(n_shifts, str(n_shifts))
     low = flat.lower()
     if f"{right} shifts" not in low:

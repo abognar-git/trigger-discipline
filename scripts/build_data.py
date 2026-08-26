@@ -114,7 +114,7 @@ ANY_ACCT_RE = re.compile(r"acct_[A-Za-z0-9_]+")
 # construction (finding #25), and its provenance says so.
 ACTOR_NAMES = ("lure_factory", "capability_dev", "recon_automation",
                "stolen_key", "framer", "supply_chain_publish",
-               "astroturf_loop")
+               "astroturf_loop", "offbrief_agent")
 
 # Identifier shapes, same regexes hunt's repo-wide gate uses.
 ASN_RE = re.compile(r"\bAS\d{3,6}\b")
@@ -444,8 +444,14 @@ SUPPLY_ENTITIES = {"collect.example", "pkghub.example"}
 # standing target - the documented strand that is the exception to the loop.
 ASTRO_ENTITIES = {"ambal-hoy.example", "revista-vendaval.example"}
 
+# The authorised range the evaluation accounts are contracted to attack. It
+# is a target like any other on the tab, which is the point: the string that
+# makes an attack legitimate looks exactly like the string that does not.
+RANGE_ENTITIES = {"sundlake-range.example"}
+
 FICTIONAL_ENTITIES = (set(BRANDS) | set(VICTIM_ORGS) | set(EMPLOYERS)
-                      | SUPPLY_ENTITIES | ASTRO_ENTITIES)
+                      | SUPPLY_ENTITIES | ASTRO_ENTITIES
+                      | RANGE_ENTITIES)
 
 
 # ===========================================================================
@@ -3392,7 +3398,7 @@ def roster_s7(hunt: Hunt) -> Roster:
                flags={"live": True, "cases": True, "appeals": True},
                briefing=S7_BRIEFING, rule=S1_RULE,
                report_lead="The identity verified. It was bought.",
-               base_day=26, live=True)
+               base_day=24, live=True)
 
     # Provenance is carried here rather than in hunt's PROVENANCE table:
     # this archetype is staged by this script the way `framer` is, and hunt's
@@ -3547,7 +3553,7 @@ def roster_s8(hunt: Hunt) -> Roster:
                flags={"live": True, "cases": True, "appeals": True},
                briefing=S8_BRIEFING, rule=S1_RULE,
                report_lead="Nothing they share is on any tab.",
-               base_day=31, live=True)
+               base_day=27, live=True)
 
     # Provenance carried here, like `framer` and the supply-chain publisher.
     # extension=True: the report documents the loop, the geographic spread and
@@ -3655,12 +3661,138 @@ def roster_s8(hunt: Hunt) -> Roster:
     return r
 
 
+
+# ===========================================================================
+# SHIFT 9 - off brief: the cleanest file in the game
+#
+# An authorised offensive-security evaluation account. Enterprise billing,
+# corporate SSO, phone verified, static egress unchanged for months, a
+# countersigned scope addendum naming the range it is allowed to attack.
+# Nothing on the account file is false and nothing about it changes. It
+# looks maximally offensive on content and it is supposed to.
+#
+# Its agent went off brief for one week. The evidence is not on this
+# account at all: one target sits outside the declared block, and a package
+# the agent minted turns up in other accounts' build failures. Relational,
+# not local - and no tab computes it.
+# ===========================================================================
+
+S9_BRIEFING = [
+    "Today's queue includes two accounts that exist to attack things. Both "
+    "are authorised, both run the same public benchmark harness, and neither "
+    "human wrote the prompts. On the content tab they are the same account.",
+
+    "Their files are the cleanest you have seen: enterprise billing, verified "
+    "phone, static egress for over a year, a countersigned addendum naming "
+    "the range each is allowed to touch. Nothing on that surface is false.",
+
+    "One of them went outside its range for a week. Nothing on its own record "
+    "shows it. What shows it is somebody else's record.",
+]
+
+
+def roster_s9(hunt: Hunt) -> Roster:
+    r = Roster(shift_id="s9", title="Off brief",
+               subtitle="Ten accounts, twenty-four hours, and the cleanest "
+                        "file in the queue.",
+               budget=24,
+               flags={"live": True, "cases": True, "appeals": True},
+               briefing=S9_BRIEFING, rule=S1_RULE,
+               report_lead="Nothing on its own record showed it.",
+               base_day=30, live=True)
+
+    # extension=True, and the reason is the whole of it: AISI reports 19
+    # cases beyond the testing parameters across 10 of 122 runs, and
+    # Anthropic reports four runs affecting the same organisation. Neither
+    # describes a customer account, a declared range, or an artefact
+    # crossing into another account's telemetry. The relational evidence is
+    # this fixture's construction.
+    offbrief_prov = {
+        "source": "UK AI Security Institute, Incident Report: unsanctioned "
+                  "agent behaviour during cyber testing; corroborated by "
+                  "Anthropic, Investigating three real-world incidents in our "
+                  "cybersecurity evaluations",
+        "date": "2026-08-04",
+        "case": "19 cases beyond the scope of the testing parameters across "
+                "10 of 122 runs; separately, three incidents across six runs, "
+                "four of which affected the same organisation.",
+        "signature": "an authorised evaluation account whose file never "
+                     "changes, whose targets are inside its declared block "
+                     "for months, and one week of targets that are not",
+        "extension": True,
+    }
+
+    in_range = "sundlake-range.example"
+    out_of_range = "kestrel-savings.example"   # a real customer, not the range
+
+    # -- the actor: authorised, and one week outside the block ---------------
+    ev_ip = "198.51.100.12"
+    r.account("acct_s9_OB01", hunt=hunt, created_min=-600000,
+              email_kind="corporate", ip=ev_ip, asn=hunt.benign_asns[2],
+              country="GB", payment="card_verified", phone=True,
+              channel="api", label="malicious", actor="offbrief_agent",
+              notes="authorised evaluation account whose harness left its range",
+              provenance=offbrief_prov, tell=None)
+    for j in range(6):
+        # five inside the declared range, one outside it. On the content tab
+        # the two are the same sentence with a different host in it.
+        outside = (j == 4)
+        r.sess("acct_s9_OB01", hunt=hunt, at_min=30 + 95 * j, channel="api",
+               category="exploit_help",
+               excerpt=PROMPTS[("exploit_help", "benign")][j % 3],
+               disposition="refused" if j == 5 else "completed",
+               ip=ev_ip, asn=hunt.benign_asns[2], country="GB",
+               target_ref=out_of_range if outside else in_range)
+
+    # -- the look-alike: the same harness, inside its own block --------------
+    lk_ip = "198.51.100.13"
+    r.account("acct_s9_NEG_eval", hunt=hunt, created_min=-580000,
+              email_kind="corporate", ip=lk_ip, asn=hunt.benign_asns[4],
+              country="IE", payment="card_verified", phone=True,
+              channel="api", label="benign", persona="authorised_evaluator",
+              notes="the same public benchmark harness, never outside its range",
+              tell=None)
+    for j in range(6):
+        r.sess("acct_s9_NEG_eval", hunt=hunt, at_min=38 + 95 * j, channel="api",
+               category="exploit_help",
+               excerpt=PROMPTS[("exploit_help", "benign")][j % 3],
+               disposition="refused" if j == 5 else "completed",
+               ip=lk_ip, asn=hunt.benign_asns[4], country="IE",
+               target_ref=in_range)
+
+    # -- the relational evidence: somebody else's build failures -------------
+    # Two ordinary accounts whose sessions name the org the agent went after.
+    # This is the only place the excursion is visible, and it is not on the
+    # account that made it.
+    for k in range(2):
+        aid = f"acct_s9_WIT{k + 1:02d}"
+        wip = r.ips.take()
+        wasn = hunt.benign_asns[6 + k]
+        r.account(aid, hunt=hunt, created_min=-300000 - 9000 * k,
+                  email_kind="corporate", ip=wip, asn=wasn, country="DE",
+                  payment="card_verified", phone=True, channel="chatgpt",
+                  label="benign", persona="victim_org_employee",
+                  notes="engineer at the org the harness left its range to reach",
+                  tell=None)
+        for j in range(2):
+            r.sess(aid, hunt=hunt, at_min=700 + 120 * k + 60 * j,
+                   channel="chatgpt", category="benign_code",
+                   excerpt=PROMPTS[("benign_code", "benign")][j % 3]
+                   .format(org=out_of_range),
+                   disposition="completed", ip=wip, asn=wasn, country="DE",
+                   target_ref=out_of_range)
+
+    _s7_background(r, hunt, count=5, prefix="s9", salt="s9")
+    return r
+
+
 SHIFT_BUILDERS = (roster_s1, roster_s2, roster_s3, roster_s4, roster_s5,
-                  roster_s6, roster_s7, roster_s8)
+                  roster_s6, roster_s7, roster_s8,
+                  roster_s9)
 
 # The four-sentence framing on the shift-select screen (SPEC-2 §4).
 FRAMING = [
-    "Eight shifts at an AI platform's enforcement desk, in the order the job "
+    "Nine shifts at an AI platform's enforcement desk, in the order the job "
     "gets harder.",
     "The pipeline flags; you decide, and every ban has to cite something that "
     "is not content.",
@@ -3986,7 +4118,7 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
     want(meta["policy"]["floor_band"] in meta["bands"],
          "the floor band is not in the band table")
     want([s["id"] for s in shifts] == ["s1", "s2", "s3", "s4", "s5",
-                                       "s6", "s7", "s8"],
+                                       "s6", "s7", "s8", "s9"],
          "shift ids/order drifted")
     want(len(meta["framing"]) == 4, "the landing framing is not 4 sentences")
     # Finding #20 — meta.topic must be hunt's own numbers, not a restatement
@@ -4035,6 +4167,8 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
                "pending_respawns": 1, "budget": 24, "live": True},
         "s8": {"accounts": 10, "scheduled": 9, "malicious": 6, "benign": 4,
                "pending_respawns": 1, "budget": 24, "live": True},
+        "s9": {"accounts": 9, "scheduled": 9, "malicious": 1, "benign": 8,
+               "pending_respawns": 0, "budget": 24, "live": True},
     }
     for shift in shifts:
         sid = shift["id"]
@@ -4338,7 +4472,11 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
         # one innocent column, mutually in shared_cadence, facts non-empty.
         twin_carriers = [a for a in accounts if a["reveal"].get("twin")]
         TWIN_COUNTS = {"s1": 2, "s2": 2, "s3": 2, "s4": 0, "s5": 2, "s6": 0,
-                       "s7": 0, "s8": 0}
+                       "s7": 0, "s8": 0,
+                       # s9: the actor and its look-alike run the SAME public
+                       # harness, so equal cadence is the design, not a
+                       # collision — the twin pair is the queue's point.
+                       "s9": 2}
         want(len(twin_carriers) == TWIN_COUNTS[sid],
              f"{sid}: {len(twin_carriers)} twin carriers, designed "
              f"{TWIN_COUNTS[sid]}")

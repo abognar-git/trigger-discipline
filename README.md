@@ -11,7 +11,7 @@ project, and the table at the bottom says which.</sub>
 
 > ### ▶ [Play it in the browser](https://abognar-git.github.io/trigger-discipline/)
 >
-> No install, no account, nothing to run. One file, eight shifts, about fifteen
+> No install, no account, nothing to run. One file, nine shifts, about fifteen
 > minutes for the first one.
 
 ---
@@ -39,12 +39,12 @@ indistinguishable from the actors. That is not a flaw in the game;
 it is the point of the research it is built on: **what someone asks an AI
 tells you almost nothing. How they behave tells you almost everything.**
 
-You play eight shifts, in the order the job gets harder. The queue starts
+You play nine shifts, in the order the job gets harder. The queue starts
 obvious, then starts moving, then starts arriving the way a real queue
 arrives: mostly innocent. On the last day the attack points the other way:
 one account in the queue is there to get someone else banned.
 
-![The shift select screen: eight shifts, each unlocking the next.](docs/figures/shift_select.png)
+![The shift select screen: nine shifts, each unlocking the next.](docs/figures/shift_select.png)
 
 ## The rules
 
