@@ -374,6 +374,16 @@ footer {
   #dossier { max-height: none; }
   #casebar { width: auto; border-left: 0; border-top: 1px solid var(--line); max-height: none; }
 }
+/* --- the shareable result (report, Score section) --------------------- */
+.share-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.btn-share { border-color: var(--muted); }
+.share-note { min-height: 1em; }
+.share-fallback {
+  display: block; width: 100%; max-width: 46ch; margin-top: 8px;
+  font-family: var(--mono); font-size: 12px; line-height: 1.5;
+  color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 6px; padding: 8px;
+}
 </style>
 </head>
 <body>
@@ -33554,6 +33564,89 @@ function buildReport() {
   };
 }
 
+/* =========================================================================
+   the shareable result
+
+   Three rules, and they are the whole design:
+
+   (1) Counts, never a map. The squares are grouped by outcome, not left in
+       queue order, so a result posted publicly cannot be read back as an
+       answer key by the next person to open the link. This is the same
+       constraint make_figures.py works under for the README figures.
+   (2) The false bans are in it, always, including the zero. A score you can
+       post without the harm beside it is exactly the reading of this game
+       that the game exists to argue against.
+   (3) No boast line, no rank, no adjective. The numbers are the claim.
+========================================================================= */
+function squares(ch, n) { return n > 0 ? new Array(n + 1).join(ch) : ''; }
+
+function shareText(rep) {
+  var m = rep.matrix;
+  var actorN = rep.counts.actors, benignN = rep.counts.benign;
+  var caught = m.banActor, hedged = m.monActor, missed = m.clearActor;
+  var falseBans = m.banBenign;
+  var lines = [];
+
+  lines.push('trigger-discipline — ' + (SHIFT.title || SHIFT.id));
+  lines.push('');
+  /* A long roster would wrap into noise on every platform; past two dozen
+     the squares stop being a glance and the counts carry it alone. */
+  if (actorN <= 24) {
+    lines.push(squares('🟩', caught) + squares('🟨', hedged) + squares('🟥', missed));
+  }
+  lines.push(caught + ' of ' + plural(actorN, 'actor') + ' banned' +
+    (hedged ? ', ' + hedged + ' monitored' : '') +
+    (missed ? ', ' + missed + ' missed' : ''));
+  lines.push('');
+  lines.push((falseBans > 0 ? squares('🟥', Math.min(falseBans, 24)) : '⬛') + ' ' +
+    falseBans + ' of ' + plural(benignN, 'innocent') + ' banned');
+  lines.push('');
+  lines.push(rep.brier.n
+    ? 'Brier ' + rep.brier.score.toFixed(3) + ' over ' + plural(rep.brier.n, 'ban') +
+      ' — 0.250 is a coin flip'
+    : 'No bans, so no confidence to score');
+  lines.push('');
+  lines.push(location.origin + location.pathname);
+  return lines.join('\n');
+}
+
+function appendShareControl(parent, rep) {
+  var p = el('p', 'share-row');
+  var btn = el('button', 'btn-share', 'Copy result');
+  var note = el('span', 'small dim share-note', '');
+  var box = null;   /* the manual fallback, built only if it is needed */
+
+  function fallback(text) {
+    if (box) { box.select(); return; }
+    box = document.createElement('textarea');
+    box.className = 'share-fallback';
+    box.readOnly = true;
+    box.rows = 9;
+    box.value = text;
+    parent.appendChild(box);
+    box.select();
+    note.textContent = 'Clipboard blocked — copy it from here.';
+  }
+
+  btn.addEventListener('click', function () {
+    var text = shareText(rep);
+    /* navigator.clipboard is absent on http:// origins and in some
+       in-app browsers, and can reject even where it exists. Every path
+       ends with the player holding the text. */
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        note.textContent = 'Copied.';
+      }, function () { fallback(text); });
+    } else {
+      fallback(text);
+    }
+  });
+
+  p.appendChild(btn);
+  p.appendChild(note);
+  parent.appendChild(p);
+}
+
 function renderReport(rep) {
   var root = $('screen-report');
   root.textContent = '';
@@ -33575,6 +33668,9 @@ function renderReport(rep) {
   sScore.appendChild(el('h2', null, 'Score'));
   sScore.appendChild(el('p', 'score-line', fmtScore(rep.score) + ' of ' + maxScore));
   sScore.appendChild(el('p', 'rank-line', 'Rank: ' + rank));
+  /* Here rather than at the foot of the report: this is where the number is,
+     and the report runs several screens past it. */
+  appendShareControl(sScore, rep);
   root.appendChild(sScore);
 
   /* --- confusion matrix (3 verdicts × 2 truths) --- */

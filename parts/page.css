@@ -345,3 +345,13 @@ footer {
   #dossier { max-height: none; }
   #casebar { width: auto; border-left: 0; border-top: 1px solid var(--line); max-height: none; }
 }
+/* --- the shareable result (report, Score section) --------------------- */
+.share-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.btn-share { border-color: var(--muted); }
+.share-note { min-height: 1em; }
+.share-fallback {
+  display: block; width: 100%; max-width: 46ch; margin-top: 8px;
+  font-family: var(--mono); font-size: 12px; line-height: 1.5;
+  color: var(--text); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 6px; padding: 8px;
+}
