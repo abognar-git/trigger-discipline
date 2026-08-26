@@ -139,7 +139,7 @@ function monitoredCluster(a){
 SCENARIOS: dict[str, dict] = {
     # ---- stills -----------------------------------------------------------
     "shift_select": dict(
-        caption="The nine shifts, in the order the job gets harder.",
+        caption="The ten shifts, in the order the job gets harder.",
         size=(1180, 1080), js="/* the landing is the boot state */",
     ),
     "refusal": dict(

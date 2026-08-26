@@ -142,7 +142,7 @@ through the real linker:
 - The framer's hour profile matches the victim's exactly, so the §4 hour
   channel offers the merge — the frame hands you the trap, and the correct
   play (action the framer, clear the victim) is worth 95 of 95.
-- Career: sixth card, landing copy "Nine shifts", completion line and
+- Career: sixth card, landing copy "Ten shifts", completion line and
   dashboard follow the data; `ACTOR_NAMES` gains `framer`, whose provenance
   cites `stress_framing.py` rather than a threat report, because that is
   what it is.

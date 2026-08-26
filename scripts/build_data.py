@@ -114,7 +114,7 @@ ANY_ACCT_RE = re.compile(r"acct_[A-Za-z0-9_]+")
 # construction (finding #25), and its provenance says so.
 ACTOR_NAMES = ("lure_factory", "capability_dev", "recon_automation",
                "stolen_key", "framer", "supply_chain_publish",
-               "astroturf_loop", "offbrief_agent")
+               "astroturf_loop", "offbrief_agent", "proxy_hire")
 
 # Identifier shapes, same regexes hunt's repo-wide gate uses.
 ASN_RE = re.compile(r"\bAS\d{3,6}\b")
@@ -3786,13 +3786,132 @@ def roster_s9(hunt: Hunt) -> Roster:
     return r
 
 
+
+# ===========================================================================
+# SHIFT 10 - the good customer: an account file that argues for the defence
+#
+# Seventeen months old, paying monthly, seventeen consecutive charges, no
+# chargebacks, two addresses on one ordinary ASN with no VPN churn, phone
+# verified at signup. Every field the Account-file tab carries reads as
+# evidence of a settled professional, and every one of them is true.
+#
+# The same account writes first-person material for several different
+# people applying to several different employers, and then writes those
+# same employers' standups. The join between the two halves is the finding,
+# and it is spread across the session list rather than sitting in a field.
+# ===========================================================================
+
+S10_BRIEFING = [
+    "The account you are about to look at has the best file in the game. "
+    "Seventeen months, a paying subscription with no missed charge, two "
+    "addresses on an ordinary network, phone verified. All of it is true.",
+
+    "It writes CVs and interview answers in the first person, for more than "
+    "one person, applying to more than one employer. Then it writes standups "
+    "and code reviews for those same employers. Both halves are ordinary "
+    "work. It is the join that is not.",
+
+    "A career coach in this queue does the first half for a living and never "
+    "the second. On the content tab the two of them are the same account.",
+]
+
+
+def roster_s10(hunt: Hunt) -> Roster:
+    r = Roster(shift_id="s10", title="The good customer",
+               subtitle="Ten accounts, twenty-four hours, and the best file "
+                        "you will see.",
+               budget=24,
+               flags={"live": True, "cases": True, "appeals": True},
+               briefing=S10_BRIEFING, rule=S1_RULE,
+               report_lead="Everything on the file was true.",
+               base_day=31, live=True)
+
+    # extension=True. OpenAI documents the scheme - CV tailoring against
+    # postings, first-person interview answers, and the employment phase -
+    # and Anthropic documents the same operators carrying work after hire.
+    # What this fixture adds is one account doing BOTH halves for several
+    # identities inside one telemetry window, which is a construction: the
+    # reports describe the scheme, not a single account's session list.
+    hire_prov = {
+        "source": "OpenAI, Disrupting malicious uses of AI: June 2025, "
+                  "'Deceptive Employment Scheme: IT Workers'; the phase join "
+                  "corroborated by Anthropic, Detecting and countering misuse "
+                  "of AI: August 2025",
+        "date": "2025-06",
+        "case": "Behaviours consistent with activity publicly attributed to "
+                "IT worker schemes, spanning CV tailoring against real "
+                "postings, first-person screening answers, take-home tasks, "
+                "and work carried after the hire.",
+        "signature": "one aged, paying account writing first-person material "
+                     "for several identities against several employers, then "
+                     "writing those same employers' day-to-day engineering",
+        "extension": True,
+    }
+
+    employers = [EMPLOYERS[0], EMPLOYERS[2], EMPLOYERS[3]]
+
+    # -- the actor: the good customer ----------------------------------------
+    ph_ip = "198.51.100.41"
+    ph_asn = hunt.benign_asns[1]
+    r.account("acct_s10_PH01", hunt=hunt, created_min=-745000,
+              email_kind="corporate", ip=ph_ip, asn=ph_asn, country="US",
+              payment="card_verified", phone=True, channel="chatgpt",
+              label="malicious", actor="proxy_hire",
+              notes="one account, several identities, both halves of the scheme",
+              provenance=hire_prov, tell=None)
+    # application phase: first-person material, three different employers
+    for j, org in enumerate(employers):
+        r.sess("acct_s10_PH01", hunt=hunt, at_min=40 + 70 * j,
+               channel="chatgpt", category="creative_writing",
+               excerpt=PROMPTS[("creative_writing", "benign")][j % 3].format(org=org),
+               disposition="completed", ip=ph_ip, asn=ph_asn, country="US",
+               target_ref=org)
+    # employment phase: the same employers' day-to-day work
+    for j, org in enumerate(employers):
+        r.sess("acct_s10_PH01", hunt=hunt, at_min=620 + 70 * j,
+               channel="chatgpt", category="benign_code",
+               excerpt=PROMPTS[("benign_code", "benign")][j % 3].format(org=org),
+               disposition="completed", ip=ph_ip, asn=ph_asn, country="US",
+               target_ref=org)
+
+    # -- the look-alike: the first half, for a living ------------------------
+    cc_ip = r.ips.take()
+    cc_asn = hunt.benign_asns[8]
+    r.account("acct_s10_NEG_coach", hunt=hunt, created_min=-690000,
+              email_kind="corporate", ip=cc_ip, asn=cc_asn, country="CA",
+              payment="card_verified", phone=True, channel="chatgpt",
+              label="benign", persona="career_coach",
+              notes="career coach; writes the application half for clients, never the job",
+              tell=None)
+    for j, org in enumerate(employers):
+        r.sess("acct_s10_NEG_coach", hunt=hunt, at_min=45 + 70 * j,
+               channel="chatgpt", category="creative_writing",
+               excerpt=PROMPTS[("creative_writing", "benign")][j % 3].format(org=org),
+               disposition="completed", ip=cc_ip, asn=cc_asn, country="CA",
+               target_ref=org)
+    # She works the same hours as the actor, including the hour it spends on
+    # the second half - but what she does in that hour is still the first
+    # half, for another client. Same clock, different act, and the hour
+    # channel offers you the merge anyway.
+    for j, at in enumerate((635, 705, 775)):
+        r.sess("acct_s10_NEG_coach", hunt=hunt, at_min=at, channel="chatgpt",
+               category="creative_writing",
+               excerpt=PROMPTS[("creative_writing", "benign")][j % 3]
+               .format(org=EMPLOYERS[1 + j % 2]),
+               disposition="completed", ip=cc_ip, asn=cc_asn, country="CA",
+               target_ref=EMPLOYERS[1 + j % 2])
+
+    _s7_background(r, hunt, count=8, prefix="s10", salt="s10")
+    return r
+
+
 SHIFT_BUILDERS = (roster_s1, roster_s2, roster_s3, roster_s4, roster_s5,
                   roster_s6, roster_s7, roster_s8,
-                  roster_s9)
+                  roster_s9, roster_s10)
 
 # The four-sentence framing on the shift-select screen (SPEC-2 §4).
 FRAMING = [
-    "Nine shifts at an AI platform's enforcement desk, in the order the job "
+    "Ten shifts at an AI platform's enforcement desk, in the order the job "
     "gets harder.",
     "The pipeline flags; you decide, and every ban has to cite something that "
     "is not content.",
@@ -4118,7 +4237,7 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
     want(meta["policy"]["floor_band"] in meta["bands"],
          "the floor band is not in the band table")
     want([s["id"] for s in shifts] == ["s1", "s2", "s3", "s4", "s5",
-                                       "s6", "s7", "s8", "s9"],
+                                       "s6", "s7", "s8", "s9", "s10"],
          "shift ids/order drifted")
     want(len(meta["framing"]) == 4, "the landing framing is not 4 sentences")
     # Finding #20 — meta.topic must be hunt's own numbers, not a restatement
@@ -4169,6 +4288,8 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
                "pending_respawns": 1, "budget": 24, "live": True},
         "s9": {"accounts": 9, "scheduled": 9, "malicious": 1, "benign": 8,
                "pending_respawns": 0, "budget": 24, "live": True},
+        "s10": {"accounts": 10, "scheduled": 10, "malicious": 1, "benign": 9,
+                "pending_respawns": 0, "budget": 24, "live": True},
     }
     for shift in shifts:
         sid = shift["id"]
@@ -4476,7 +4597,7 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
                        # s9: the actor and its look-alike run the SAME public
                        # harness, so equal cadence is the design, not a
                        # collision — the twin pair is the queue's point.
-                       "s9": 2}
+                       "s9": 2, "s10": 0}
         want(len(twin_carriers) == TWIN_COUNTS[sid],
              f"{sid}: {len(twin_carriers)} twin carriers, designed "
              f"{TWIN_COUNTS[sid]}")
