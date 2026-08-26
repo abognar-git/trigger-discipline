@@ -4641,9 +4641,9 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
     # --- SPEC-2 §5: size budget ---------------------------------------------
     # The whole thing is injected into one HTML file the player downloads once.
     # The sibling assay explorer is 838 KB; staying in that family is the
-    # budget, and it is checked against the bytes that actually ship, not
-    # against the compact form.
-    size = len(serialize(data).encode())
+    # budget, and it is checked against the bytes that actually ship: the
+    # compact block inside index.html, not the indented file beside it.
+    size = len(serialize_page(data).encode())
     want(size <= 900 * 1024,
          f"injected payload is {size} bytes, over the 900 KB budget")
 
@@ -4655,7 +4655,21 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
 # ===========================================================================
 
 def serialize(data: dict) -> str:
+    """The committed file: indented, because it is reviewed and diffed."""
     return json.dumps(data, indent=1, ensure_ascii=False)
+
+
+def serialize_page(data: dict) -> str:
+    """The block that goes INTO index.html: compact.
+
+    The budget in SPEC-2 is on the injected JSON, and until now both forms
+    came out of one call, so the page carried the file's indentation - about
+    260 KB of whitespace inside the artifact a player downloads. Nobody reads
+    a JSON blob embedded in a one-megabyte HTML file; the file next to it is
+    the readable copy and it stays indented. Determinism is asserted over
+    this form too, so a byte difference in either is still caught.
+    """
+    return json.dumps(data, separators=(",", ":"), ensure_ascii=False)
 
 
 DATA_BLOCK_RE = re.compile(
@@ -4745,6 +4759,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     payload = serialize(data)
+    page_payload = serialize_page(data)
 
     # SPEC-2 §5: same hunt checkout -> byte-identical output. Asserted rather
     # than asserted-about: build the whole thing a second time and compare the
@@ -4753,7 +4768,7 @@ def main(argv: list[str] | None = None) -> int:
     # randomisation) is covered by running this script twice, which is what
     # the sim harness does.
     second, _ = build(hunt_root, built_date=args.built)
-    if serialize(second) != payload:
+    if serialize(second) != payload or serialize_page(second) != page_payload:
         print("build_data: NOT DETERMINISTIC - two builds of the same "
               "checkout produced different bytes", file=sys.stderr)
         return 1
@@ -4773,7 +4788,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  identifiers: {data['meta']['identifier_predicates']}")
     print(f"  source:     {data['meta']['source_commit'][:12]} "
           f"({data['meta']['built']})")
-    print(f"  payload:    {len(payload) + 1} bytes")
+    print(f"  file:       {len(payload) + 1} bytes (indented, for review)")
+    print(f"  payload:    {len(page_payload)} bytes injected "
+          f"({100 * len(page_payload) / (900 * 1024):.0f}% of budget)")
 
     if args.check:
         print("--check: nothing written")
@@ -4787,7 +4804,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"wrote {out_path} ({len(payload) + 1} bytes)")
 
     if args.inject:
-        inject(Path(args.inject).expanduser().resolve(), payload)
+        inject(Path(args.inject).expanduser().resolve(), page_payload)
     return 0
 
 
