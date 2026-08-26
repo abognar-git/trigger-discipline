@@ -113,7 +113,8 @@ ANY_ACCT_RE = re.compile(r"acct_[A-Za-z0-9_]+")
 # is not a threat-report archetype: it is stress_framing's measured attacker
 # construction (finding #25), and its provenance says so.
 ACTOR_NAMES = ("lure_factory", "capability_dev", "recon_automation",
-               "stolen_key", "framer", "supply_chain_publish")
+               "stolen_key", "framer", "supply_chain_publish",
+               "astroturf_loop")
 
 # Identifier shapes, same regexes hunt's repo-wide gate uses.
 ASN_RE = re.compile(r"\bAS\d{3,6}\b")
@@ -438,8 +439,13 @@ EMPLOYERS = [
 # declared here before the domain scan will accept them.
 SUPPLY_ENTITIES = {"collect.example", "pkghub.example"}
 
+# Names introduced by the astroturf archetype: the local outlet whose articles
+# the operation manufactures, and the magazine one seat replies to as a
+# standing target - the documented strand that is the exception to the loop.
+ASTRO_ENTITIES = {"ambal-hoy.example", "revista-vendaval.example"}
+
 FICTIONAL_ENTITIES = (set(BRANDS) | set(VICTIM_ORGS) | set(EMPLOYERS)
-                      | SUPPLY_ENTITIES)
+                      | SUPPLY_ENTITIES | ASTRO_ENTITIES)
 
 
 # ===========================================================================
@@ -3348,21 +3354,25 @@ _S7_JOBS = [
 ]
 
 
-def _s7_background(r: Roster, hunt: Hunt, count: int) -> None:
+def _s7_background(r: Roster, hunt: Hunt, count: int, prefix: str = "s7",
+                   salt: str = "s7") -> None:
+    """Ordinary traffic for a small live shift. Parameterised over the shift
+    so s8 can reuse it: the salt keeps the two shifts' generated accounts
+    from being the same rows under different ids."""
     for k in range(count):
-        aid = f"acct_s7_BG{k + 1:02d}"
+        aid = f"acct_{prefix}_BG{k + 1:02d}"
         cat, chan, _label = _S7_JOBS[k % len(_S7_JOBS)]
         pool = PROMPTS[(cat, "benign")]
-        asn = hunt.benign_asns[dint(0, len(hunt.benign_asns) - 1, "s7asn", aid)]
+        asn = hunt.benign_asns[dint(0, len(hunt.benign_asns) - 1, salt + "asn", aid)]
         ip = r.ips.take()
-        n_sess = dint(1, 3, "s7n", aid)
-        start = dint(0, 21, "s7start", aid) * 60 + dint(0, 55, "s7min", aid)
-        email = "corporate" if dfloat("s7mail", aid) < 0.6 else "freemail"
-        phone = dfloat("s7phone", aid) > 0.2
-        payment = "card_verified" if dfloat("s7pay", aid) > 0.15 else "none"
+        n_sess = dint(1, 3, salt + "n", aid)
+        start = dint(0, 21, salt + "start", aid) * 60 + dint(0, 55, salt + "min", aid)
+        email = "corporate" if dfloat(salt + "mail", aid) < 0.6 else "freemail"
+        phone = dfloat(salt + "phone", aid) > 0.2
+        payment = "card_verified" if dfloat(salt + "pay", aid) > 0.15 else "none"
         country = dpick(["US", "GB", "DE", "FR", "NL", "SE", "ES", "IE"],
-                        "s7cc", aid)
-        r.account(aid, hunt=hunt, created_min=-1440 * dint(3, 380, "s7age", aid),
+                        salt + "cc", aid)
+        r.account(aid, hunt=hunt, created_min=-1440 * dint(3, 380, salt + "age", aid),
                   email_kind=email, ip=ip, asn=asn, country=country,
                   payment=payment, phone=phone, channel=chan, label="benign",
                   notes="ordinary low-risk usage", tell=None)
@@ -3500,12 +3510,157 @@ def roster_s7(hunt: Hunt) -> Roster:
     return r
 
 
+
+# ===========================================================================
+# SHIFT 8 - the handoff: a correlation the tabs cannot compute
+#
+# The astroturf loop manufactures both the article and the reaction to it,
+# across accounts that share nothing the network tab can see: five ASNs,
+# five addresses, five signup months, nine timezones of offset, every
+# overlap list empty. Every signal reads zero. What links them is that one
+# account's output becomes another account's input, every working day, in
+# the same direction - and direction is not a token.
+# ===========================================================================
+
+S8_BRIEFING = [
+    "Five accounts today that have nothing in common. Different countries, "
+    "different infrastructure, different signup months, verified payment and "
+    "phone on all of them. Every overlap the network tab computes comes back "
+    "empty, and every signal the scorer has reads zero.",
+
+    "They are one operation. The work moves between them in one direction: an "
+    "article is drafted in one account, and the reaction to that article is "
+    "drafted in another, forty minutes later, every working day, never the "
+    "other way round. The tab that would show you this does not exist.",
+
+    "Somebody in this queue studies exactly these operations for a living and "
+    "sends the same requests to build a labelled corpus. Her volume moves with "
+    "theirs, because she is watching them.",
+]
+
+
+def roster_s8(hunt: Hunt) -> Roster:
+    r = Roster(shift_id="s8", title="The handoff",
+               subtitle="Nine accounts, twenty-four hours, and five that share "
+                        "nothing at all.",
+               budget=24,
+               flags={"live": True, "cases": True, "appeals": True},
+               briefing=S8_BRIEFING, rule=S1_RULE,
+               report_lead="Nothing they share is on any tab.",
+               base_day=31, live=True)
+
+    # Provenance carried here, like `framer` and the supply-chain publisher.
+    # extension=True: the report documents the loop, the geographic spread and
+    # the provenance scrubbing. The one-way daily handoff as a TIMED, directed
+    # relation between named accounts is this fixture's construction - the
+    # report describes the pattern, not an interval.
+    astro_prov = {
+        "source": "OpenAI, Disrupting malicious uses of our models: an update, "
+                  "February 2026; corroborated by PRC-linked influence "
+                  "operations are targeting AI debates in the US (June 2026)",
+        "date": "2026-02",
+        "case": "Operation 'Trolling Stone': accounts generated the articles, "
+                "further accounts generated comments about those same "
+                "articles, and the operators asked for the em-dashes to be "
+                "removed so the text would not read as AI-written. The parts "
+                "very likely originated in different countries and behaved in "
+                "a coordinated way regardless.",
+        "signature": "one account's completion becomes another account's "
+                     "prompt within the hour, every working day, always in "
+                     "that order, between accounts sharing no infrastructure",
+        "extension": True,
+    }
+
+    # Five accounts, deliberately unalike on every field the account file
+    # carries. This is the inverse of lure_factory, which gives itself away
+    # on exactly these fields.
+    cell = [
+        # AS64499 is in hunt's higher-risk set, so it would fire burner_infra
+        # and hand the player exactly the signal this archetype claims to
+        # deny them. Every ASN here is an ordinary one.
+        ("acct_s8_AL01", "corporate", "UY", "AS64502", "203.0.113.17", -520000),
+        ("acct_s8_AL02", "freemail",  "AM", "AS64503", "198.51.100.92", -400000),
+        ("acct_s8_AL03", "corporate", "PK", "AS64506", "192.0.2.140", -640000),
+        ("acct_s8_AL04", "freemail",  "KZ", "AS64508", "203.0.113.201", -560000),
+        ("acct_s8_AL05", "freemail",  "AR", "AS64510", "198.51.100.7", -460000),
+    ]
+    outlet = "ambal-hoy.example"
+    standing = "revista-vendaval.example"
+
+    # Paired, and staggered across the day. The pairing is the operation:
+    # an article in one account, the reaction to that article in another,
+    # forty minutes later, never the other way round. The stagger is the
+    # geography - the report puts the parts in different countries, and
+    # accounts working different hours is what that looks like on a clock.
+    # It also keeps the hour channel sparse, which it has to be: a channel
+    # that links everyone links nobody.
+    starts = {"acct_s8_AL01": 20, "acct_s8_AL02": 60,
+              "acct_s8_AL03": 545, "acct_s8_AL04": 585,
+              "acct_s8_AL05": 960}
+    for k, (aid, ekind, cc, asn, ip, age) in enumerate(cell):
+        r.account(aid, hunt=hunt, created_min=age, email_kind=ekind, ip=ip,
+                  asn=asn, country=cc, payment="card_verified", phone=True,
+                  channel="chatgpt", label="malicious", actor="astroturf_loop",
+                  notes="one seat in a content farm that writes its own audience",
+                  provenance=astro_prov, tell=None)
+        drafts = (k % 2 == 0)
+        for j in range(3):
+            at = starts[aid] + 22 * j
+            if drafts:
+                ex = PROMPTS[("creative_writing", "benign")][j % 3]
+                cat = "creative_writing"
+            else:
+                ex = PROMPTS[("translation", "benign")][j % 2]
+                cat = "translation"
+            r.sess(aid, hunt=hunt, at_min=at, channel="chatgpt", category=cat,
+                   excerpt=ex.format(org=outlet), disposition="completed",
+                   ip=ip, asn=asn, country=cc,
+                   target_ref=standing if aid.endswith("AL05") else None)
+
+    # -- the seat that came back ---------------------------------------------
+    # A content farm replaces a seat, it does not retire the desk. New
+    # country, new infrastructure, same hour and same half of the handoff.
+    rsp_ip = r.ips.take()
+    r.account("acct_s8_AL06", hunt=hunt, created_min=-60,
+              email_kind="corporate", ip=rsp_ip, asn=hunt.benign_asns[9],
+              country="PT", payment="card_verified", phone=True,
+              channel="chatgpt", label="malicious", actor="astroturf_loop",
+              notes="replacement seat: new country, same half of the handoff",
+              provenance=astro_prov, tell=None,
+              respawn={"delay_h": 4}, respawn_of="astroturf_loop")
+    for j in range(3):
+        r.sess("acct_s8_AL06", hunt=hunt, at_min=20 + 22 * j,
+               channel="chatgpt", category="creative_writing",
+               excerpt=PROMPTS[("creative_writing", "benign")][j % 3].format(org=outlet),
+               disposition="completed", ip=rsp_ip, asn=hunt.benign_asns[9],
+               country="PT", target_ref=standing)
+
+    # -- the look-alike: she studies exactly this, and asks for the same thing
+    dr_ip = r.ips.take()
+    dr_asn = hunt.benign_asns[5]
+    r.account("acct_s8_NEG_disinfo", hunt=hunt, created_min=-430000,
+              email_kind="corporate", ip=dr_ip, asn=dr_asn, country="GB",
+              payment="card_verified", phone=True, channel="chatgpt",
+              label="benign", persona="disinfo_researcher",
+              notes="media-integrity lab; builds labelled corpora of this exact behaviour",
+              tell=None)
+    for j in range(3):
+        r.sess("acct_s8_NEG_disinfo", hunt=hunt, at_min=65 + 22 * j,
+               channel="chatgpt", category="creative_writing",
+               excerpt=PROMPTS[("creative_writing", "benign")][j % 3].format(org=outlet),
+               disposition="completed", ip=dr_ip, asn=dr_asn, country="GB",
+               target_ref=standing)
+
+    _s7_background(r, hunt, count=3, prefix="s8", salt="s8")
+    return r
+
+
 SHIFT_BUILDERS = (roster_s1, roster_s2, roster_s3, roster_s4, roster_s5,
-                  roster_s6, roster_s7)
+                  roster_s6, roster_s7, roster_s8)
 
 # The four-sentence framing on the shift-select screen (SPEC-2 §4).
 FRAMING = [
-    "Seven shifts at an AI platform's enforcement desk, in the order the job "
+    "Eight shifts at an AI platform's enforcement desk, in the order the job "
     "gets harder.",
     "The pipeline flags; you decide, and every ban has to cite something that "
     "is not content.",
@@ -3831,7 +3986,7 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
     want(meta["policy"]["floor_band"] in meta["bands"],
          "the floor band is not in the band table")
     want([s["id"] for s in shifts] == ["s1", "s2", "s3", "s4", "s5",
-                                       "s6", "s7"],
+                                       "s6", "s7", "s8"],
          "shift ids/order drifted")
     want(len(meta["framing"]) == 4, "the landing framing is not 4 sentences")
     # Finding #20 — meta.topic must be hunt's own numbers, not a restatement
@@ -3877,6 +4032,8 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
         "s6": {"accounts": 16, "scheduled": 15, "malicious": 5, "benign": 11,
                "pending_respawns": 1, "budget": 36, "live": True},
         "s7": {"accounts": 9, "scheduled": 8, "malicious": 3, "benign": 6,
+               "pending_respawns": 1, "budget": 24, "live": True},
+        "s8": {"accounts": 10, "scheduled": 9, "malicious": 6, "benign": 4,
                "pending_respawns": 1, "budget": 24, "live": True},
     }
     for shift in shifts:
@@ -4181,7 +4338,7 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
         # one innocent column, mutually in shared_cadence, facts non-empty.
         twin_carriers = [a for a in accounts if a["reveal"].get("twin")]
         TWIN_COUNTS = {"s1": 2, "s2": 2, "s3": 2, "s4": 0, "s5": 2, "s6": 0,
-                       "s7": 0}
+                       "s7": 0, "s8": 0}
         want(len(twin_carriers) == TWIN_COUNTS[sid],
              f"{sid}: {len(twin_carriers)} twin carriers, designed "
              f"{TWIN_COUNTS[sid]}")

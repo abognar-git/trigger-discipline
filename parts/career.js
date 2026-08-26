@@ -148,7 +148,7 @@ function renderLanding() {
      copy ships in meta.framing; the fallback below covers the hand-written
      placeholder sample only. */
   var framing = (meta && meta.framing && meta.framing.length) ? meta.framing : [
-    'Seven shifts at an AI platform\'s enforcement desk, in the order the job gets harder.',
+    'Eight shifts at an AI platform\'s enforcement desk, in the order the job gets harder.',
     'The pipeline flags; you decide, and every ban has to cite something that is not content.',
     'The queue starts obvious, then starts moving, then starts arriving as it actually arrives — mostly innocent.',
     'The actor you miss comes back tomorrow. The innocent you ban has no easy way back.'

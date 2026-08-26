@@ -14,11 +14,11 @@
      og:url and og:image have to be absolute, so they name the canonical
      deployment. A fork serving this from another origin should edit both
      lines; the page itself works untouched either way. -->
-<meta name="description" content="Seven shifts at an AI platform's enforcement desk. The pipeline flags; you decide — and every ban has to cite something that is not content.">
+<meta name="description" content="Eight shifts at an AI platform's enforcement desk. The pipeline flags; you decide — and every ban has to cite something that is not content.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="trigger-discipline">
 <meta property="og:title" content="trigger-discipline — the ban you do not make">
-<meta property="og:description" content="A queue of accounts on an AI platform. Some belong to criminals. Most only look like they do. Seven shifts, about fifteen minutes, nothing to install.">
+<meta property="og:description" content="A queue of accounts on an AI platform. Some belong to criminals. Most only look like they do. Eight shifts, about fifteen minutes, nothing to install.">
 <meta property="og:url" content="https://abognar-git.github.io/trigger-discipline/">
 <meta property="og:image" content="https://abognar-git.github.io/trigger-discipline/docs/figures/social_card.png">
 <meta property="og:image:type" content="image/png">
@@ -679,7 +679,7 @@ identifiers are RFC-reserved. MIT.</footer>
    ]
   ],
   "framing": [
-   "Seven shifts at an AI platform's enforcement desk, in the order the job gets harder.",
+   "Eight shifts at an AI platform's enforcement desk, in the order the job gets harder.",
    "The pipeline flags; you decide, and every ban has to cite something that is not content.",
    "The queue starts obvious, then starts moving, then starts arriving as it actually arrives — mostly innocent.",
    "The actor you miss comes back tomorrow. The innocent you ban has no easy way back."
@@ -698,10 +698,10 @@ identifiers are RFC-reserved. MIT.</footer>
    "sessions": 98
   },
   "totals": {
-   "shifts": 7,
-   "accounts": 166,
-   "sessions": 532,
-   "malicious": 43
+   "shifts": 8,
+   "accounts": 176,
+   "sessions": 561,
+   "malicious": 49
   }
  },
  "shifts": [
@@ -28102,6 +28102,1323 @@ identifiers are RFC-reserved. MIT.</footer>
      }
     }
    ]
+  },
+  {
+   "id": "s8",
+   "title": "The handoff",
+   "subtitle": "Nine accounts, twenty-four hours, and five that share nothing at all.",
+   "budget": 24,
+   "flags": {
+    "live": true,
+    "cases": true,
+    "appeals": true
+   },
+   "briefing": [
+    "Five accounts today that have nothing in common. Different countries, different infrastructure, different signup months, verified payment and phone on all of them. Every overlap the network tab computes comes back empty, and every signal the scorer has reads zero.",
+    "They are one operation. The work moves between them in one direction: an article is drafted in one account, and the reaction to that article is drafted in another, forty minutes later, every working day, never the other way round. The tab that would show you this does not exist.",
+    "Somebody in this queue studies exactly these operations for a living and sends the same requests to build a labelled corpus. Her volume moves with theirs, because she is watching them."
+   ],
+   "rule": "Nothing here is auto-banned. The pipeline flags; you decide. The actor you miss comes back tomorrow. The innocent you ban has no easy way back.",
+   "report_lead": "Nothing they share is on any tab.",
+   "counts": {
+    "accounts": 10,
+    "scheduled": 9,
+    "pending_respawns": 1,
+    "malicious": 6,
+    "benign": 4,
+    "sessions": 29,
+    "prevalence": 0.5556
+   },
+   "style": {
+    "source": "hunt src/linkage.py (imported, not restated)",
+    "order": [
+     "acct_0a8b",
+     "acct_1972",
+     "acct_6256",
+     "acct_6cc4",
+     "acct_6f8e",
+     "acct_b8b4",
+     "acct_ca85",
+     "acct_dac1",
+     "acct_daf1",
+     "acct_f1a1"
+    ],
+    "pairs": [
+     1.0,
+     1.0,
+     0.998,
+     0.998,
+     1.0,
+     0.998,
+     0.994,
+     1.0,
+     0.994,
+     1.0,
+     0.998,
+     0.998,
+     1.0,
+     0.998,
+     0.994,
+     1.0,
+     0.994,
+     0.998,
+     0.998,
+     1.0,
+     0.998,
+     0.994,
+     1.0,
+     0.994,
+     1.0,
+     0.998,
+     1.0,
+     0.995,
+     0.998,
+     0.995,
+     0.998,
+     1.0,
+     0.996,
+     0.998,
+     0.996,
+     0.998,
+     0.994,
+     1.0,
+     0.994,
+     0.996,
+     0.998,
+     0.996,
+     0.994,
+     1.0,
+     0.994
+    ],
+    "min": 0.994,
+    "max": 1.0,
+    "median_words": 40,
+    "word_floor": 1000
+   },
+   "accounts": [
+    {
+     "id": "acct_0a8b",
+     "appears_at": 16,
+     "profile": {
+      "created_at": "2025-09-14T13:20:00Z",
+      "email_kind": "freemail",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "AR",
+      "signup_asn": "AS64510",
+      "signup_ip": "198.51.100.7",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-31T16:00:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "for my novel, write dialogue where a hacker character explains a break-in, dramatic but plausible",
+       "disposition": "completed",
+       "src_ip": "198.51.100.7",
+       "asn": "AS64510",
+       "country": "AR",
+       "target_ref": "revista-vendaval.example",
+       "appears_at": 16
+      },
+      {
+       "ts": "2026-07-31T16:22:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "describe, in prose, what my antagonist's malware does as it spreads",
+       "disposition": "completed",
+       "src_ip": "198.51.100.7",
+       "asn": "AS64510",
+       "country": "AR",
+       "target_ref": "revista-vendaval.example",
+       "appears_at": 16
+      },
+      {
+       "ts": "2026-07-31T16:44:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "write a short scene where the intruder is caught by a log alert",
+       "disposition": "completed",
+       "src_ip": "198.51.100.7",
+       "asn": "AS64510",
+       "country": "AR",
+       "target_ref": "revista-vendaval.example",
+       "appears_at": 16
+      }
+     ],
+     "pipeline": {
+      "risk": 0.05,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "target_fixation",
+        "value": 0.05,
+        "note": "3 sessions referencing 'revista-vendaval.example'",
+        "n_observations": null
+       },
+       {
+        "name": "capability_trajectory",
+        "n_observations": null
+       },
+       {
+        "name": "baseline_drift",
+        "n_observations": null
+       },
+       {
+        "name": "automation_cadence",
+        "n_observations": null
+       },
+       {
+        "name": "burner_infra",
+        "n_observations": null
+       },
+       {
+        "name": "refusal_farming",
+        "n_observations": 3
+       },
+       {
+        "name": "content_category_risk",
+        "n_observations": 3
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [
+       "acct_6256"
+      ],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {
+       "shared_target": {
+        "acct_6256": [
+         "2026-07-31T16:00:00Z",
+         "2026-07-31T01:05:00Z"
+        ]
+       }
+      }
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "malicious",
+      "actor": "astroturf_loop",
+      "persona": null,
+      "original_id": "acct_s8_AL05",
+      "notes": "one seat in a content farm that writes its own audience",
+      "tell": "Three sessions, all creative writing, from an account with a verified card, a verified phone, a freemail address. It scores 0.0500, and the only signal that fired was target_fixation. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": {
+       "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
+       "date": "2026-02",
+       "case": "Operation 'Trolling Stone': accounts generated the articles, further accounts generated comments about those same articles, and the operators asked for the em-dashes to be removed so the text would not read as AI-written. The parts very likely originated in different countries and behaved in a coordinated way regardless.",
+       "signature": "one account's completion becomes another account's prompt within the hour, every working day, always in that order, between accounts sharing no infrastructure",
+       "extension": true
+      },
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and a risk of 0.0500, all of it target_fixation.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_1972",
+     "appears_at": null,
+     "profile": {
+      "created_at": "2026-07-30T23:00:00Z",
+      "email_kind": "corporate",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "PT",
+      "signup_asn": "AS64509",
+      "signup_ip": "192.0.2.2",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-31T00:20:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "for my novel, write dialogue where a hacker character explains a break-in, dramatic but plausible",
+       "disposition": "completed",
+       "src_ip": "192.0.2.2",
+       "asn": "AS64509",
+       "country": "PT",
+       "target_ref": "revista-vendaval.example",
+       "appears_at": 0
+      },
+      {
+       "ts": "2026-07-31T00:42:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "describe, in prose, what my antagonist's malware does as it spreads",
+       "disposition": "completed",
+       "src_ip": "192.0.2.2",
+       "asn": "AS64509",
+       "country": "PT",
+       "target_ref": "revista-vendaval.example",
+       "appears_at": 0
+      },
+      {
+       "ts": "2026-07-31T01:04:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "write a short scene where the intruder is caught by a log alert",
+       "disposition": "completed",
+       "src_ip": "192.0.2.2",
+       "asn": "AS64509",
+       "country": "PT",
+       "target_ref": "revista-vendaval.example",
+       "appears_at": 1
+      }
+     ],
+     "pipeline": {
+      "risk": 0.05,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "target_fixation",
+        "value": 0.05,
+        "note": "3 sessions referencing 'revista-vendaval.example'",
+        "n_observations": null
+       },
+       {
+        "name": "capability_trajectory",
+        "n_observations": null
+       },
+       {
+        "name": "baseline_drift",
+        "n_observations": null
+       },
+       {
+        "name": "automation_cadence",
+        "n_observations": null
+       },
+       {
+        "name": "burner_infra",
+        "n_observations": null
+       },
+       {
+        "name": "refusal_farming",
+        "n_observations": 3
+       },
+       {
+        "name": "content_category_risk",
+        "n_observations": 3
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [
+       "acct_0a8b",
+       "acct_6256"
+      ],
+      "shared_cadence": [],
+      "shared_hours": [
+       "acct_daf1"
+      ],
+      "first_seen": {
+       "shared_target": {
+        "acct_0a8b": [
+         "2026-07-31T00:20:00Z",
+         "2026-07-31T16:00:00Z"
+        ],
+        "acct_6256": [
+         "2026-07-31T00:20:00Z",
+         "2026-07-31T01:05:00Z"
+        ]
+       }
+      }
+     },
+     "respawn": {
+      "delay_h": 4
+     },
+     "reveal": {
+      "truth": "malicious",
+      "actor": "astroturf_loop",
+      "persona": null,
+      "original_id": "acct_s8_AL06",
+      "notes": "replacement seat: new country, same half of the handoff",
+      "tell": "Three sessions, all creative writing, from an account with a verified card, a verified phone, a corporate address. It scores 0.0500, and the only signal that fired was target_fixation. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": {
+       "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
+       "date": "2026-02",
+       "case": "Operation 'Trolling Stone': accounts generated the articles, further accounts generated comments about those same articles, and the operators asked for the em-dashes to be removed so the text would not read as AI-written. The parts very likely originated in different countries and behaved in a coordinated way regardless.",
+       "signature": "one account's completion becomes another account's prompt within the hour, every working day, always in that order, between accounts sharing no infrastructure",
+       "extension": true
+      },
+      "respawn_of": "astroturf_loop",
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and a risk of 0.0500, all of it target_fixation.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_6256",
+     "appears_at": 1,
+     "profile": {
+      "created_at": "2025-10-05T09:20:00Z",
+      "email_kind": "corporate",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "GB",
+      "signup_asn": "AS64505",
+      "signup_ip": "198.51.100.2",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-31T01:05:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "for my novel, write dialogue where a hacker character explains a break-in, dramatic but plausible",
+       "disposition": "completed",
+       "src_ip": "198.51.100.2",
+       "asn": "AS64505",
+       "country": "GB",
+       "target_ref": "revista-vendaval.example",
+       "appears_at": 1
+      },
+      {
+       "ts": "2026-07-31T01:27:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "describe, in prose, what my antagonist's malware does as it spreads",
+       "disposition": "completed",
+       "src_ip": "198.51.100.2",
+       "asn": "AS64505",
+       "country": "GB",
+       "target_ref": "revista-vendaval.example",
+       "appears_at": 1
+      },
+      {
+       "ts": "2026-07-31T01:49:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "write a short scene where the intruder is caught by a log alert",
+       "disposition": "completed",
+       "src_ip": "198.51.100.2",
+       "asn": "AS64505",
+       "country": "GB",
+       "target_ref": "revista-vendaval.example",
+       "appears_at": 1
+      }
+     ],
+     "pipeline": {
+      "risk": 0.05,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "target_fixation",
+        "value": 0.05,
+        "note": "3 sessions referencing 'revista-vendaval.example'",
+        "n_observations": null
+       },
+       {
+        "name": "capability_trajectory",
+        "n_observations": null
+       },
+       {
+        "name": "baseline_drift",
+        "n_observations": null
+       },
+       {
+        "name": "automation_cadence",
+        "n_observations": null
+       },
+       {
+        "name": "burner_infra",
+        "n_observations": null
+       },
+       {
+        "name": "refusal_farming",
+        "n_observations": 3
+       },
+       {
+        "name": "content_category_risk",
+        "n_observations": 3
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [
+       "acct_0a8b"
+      ],
+      "shared_cadence": [],
+      "shared_hours": [
+       "acct_f1a1"
+      ],
+      "first_seen": {
+       "shared_target": {
+        "acct_0a8b": [
+         "2026-07-31T01:05:00Z",
+         "2026-07-31T16:00:00Z"
+        ]
+       }
+      }
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "benign",
+      "actor": null,
+      "persona": "disinfo_researcher",
+      "original_id": "acct_s8_NEG_disinfo",
+      "notes": "media-integrity lab; builds labelled corpora of this exact behaviour",
+      "tell": "Three sessions, all creative writing, from an account with a verified card, a verified phone, a corporate address. It scores 0.0500, and the only signal that fired was target_fixation. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": null,
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and a risk of 0.0500, all of it target_fixation.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_6cc4",
+     "appears_at": 8,
+     "profile": {
+      "created_at": "2026-01-22T00:00:00Z",
+      "email_kind": "corporate",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "ES",
+      "signup_asn": "AS65538",
+      "signup_ip": "192.0.2.3",
+      "primary_channel": "api"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-31T08:33:00Z",
+       "channel": "api",
+       "category": "benign_code",
+       "prompt_excerpt": "review this python function for style and edge cases",
+       "disposition": "completed",
+       "src_ip": "192.0.2.3",
+       "asn": "AS65538",
+       "country": "ES",
+       "target_ref": null,
+       "appears_at": 8
+      },
+      {
+       "ts": "2026-07-31T09:28:00Z",
+       "channel": "api",
+       "category": "benign_code",
+       "prompt_excerpt": "summarise this batch of application error logs and cluster them by root cause",
+       "disposition": "completed",
+       "src_ip": "192.0.2.3",
+       "asn": "AS65538",
+       "country": "ES",
+       "target_ref": null,
+       "appears_at": 9
+      }
+     ],
+     "pipeline": {
+      "risk": 0.0,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "capability_trajectory",
+        "n_observations": null
+       },
+       {
+        "name": "baseline_drift",
+        "n_observations": null
+       },
+       {
+        "name": "automation_cadence",
+        "n_observations": null
+       },
+       {
+        "name": "burner_infra",
+        "n_observations": null
+       },
+       {
+        "name": "refusal_farming",
+        "n_observations": 2
+       },
+       {
+        "name": "target_fixation",
+        "n_observations": null
+       },
+       {
+        "name": "content_category_risk",
+        "n_observations": 2
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "benign",
+      "actor": null,
+      "persona": null,
+      "original_id": "acct_s8_BG02",
+      "notes": "ordinary low-risk usage",
+      "tell": "Two sessions, all code review and debugging, from an account with a verified card, a verified phone, a corporate address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": null,
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 2 sessions of ordinary use and not one signal above zero.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_6f8e",
+     "appears_at": 12,
+     "profile": {
+      "created_at": "2026-07-26T00:00:00Z",
+      "email_kind": "freemail",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "US",
+      "signup_asn": "AS64500",
+      "signup_ip": "198.51.100.3",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-31T12:12:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "review this python function for style and edge cases",
+       "disposition": "completed",
+       "src_ip": "198.51.100.3",
+       "asn": "AS64500",
+       "country": "US",
+       "target_ref": null,
+       "appears_at": 12
+      },
+      {
+       "ts": "2026-07-31T13:07:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "summarise this batch of application error logs and cluster them by root cause",
+       "disposition": "completed",
+       "src_ip": "198.51.100.3",
+       "asn": "AS64500",
+       "country": "US",
+       "target_ref": null,
+       "appears_at": 13
+      },
+      {
+       "ts": "2026-07-31T14:02:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "generate unit tests for this module",
+       "disposition": "completed",
+       "src_ip": "198.51.100.3",
+       "asn": "AS64500",
+       "country": "US",
+       "target_ref": null,
+       "appears_at": 14
+      }
+     ],
+     "pipeline": {
+      "risk": 0.0,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "capability_trajectory",
+        "n_observations": null
+       },
+       {
+        "name": "baseline_drift",
+        "n_observations": null
+       },
+       {
+        "name": "automation_cadence",
+        "n_observations": null
+       },
+       {
+        "name": "burner_infra",
+        "n_observations": null
+       },
+       {
+        "name": "refusal_farming",
+        "n_observations": 3
+       },
+       {
+        "name": "target_fixation",
+        "n_observations": null
+       },
+       {
+        "name": "content_category_risk",
+        "n_observations": 3
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "benign",
+      "actor": null,
+      "persona": null,
+      "original_id": "acct_s8_BG03",
+      "notes": "ordinary low-risk usage",
+      "tell": "Three sessions, all code review and debugging, from an account with a verified card, a verified phone, a freemail address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": null,
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and not one signal above zero.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_b8b4",
+     "appears_at": 9,
+     "profile": {
+      "created_at": "2025-05-12T13:20:00Z",
+      "email_kind": "corporate",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "PK",
+      "signup_asn": "AS64506",
+      "signup_ip": "192.0.2.140",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-31T09:05:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "for my novel, write dialogue where a hacker character explains a break-in, dramatic but plausible",
+       "disposition": "completed",
+       "src_ip": "192.0.2.140",
+       "asn": "AS64506",
+       "country": "PK",
+       "target_ref": null,
+       "appears_at": 9
+      },
+      {
+       "ts": "2026-07-31T09:27:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "describe, in prose, what my antagonist's malware does as it spreads",
+       "disposition": "completed",
+       "src_ip": "192.0.2.140",
+       "asn": "AS64506",
+       "country": "PK",
+       "target_ref": null,
+       "appears_at": 9
+      },
+      {
+       "ts": "2026-07-31T09:49:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "write a short scene where the intruder is caught by a log alert",
+       "disposition": "completed",
+       "src_ip": "192.0.2.140",
+       "asn": "AS64506",
+       "country": "PK",
+       "target_ref": null,
+       "appears_at": 9
+      }
+     ],
+     "pipeline": {
+      "risk": 0.0,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "capability_trajectory",
+        "n_observations": null
+       },
+       {
+        "name": "baseline_drift",
+        "n_observations": null
+       },
+       {
+        "name": "automation_cadence",
+        "n_observations": null
+       },
+       {
+        "name": "burner_infra",
+        "n_observations": null
+       },
+       {
+        "name": "refusal_farming",
+        "n_observations": 3
+       },
+       {
+        "name": "target_fixation",
+        "n_observations": null
+       },
+       {
+        "name": "content_category_risk",
+        "n_observations": 3
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "malicious",
+      "actor": "astroturf_loop",
+      "persona": null,
+      "original_id": "acct_s8_AL03",
+      "notes": "one seat in a content farm that writes its own audience",
+      "tell": "Three sessions, all creative writing, from an account with a verified card, a verified phone, a corporate address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": {
+       "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
+       "date": "2026-02",
+       "case": "Operation 'Trolling Stone': accounts generated the articles, further accounts generated comments about those same articles, and the operators asked for the em-dashes to be removed so the text would not read as AI-written. The parts very likely originated in different countries and behaved in a coordinated way regardless.",
+       "signature": "one account's completion becomes another account's prompt within the hour, every working day, always in that order, between accounts sharing no infrastructure",
+       "extension": true
+      },
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and not one signal above zero.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_ca85",
+     "appears_at": 8,
+     "profile": {
+      "created_at": "2026-04-10T00:00:00Z",
+      "email_kind": "freemail",
+      "payment": "card_verified",
+      "phone_verified": false,
+      "signup_country": "NL",
+      "signup_asn": "AS65537",
+      "signup_ip": "203.0.113.2",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-31T08:28:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "review this python function for style and edge cases",
+       "disposition": "completed",
+       "src_ip": "203.0.113.2",
+       "asn": "AS65537",
+       "country": "NL",
+       "target_ref": null,
+       "appears_at": 8
+      },
+      {
+       "ts": "2026-07-31T09:23:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "summarise this batch of application error logs and cluster them by root cause",
+       "disposition": "completed",
+       "src_ip": "203.0.113.2",
+       "asn": "AS65537",
+       "country": "NL",
+       "target_ref": null,
+       "appears_at": 9
+      },
+      {
+       "ts": "2026-07-31T10:18:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "generate unit tests for this module",
+       "disposition": "completed",
+       "src_ip": "203.0.113.2",
+       "asn": "AS65537",
+       "country": "NL",
+       "target_ref": null,
+       "appears_at": 10
+      }
+     ],
+     "pipeline": {
+      "risk": 0.032,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "burner_infra",
+        "value": 0.032,
+        "note": "no phone verification",
+        "n_observations": null
+       },
+       {
+        "name": "capability_trajectory",
+        "n_observations": null
+       },
+       {
+        "name": "baseline_drift",
+        "n_observations": null
+       },
+       {
+        "name": "automation_cadence",
+        "n_observations": null
+       },
+       {
+        "name": "refusal_farming",
+        "n_observations": 3
+       },
+       {
+        "name": "target_fixation",
+        "n_observations": null
+       },
+       {
+        "name": "content_category_risk",
+        "n_observations": 3
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "benign",
+      "actor": null,
+      "persona": null,
+      "original_id": "acct_s8_BG01",
+      "notes": "ordinary low-risk usage",
+      "tell": "Three sessions, all code review and debugging, from an account with a verified card, no phone verification, a freemail address. It scores 0.0320, and the only signal that fired was burner_infra - a fact about how the account was opened, not about anything it did. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": null,
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The card on this account is mine. I never bothered with the phone step, which is not a crime.",
+       "verification": "The payment processor confirms the cardholder and the registration date. The missing phone verification is the whole of what the scorer noticed, and it is a fact about signup, not about use: the record shows 3 sessions of ordinary use and a risk of 0.0320, all of it burner_infra.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_dac1",
+     "appears_at": 9,
+     "profile": {
+      "created_at": "2025-07-07T02:40:00Z",
+      "email_kind": "freemail",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "KZ",
+      "signup_asn": "AS64508",
+      "signup_ip": "203.0.113.201",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-31T09:45:00Z",
+       "channel": "chatgpt",
+       "category": "translation",
+       "prompt_excerpt": "translate this product description from English into French",
+       "disposition": "completed",
+       "src_ip": "203.0.113.201",
+       "asn": "AS64508",
+       "country": "KZ",
+       "target_ref": null,
+       "appears_at": 9
+      },
+      {
+       "ts": "2026-07-31T10:07:00Z",
+       "channel": "chatgpt",
+       "category": "translation",
+       "prompt_excerpt": "translate this support macro into German, keep the tone formal",
+       "disposition": "completed",
+       "src_ip": "203.0.113.201",
+       "asn": "AS64508",
+       "country": "KZ",
+       "target_ref": null,
+       "appears_at": 10
+      },
+      {
+       "ts": "2026-07-31T10:29:00Z",
+       "channel": "chatgpt",
+       "category": "translation",
+       "prompt_excerpt": "translate this product description from English into French",
+       "disposition": "completed",
+       "src_ip": "203.0.113.201",
+       "asn": "AS64508",
+       "country": "KZ",
+       "target_ref": null,
+       "appears_at": 10
+      }
+     ],
+     "pipeline": {
+      "risk": 0.0,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "capability_trajectory",
+        "n_observations": null
+       },
+       {
+        "name": "baseline_drift",
+        "n_observations": null
+       },
+       {
+        "name": "automation_cadence",
+        "n_observations": null
+       },
+       {
+        "name": "burner_infra",
+        "n_observations": null
+       },
+       {
+        "name": "refusal_farming",
+        "n_observations": 3
+       },
+       {
+        "name": "target_fixation",
+        "n_observations": null
+       },
+       {
+        "name": "content_category_risk",
+        "n_observations": 3
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "malicious",
+      "actor": "astroturf_loop",
+      "persona": null,
+      "original_id": "acct_s8_AL04",
+      "notes": "one seat in a content farm that writes its own audience",
+      "tell": "Three sessions, all translation, from an account with a verified card, a verified phone, a freemail address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": {
+       "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
+       "date": "2026-02",
+       "case": "Operation 'Trolling Stone': accounts generated the articles, further accounts generated comments about those same articles, and the operators asked for the em-dashes to be removed so the text would not read as AI-written. The parts very likely originated in different countries and behaved in a coordinated way regardless.",
+       "signature": "one account's completion becomes another account's prompt within the hour, every working day, always in that order, between accounts sharing no infrastructure",
+       "extension": true
+      },
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and not one signal above zero.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_daf1",
+     "appears_at": 0,
+     "profile": {
+      "created_at": "2025-08-03T21:20:00Z",
+      "email_kind": "corporate",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "UY",
+      "signup_asn": "AS64502",
+      "signup_ip": "203.0.113.17",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-31T00:20:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "for my novel, write dialogue where a hacker character explains a break-in, dramatic but plausible",
+       "disposition": "completed",
+       "src_ip": "203.0.113.17",
+       "asn": "AS64502",
+       "country": "UY",
+       "target_ref": null,
+       "appears_at": 0
+      },
+      {
+       "ts": "2026-07-31T00:42:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "describe, in prose, what my antagonist's malware does as it spreads",
+       "disposition": "completed",
+       "src_ip": "203.0.113.17",
+       "asn": "AS64502",
+       "country": "UY",
+       "target_ref": null,
+       "appears_at": 0
+      },
+      {
+       "ts": "2026-07-31T01:04:00Z",
+       "channel": "chatgpt",
+       "category": "creative_writing",
+       "prompt_excerpt": "write a short scene where the intruder is caught by a log alert",
+       "disposition": "completed",
+       "src_ip": "203.0.113.17",
+       "asn": "AS64502",
+       "country": "UY",
+       "target_ref": null,
+       "appears_at": 1
+      }
+     ],
+     "pipeline": {
+      "risk": 0.0,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "capability_trajectory",
+        "n_observations": null
+       },
+       {
+        "name": "baseline_drift",
+        "n_observations": null
+       },
+       {
+        "name": "automation_cadence",
+        "n_observations": null
+       },
+       {
+        "name": "burner_infra",
+        "n_observations": null
+       },
+       {
+        "name": "refusal_farming",
+        "n_observations": 3
+       },
+       {
+        "name": "target_fixation",
+        "n_observations": null
+       },
+       {
+        "name": "content_category_risk",
+        "n_observations": 3
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "malicious",
+      "actor": "astroturf_loop",
+      "persona": null,
+      "original_id": "acct_s8_AL01",
+      "notes": "one seat in a content farm that writes its own audience",
+      "tell": "Three sessions, all creative writing, from an account with a verified card, a verified phone, a corporate address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": {
+       "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
+       "date": "2026-02",
+       "case": "Operation 'Trolling Stone': accounts generated the articles, further accounts generated comments about those same articles, and the operators asked for the em-dashes to be removed so the text would not read as AI-written. The parts very likely originated in different countries and behaved in a coordinated way regardless.",
+       "signature": "one account's completion becomes another account's prompt within the hour, every working day, always in that order, between accounts sharing no infrastructure",
+       "extension": true
+      },
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and not one signal above zero.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_f1a1",
+     "appears_at": 1,
+     "profile": {
+      "created_at": "2025-10-26T05:20:00Z",
+      "email_kind": "freemail",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "AM",
+      "signup_asn": "AS64503",
+      "signup_ip": "198.51.100.92",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-31T01:00:00Z",
+       "channel": "chatgpt",
+       "category": "translation",
+       "prompt_excerpt": "translate this product description from English into French",
+       "disposition": "completed",
+       "src_ip": "198.51.100.92",
+       "asn": "AS64503",
+       "country": "AM",
+       "target_ref": null,
+       "appears_at": 1
+      },
+      {
+       "ts": "2026-07-31T01:22:00Z",
+       "channel": "chatgpt",
+       "category": "translation",
+       "prompt_excerpt": "translate this support macro into German, keep the tone formal",
+       "disposition": "completed",
+       "src_ip": "198.51.100.92",
+       "asn": "AS64503",
+       "country": "AM",
+       "target_ref": null,
+       "appears_at": 1
+      },
+      {
+       "ts": "2026-07-31T01:44:00Z",
+       "channel": "chatgpt",
+       "category": "translation",
+       "prompt_excerpt": "translate this product description from English into French",
+       "disposition": "completed",
+       "src_ip": "198.51.100.92",
+       "asn": "AS64503",
+       "country": "AM",
+       "target_ref": null,
+       "appears_at": 1
+      }
+     ],
+     "pipeline": {
+      "risk": 0.0,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "capability_trajectory",
+        "n_observations": null
+       },
+       {
+        "name": "baseline_drift",
+        "n_observations": null
+       },
+       {
+        "name": "automation_cadence",
+        "n_observations": null
+       },
+       {
+        "name": "burner_infra",
+        "n_observations": null
+       },
+       {
+        "name": "refusal_farming",
+        "n_observations": 3
+       },
+       {
+        "name": "target_fixation",
+        "n_observations": null
+       },
+       {
+        "name": "content_category_risk",
+        "n_observations": 3
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [
+       "acct_6256"
+      ],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "malicious",
+      "actor": "astroturf_loop",
+      "persona": null,
+      "original_id": "acct_s8_AL02",
+      "notes": "one seat in a content farm that writes its own audience",
+      "tell": "Three sessions, all translation, from an account with a verified card, a verified phone, a freemail address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": {
+       "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
+       "date": "2026-02",
+       "case": "Operation 'Trolling Stone': accounts generated the articles, further accounts generated comments about those same articles, and the operators asked for the em-dashes to be removed so the text would not read as AI-written. The parts very likely originated in different countries and behaved in a coordinated way regardless.",
+       "signature": "one account's completion becomes another account's prompt within the hour, every working day, always in that order, between accounts sharing no infrastructure",
+       "extension": true
+      },
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and not one signal above zero.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    }
+   ]
   }
  ]
 }
@@ -31748,7 +33065,7 @@ function renderLanding() {
      copy ships in meta.framing; the fallback below covers the hand-written
      placeholder sample only. */
   var framing = (meta && meta.framing && meta.framing.length) ? meta.framing : [
-    'Seven shifts at an AI platform\'s enforcement desk, in the order the job gets harder.',
+    'Eight shifts at an AI platform\'s enforcement desk, in the order the job gets harder.',
     'The pipeline flags; you decide, and every ban has to cite something that is not content.',
     'The queue starts obvious, then starts moving, then starts arriving as it actually arrives — mostly innocent.',
     'The actor you miss comes back tomorrow. The innocent you ban has no easy way back.'
