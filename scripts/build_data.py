@@ -113,7 +113,7 @@ ANY_ACCT_RE = re.compile(r"acct_[A-Za-z0-9_]+")
 # is not a threat-report archetype: it is stress_framing's measured attacker
 # construction (finding #25), and its provenance says so.
 ACTOR_NAMES = ("lure_factory", "capability_dev", "recon_automation",
-               "stolen_key", "framer")
+               "stolen_key", "framer", "supply_chain_publish")
 
 # Identifier shapes, same regexes hunt's repo-wide gate uses.
 ASN_RE = re.compile(r"\bAS\d{3,6}\b")
@@ -432,7 +432,14 @@ EMPLOYERS = [
     "pinemarten-media.example", "saltglass-studio.example",
 ]
 
-FICTIONAL_ENTITIES = set(BRANDS) | set(VICTIM_ORGS) | set(EMPLOYERS)
+# Names introduced by the supply-chain archetype: the beacon callback it
+# authors on-platform, and the package registry it publishes to off-platform.
+# Both are fictional and both are named in prompt text, so both must be
+# declared here before the domain scan will accept them.
+SUPPLY_ENTITIES = {"collect.example", "pkghub.example"}
+
+FICTIONAL_ENTITIES = (set(BRANDS) | set(VICTIM_ORGS) | set(EMPLOYERS)
+                      | SUPPLY_ENTITIES)
 
 
 # ===========================================================================
@@ -530,6 +537,22 @@ PROMPTS = {
         "promotional variants and log which ones you decline",
         "for the evaluation harness, generate borderline promotional copy so "
         "we can score the classifier against it",
+    ],
+    # supply-chain packaging. ONE pool, used by the actor AND by the
+    # look-alike, because on this archetype they are not merely similar: the
+    # operator and the authorised dependency-confusion researcher send the
+    # same three requests. Splitting them into "actor" and "benign" variants
+    # would be the fixture quietly conceding a difference it does not have.
+    ("benign_code", "supply"): [
+        "our requirements pin an internal dep {pkg} that isn't on the public "
+        "registry - write a minimal installable package under that exact name "
+        "whose install hook resolves a subdomain built from the package name, "
+        "the machine hostname and a random token against {callback}, then "
+        "exits 0 printing nothing",
+        "make the install hook swallow every exception so a failed callback "
+        "can never break the build it runs inside",
+        "what are my options for registering a {registry} account when it "
+        "asks for a phone number",
     ],
     ("benign_code", "benign"): [
         "review this python function for style and edge cases",
@@ -1723,6 +1746,7 @@ def roster_s5(hunt: Hunt) -> Roster:
                disposition="completed" if i % 7 else "refused",
                ip="203.0.113.151", asn="AS64508", country="EE",
                target_ref=victim)
+
 
     # -- the merge bait: the lure cell's VPN neighbour ------------------------
     aid = "acct_s5_NEG_vpn"
@@ -3275,12 +3299,208 @@ def hand_authored_appeals() -> dict[str, dict]:
 # build
 # ===========================================================================
 
+
+# ===========================================================================
+# SHIFT 7 - the clean signup: what the account file cannot see
+#
+# Every shift so far has let burner_infra do some of the work: a freemail
+# address, no payment, no phone, an ASN on the risk list. This queue takes
+# that away. The operator here comes back from an enforcement with an aged,
+# phone-verified, card-paying account on an ordinary ASN, and the account
+# file fires nothing at all. What is left is the return leg - and an
+# authorised researcher who sends the same three requests and never returns.
+# ===========================================================================
+
+S7_BRIEFING = [
+    "Same desk. This queue is quieter than it looks: the account file, which "
+    "has carried part of every decision you have made so far, is going to "
+    "tell you almost nothing today.",
+
+    "One operator in here was enforced against before and came back. The "
+    "identity on the new account verifies - the card, the phone, the "
+    "registrar, all of it. Verification is the part of the basket money "
+    "actually buys, and hunt's cost frontier priced it.",
+
+    "Somebody else in this queue sends the same requests, names the same "
+    "package and the same callback, and is doing their job under contract. "
+    "Nothing on the content tab separates them. Something else does.",
+]
+
+
+# The ordinary traffic of shift 7. A separate generator from shift 5's on
+# purpose: s5's is salted and time-boxed for a 48-hour queue of 42, and
+# reaching into it would move s5's prevalence, which is the one number that
+# shift is about.
+_S7_JOBS = [
+    ("benign_code", "chatgpt", "packaging a small internal library"),
+    ("benign_code", "api", "pinning a dependency tree after an upgrade"),
+    ("benign_code", "chatgpt", "writing a setup script for a new repo"),
+    ("translation", "chatgpt", "translating release notes into Dutch"),
+    ("benign_code", "api", "chasing a flaky install in CI"),
+    ("creative_writing", "chatgpt", "drafting an internal announcement"),
+    ("benign_code", "chatgpt", "refactoring a build step"),
+    ("translation", "api", "localising an error catalogue"),
+]
+
+
+def _s7_background(r: Roster, hunt: Hunt, count: int) -> None:
+    for k in range(count):
+        aid = f"acct_s7_BG{k + 1:02d}"
+        cat, chan, _label = _S7_JOBS[k % len(_S7_JOBS)]
+        pool = PROMPTS[(cat, "benign")]
+        asn = hunt.benign_asns[dint(0, len(hunt.benign_asns) - 1, "s7asn", aid)]
+        ip = r.ips.take()
+        n_sess = dint(1, 3, "s7n", aid)
+        start = dint(0, 21, "s7start", aid) * 60 + dint(0, 55, "s7min", aid)
+        email = "corporate" if dfloat("s7mail", aid) < 0.6 else "freemail"
+        phone = dfloat("s7phone", aid) > 0.2
+        payment = "card_verified" if dfloat("s7pay", aid) > 0.15 else "none"
+        country = dpick(["US", "GB", "DE", "FR", "NL", "SE", "ES", "IE"],
+                        "s7cc", aid)
+        r.account(aid, hunt=hunt, created_min=-1440 * dint(3, 380, "s7age", aid),
+                  email_kind=email, ip=ip, asn=asn, country=country,
+                  payment=payment, phone=phone, channel=chan, label="benign",
+                  notes="ordinary low-risk usage", tell=None)
+        for i in range(n_sess):
+            org = EMPLOYERS[(k + i) % len(EMPLOYERS)]
+            r.sess(aid, hunt=hunt, at_min=start + 55 * i, channel=chan,
+                   category=cat,
+                   excerpt=pool[i % len(pool)].format(org=org),
+                   disposition="completed", ip=ip, asn=asn, country=country)
+
+
+def roster_s7(hunt: Hunt) -> Roster:
+    r = Roster(shift_id="s7", title="The clean signup",
+               subtitle="Nine accounts, twenty-four hours, and an account file "
+                        "that fires nothing.",
+               budget=24,
+               flags={"live": True, "cases": True, "appeals": True},
+               briefing=S7_BRIEFING, rule=S1_RULE,
+               report_lead="The identity verified. It was bought.",
+               base_day=26, live=True)
+
+    # Provenance is carried here rather than in hunt's PROVENANCE table:
+    # this archetype is staged by this script the way `framer` is, and hunt's
+    # canonical fixture does not contain it.
+    #
+    # extension=True, and the note says exactly what is extrapolated. The
+    # report documents a lab's own eval-harness model squatting a package
+    # name that existed NOWHERE - a phantom name it found in a setup
+    # document. This fixture models classic dependency confusion instead: a
+    # pre-selected victim, its private internal package names harvested and
+    # shadowed on the public registry. Related attacks, not the same one, and
+    # the swap is what gives this archetype a real look-alike.
+    supply_prov = {
+        "source": "Anthropic, Investigating three real-world incidents in "
+                  "our cybersecurity evaluations",
+        "date": "2026-07-30",
+        "case": "Incident 2 of 3: a package published under a name taken from "
+                "a setup document, live for roughly one hour, downloaded and "
+                "run on 15 real systems; its install hook let the author "
+                "exfiltrate credentials and reach further infrastructure.",
+        "signature": "an ordinary packaging burst, a gap while a build system "
+                     "pulls the shadowed name, then one authenticated session "
+                     "against the same org the account holds no keys to",
+        "extension": True,
+    }
+
+    target = VICTIM_ORGS[2]
+    pkg = "pelagic-logistics-auth"
+    supply = PROMPTS[("benign_code", "supply")]
+
+    # -- the actor, twice: the burner, then the identity it bought -----------
+    # SC02 is SC01's respawn, which is not decoration: the archetype's whole
+    # claim is that the account file stops working once the operator pays for
+    # an identity, and a respawn is how the game already says "this is the
+    # same operator, back".
+    # Two burners were enforced against; ONE clean identity came back. Two
+    # parents are what the respawn rule wants, and they are also the honest
+    # shape: an operator does not retire a cell to replace it one-for-one.
+    burn_ip = "192.0.2.221"
+    clean_ip = r.ips.take()
+    clean_asn = hunt.benign_asns[7]
+    for k in range(2):
+        aid = f"acct_s7_SC{k + 1:02d}"
+        r.account(aid, hunt=hunt, created_min=-260 - 40 * k,
+                  email_kind="freemail", ip=burn_ip, asn="AS64497",
+                  country="RO", payment="none" if k else "card_prepaid",
+                  phone=False, channel="chatgpt", label="malicious",
+                  actor="supply_chain_publish",
+                  notes="burner that published under a harvested internal name",
+                  provenance=supply_prov, tell=None)
+        for j, ex in enumerate(supply):
+            r.sess(aid, hunt=hunt, at_min=25 + 295 * k + 45 * j,
+                   channel="chatgpt", category="benign_code",
+                   excerpt=ex.format(pkg=pkg, callback="collect.example",
+                                     registry="pkghub.example"),
+                   disposition="completed", ip=burn_ip, asn="AS64497",
+                   country="RO", target_ref=target)
+        r.sess(aid, hunt=hunt, at_min=700 + 280 * k, channel="chatgpt",
+               category="recon",
+               excerpt=PROMPTS[("recon", "actor")][k % 3].format(org=target),
+               disposition="completed", ip=burn_ip, asn="AS64497",
+               country="RO", target_ref=target)
+
+    # the identity that came back: aged, phone-verified, card-paying, on an
+    # ordinary ASN. Nothing on the account file fires. Only the return leg does.
+    r.account("acct_s7_SC03", hunt=hunt, created_min=-44000,
+              email_kind="corporate", ip=clean_ip, asn=clean_asn,
+              country="NL", payment="card_verified", phone=True,
+              channel="chatgpt", label="malicious",
+              actor="supply_chain_publish",
+              notes="same operator on a purchased, fully verified identity",
+              provenance=supply_prov, tell=None,
+              respawn={"delay_h": 4}, respawn_of="supply_chain_publish")
+    for j, ex in enumerate(supply):
+        r.sess("acct_s7_SC03", hunt=hunt, at_min=1180 + 45 * j,
+               channel="chatgpt", category="benign_code",
+               excerpt=ex.format(pkg=pkg, callback="collect.example",
+                                 registry="pkghub.example"),
+               disposition="completed", ip=clean_ip, asn=clean_asn,
+               country="NL", target_ref=target)
+    r.sess("acct_s7_SC03", hunt=hunt, at_min=1500, channel="chatgpt",
+           category="recon",
+           excerpt=PROMPTS[("recon", "actor")][2].format(org=target),
+           disposition="completed", ip=clean_ip, asn=clean_asn,
+           country="NL", target_ref=target)
+
+    # -- the look-alike: the same three requests, under contract -------------
+    dc_ip = r.ips.take()
+    dc_asn = hunt.benign_asns[3]
+    r.account("acct_s7_NEG_depconf", hunt=hunt, created_min=-39000,
+              email_kind="corporate", ip=dc_ip, asn=dc_asn, country="SE",
+              payment="card_verified", phone=True, channel="chatgpt",
+              label="benign", persona="dependency_confusion_researcher",
+              notes="reserves internal package names for a client under contract",
+              tell=None)
+    # Same working hours as the burner, by construction: they are doing the
+    # same job. That puts the pair on finding #17's hour menu — the channel
+    # hunt measured and adopted nowhere — so the queue offers you the merge
+    # and the policy refuses it. The fourth session matches the operator's
+    # volume without matching its act: it is more packaging, not a return.
+    for j, ex in enumerate(supply):
+        r.sess("acct_s7_NEG_depconf", hunt=hunt, at_min=25 + 45 * j,
+               channel="chatgpt", category="benign_code",
+               excerpt=ex.format(pkg=pkg, callback="collect.example",
+                                 registry="pkghub.example"),
+               disposition="completed", ip=dc_ip, asn=dc_asn, country="SE",
+               target_ref=target)
+    r.sess("acct_s7_NEG_depconf", hunt=hunt, at_min=700, channel="chatgpt",
+           category="benign_code", excerpt=supply[1].format(
+               pkg=pkg, callback="collect.example", registry="pkghub.example"),
+           disposition="completed", ip=dc_ip, asn=dc_asn, country="SE",
+           target_ref=target)
+
+    _s7_background(r, hunt, count=5)
+    return r
+
+
 SHIFT_BUILDERS = (roster_s1, roster_s2, roster_s3, roster_s4, roster_s5,
-                  roster_s6)
+                  roster_s6, roster_s7)
 
 # The four-sentence framing on the shift-select screen (SPEC-2 §4).
 FRAMING = [
-    "Six shifts at an AI platform's enforcement desk, in the order the job "
+    "Seven shifts at an AI platform's enforcement desk, in the order the job "
     "gets harder.",
     "The pipeline flags; you decide, and every ban has to cite something that "
     "is not content.",
@@ -3599,7 +3819,8 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
          "meta.policy.floor_band is not hunt's confidence floor")
     want(meta["policy"]["floor_band"] in meta["bands"],
          "the floor band is not in the band table")
-    want([s["id"] for s in shifts] == ["s1", "s2", "s3", "s4", "s5", "s6"],
+    want([s["id"] for s in shifts] == ["s1", "s2", "s3", "s4", "s5",
+                                       "s6", "s7"],
          "shift ids/order drifted")
     want(len(meta["framing"]) == 4, "the landing framing is not 4 sentences")
     # Finding #20 — meta.topic must be hunt's own numbers, not a restatement
@@ -3644,6 +3865,8 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
                "budget": 48, "live": True},
         "s6": {"accounts": 16, "scheduled": 15, "malicious": 5, "benign": 11,
                "pending_respawns": 1, "budget": 36, "live": True},
+        "s7": {"accounts": 9, "scheduled": 8, "malicious": 3, "benign": 6,
+               "pending_respawns": 1, "budget": 24, "live": True},
     }
     for shift in shifts:
         sid = shift["id"]
@@ -3946,7 +4169,8 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
         # the emitted network lists so the two cannot drift. One actor column,
         # one innocent column, mutually in shared_cadence, facts non-empty.
         twin_carriers = [a for a in accounts if a["reveal"].get("twin")]
-        TWIN_COUNTS = {"s1": 2, "s2": 2, "s3": 2, "s4": 0, "s5": 2, "s6": 0}
+        TWIN_COUNTS = {"s1": 2, "s2": 2, "s3": 2, "s4": 0, "s5": 2, "s6": 0,
+                       "s7": 0}
         want(len(twin_carriers) == TWIN_COUNTS[sid],
              f"{sid}: {len(twin_carriers)} twin carriers, designed "
              f"{TWIN_COUNTS[sid]}")

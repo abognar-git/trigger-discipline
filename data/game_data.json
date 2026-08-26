@@ -2,8 +2,8 @@
  "meta": {
   "contract": 2,
   "source_repo": "github.com/abognar-git/model-abuse-hunt",
-  "source_commit": "0761258fc3b408260a7c7d41525efbe36155f74a",
-  "built": "2026-08-10",
+  "source_commit": "e650b4ab49e251aee071d1f835dae61243b613e2",
+  "built": "2026-08-25",
   "generator": "scripts/build_data.py",
   "scorer": "hunt src/signals.py (imported, not restated)",
   "linker": "hunt src/attribute.py (imported, not restated)",
@@ -122,7 +122,7 @@
    ]
   ],
   "framing": [
-   "Six shifts at an AI platform's enforcement desk, in the order the job gets harder.",
+   "Seven shifts at an AI platform's enforcement desk, in the order the job gets harder.",
    "The pipeline flags; you decide, and every ban has to cite something that is not content.",
    "The queue starts obvious, then starts moving, then starts arriving as it actually arrives — mostly innocent.",
    "The actor you miss comes back tomorrow. The innocent you ban has no easy way back."
@@ -141,10 +141,10 @@
    "sessions": 98
   },
   "totals": {
-   "shifts": 6,
-   "accounts": 157,
-   "sessions": 503,
-   "malicious": 40
+   "shifts": 7,
+   "accounts": 166,
+   "sessions": 532,
+   "malicious": 43
   }
  },
  "shifts": [
@@ -31199,6 +31199,1632 @@
       "provenance": null,
       "respawn_of": null,
       "appeal": null,
+      "twin": null
+     }
+    }
+   ]
+  },
+  {
+   "id": "s7",
+   "title": "The clean signup",
+   "subtitle": "Nine accounts, twenty-four hours, and an account file that fires nothing.",
+   "budget": 24,
+   "flags": {
+    "live": true,
+    "cases": true,
+    "appeals": true
+   },
+   "briefing": [
+    "Same desk. This queue is quieter than it looks: the account file, which has carried part of every decision you have made so far, is going to tell you almost nothing today.",
+    "One operator in here was enforced against before and came back. The identity on the new account verifies - the card, the phone, the registrar, all of it. Verification is the part of the basket money actually buys, and hunt's cost frontier priced it.",
+    "Somebody else in this queue sends the same requests, names the same package and the same callback, and is doing their job under contract. Nothing on the content tab separates them. Something else does."
+   ],
+   "rule": "Nothing here is auto-banned. The pipeline flags; you decide. The actor you miss comes back tomorrow. The innocent you ban has no easy way back.",
+   "report_lead": "The identity verified. It was bought.",
+   "counts": {
+    "accounts": 9,
+    "scheduled": 8,
+    "pending_respawns": 1,
+    "malicious": 3,
+    "benign": 6,
+    "sessions": 29,
+    "prevalence": 0.25
+   },
+   "style": {
+    "source": "hunt src/linkage.py (imported, not restated)",
+    "order": [
+     "acct_0d4b",
+     "acct_1bf8",
+     "acct_352b",
+     "acct_420e",
+     "acct_5255",
+     "acct_61ae",
+     "acct_9a97",
+     "acct_bf96",
+     "acct_cbe4"
+    ],
+    "pairs": [
+     0.987,
+     0.986,
+     1.0,
+     1.0,
+     0.999,
+     0.986,
+     0.988,
+     0.999,
+     1.0,
+     0.987,
+     0.987,
+     0.984,
+     1.0,
+     1.0,
+     0.985,
+     0.986,
+     0.986,
+     0.984,
+     1.0,
+     1.0,
+     0.985,
+     1.0,
+     0.999,
+     0.986,
+     0.988,
+     0.999,
+     0.999,
+     0.986,
+     0.988,
+     0.999,
+     0.983,
+     0.985,
+     0.998,
+     1.0,
+     0.983,
+     0.986
+    ],
+    "min": 0.983,
+    "max": 1.0,
+    "median_words": 28,
+    "word_floor": 1000
+   },
+   "accounts": [
+    {
+     "id": "acct_0d4b",
+     "appears_at": 19,
+     "profile": {
+      "created_at": "2026-03-21T00:00:00Z",
+      "email_kind": "corporate",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "FR",
+      "signup_asn": "AS65548",
+      "signup_ip": "198.51.100.3",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-26T19:48:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "review this python function for style and edge cases",
+       "disposition": "completed",
+       "src_ip": "198.51.100.3",
+       "asn": "AS65548",
+       "country": "FR",
+       "target_ref": null,
+       "appears_at": 19
+      },
+      {
+       "ts": "2026-07-26T20:43:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "summarise this batch of application error logs and cluster them by root cause",
+       "disposition": "completed",
+       "src_ip": "198.51.100.3",
+       "asn": "AS65548",
+       "country": "FR",
+       "target_ref": null,
+       "appears_at": 20
+      },
+      {
+       "ts": "2026-07-26T21:38:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "generate unit tests for this module",
+       "disposition": "completed",
+       "src_ip": "198.51.100.3",
+       "asn": "AS65548",
+       "country": "FR",
+       "target_ref": null,
+       "appears_at": 21
+      }
+     ],
+     "pipeline": {
+      "risk": 0.0,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "capability_trajectory",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.22,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "baseline_drift",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.2,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "automation_cadence",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "burner_infra",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "refusal_farming",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": 3,
+        "fired": false
+       },
+       {
+        "name": "target_fixation",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "content_category_risk",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.06,
+        "n_observations": 3,
+        "fired": false
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "benign",
+      "actor": null,
+      "persona": null,
+      "original_id": "acct_s7_BG03",
+      "notes": "ordinary low-risk usage",
+      "tell": "Three sessions, all code review and debugging, from an account with a verified card, a verified phone, a corporate address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": null,
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and not one signal above zero.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_1bf8",
+     "appears_at": null,
+     "profile": {
+      "created_at": "2026-06-25T10:40:00Z",
+      "email_kind": "corporate",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "NL",
+      "signup_asn": "AS64507",
+      "signup_ip": "192.0.2.2",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-26T19:40:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "our requirements pin an internal dep pelagic-logistics-auth that isn't on the public registry - write a minimal installable package under that exact name whose install hook resolves a subdomain built from the package name, the machine hostname and a random token against collect.example, then exits 0 printing nothing",
+       "disposition": "completed",
+       "src_ip": "192.0.2.2",
+       "asn": "AS64507",
+       "country": "NL",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 0
+      },
+      {
+       "ts": "2026-07-26T20:25:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "make the install hook swallow every exception so a failed callback can never break the build it runs inside",
+       "disposition": "completed",
+       "src_ip": "192.0.2.2",
+       "asn": "AS64507",
+       "country": "NL",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 1
+      },
+      {
+       "ts": "2026-07-26T21:10:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "what are my options for registering a pkghub.example account when it asks for a phone number",
+       "disposition": "completed",
+       "src_ip": "192.0.2.2",
+       "asn": "AS64507",
+       "country": "NL",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 2
+      },
+      {
+       "ts": "2026-07-27T01:00:00Z",
+       "channel": "chatgpt",
+       "category": "recon",
+       "prompt_excerpt": "clean up this dump of pelagic-logistics.example contact rows and tell me which ones look like service accounts",
+       "disposition": "completed",
+       "src_ip": "192.0.2.2",
+       "asn": "AS64507",
+       "country": "NL",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 6
+      }
+     ],
+     "pipeline": {
+      "risk": 0.0817,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.015,
+      "topic_derived_score": 0.015,
+      "signals": [
+       {
+        "name": "target_fixation",
+        "value": 0.0667,
+        "note": "4 sessions referencing 'pelagic-logistics.example'",
+        "intensity": 0.667,
+        "weight": 0.1,
+        "n_observations": null,
+        "fired": true
+       },
+       {
+        "name": "content_category_risk",
+        "value": 0.015,
+        "note": "1/4 sessions in high-risk topics",
+        "intensity": 0.25,
+        "weight": 0.06,
+        "n_observations": 4,
+        "fired": true
+       },
+       {
+        "name": "capability_trajectory",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.22,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "baseline_drift",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.2,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "automation_cadence",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "burner_infra",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "refusal_farming",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": 4,
+        "fired": false
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [
+       "acct_352b",
+       "acct_9a97",
+       "acct_bf96"
+      ],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {
+       "shared_target": {
+        "acct_bf96": [
+         "2026-07-26T19:40:00Z",
+         "2026-07-26T00:25:00Z"
+        ],
+        "acct_352b": [
+         "2026-07-26T19:40:00Z",
+         "2026-07-26T05:20:00Z"
+        ],
+        "acct_9a97": [
+         "2026-07-26T19:40:00Z",
+         "2026-07-26T00:25:00Z"
+        ]
+       }
+      }
+     },
+     "respawn": {
+      "delay_h": 4
+     },
+     "reveal": {
+      "truth": "malicious",
+      "actor": "supply_chain_publish",
+      "persona": null,
+      "original_id": "acct_s7_SC03",
+      "notes": "same operator on a purchased, fully verified identity",
+      "tell": "Four sessions, all code review and debugging, background research, from an account with a verified card, a verified phone, a corporate address. It scores 0.0817, and the signals that fired were target_fixation, content_category_risk. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": {
+       "source": "Anthropic, Investigating three real-world incidents in our cybersecurity evaluations",
+       "date": "2026-07-30",
+       "case": "Incident 2 of 3: a package published under a name taken from a setup document, live for roughly one hour, downloaded and run on 15 real systems; its install hook let the author exfiltrate credentials and reach further infrastructure.",
+       "signature": "an ordinary packaging burst, a gap while a build system pulls the shadowed name, then one authenticated session against the same org the account holds no keys to",
+       "extension": true
+      },
+      "respawn_of": "supply_chain_publish",
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 4 sessions of ordinary use and a risk of 0.0817, all of it target_fixation, content_category_risk.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_352b",
+     "appears_at": 5,
+     "profile": {
+      "created_at": "2026-07-25T19:00:00Z",
+      "email_kind": "freemail",
+      "payment": "none",
+      "phone_verified": false,
+      "signup_country": "RO",
+      "signup_asn": "AS64497",
+      "signup_ip": "192.0.2.221",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-26T05:20:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "our requirements pin an internal dep pelagic-logistics-auth that isn't on the public registry - write a minimal installable package under that exact name whose install hook resolves a subdomain built from the package name, the machine hostname and a random token against collect.example, then exits 0 printing nothing",
+       "disposition": "completed",
+       "src_ip": "192.0.2.221",
+       "asn": "AS64497",
+       "country": "RO",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 5
+      },
+      {
+       "ts": "2026-07-26T06:05:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "make the install hook swallow every exception so a failed callback can never break the build it runs inside",
+       "disposition": "completed",
+       "src_ip": "192.0.2.221",
+       "asn": "AS64497",
+       "country": "RO",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 6
+      },
+      {
+       "ts": "2026-07-26T06:50:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "what are my options for registering a pkghub.example account when it asks for a phone number",
+       "disposition": "completed",
+       "src_ip": "192.0.2.221",
+       "asn": "AS64497",
+       "country": "RO",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 6
+      },
+      {
+       "ts": "2026-07-26T16:20:00Z",
+       "channel": "chatgpt",
+       "category": "recon",
+       "prompt_excerpt": "from this staff listing for pelagic-logistics.example, group the names by department and flag anyone with an admin-sounding title",
+       "disposition": "completed",
+       "src_ip": "192.0.2.221",
+       "asn": "AS64497",
+       "country": "RO",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 16
+      }
+     ],
+     "pipeline": {
+      "risk": 0.1937,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.015,
+      "topic_derived_score": 0.015,
+      "signals": [
+       {
+        "name": "burner_infra",
+        "value": 0.112,
+        "note": "no phone verification, none payment, higher-risk ASN AS64497",
+        "intensity": 0.7,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": true
+       },
+       {
+        "name": "target_fixation",
+        "value": 0.0667,
+        "note": "4 sessions referencing 'pelagic-logistics.example'",
+        "intensity": 0.667,
+        "weight": 0.1,
+        "n_observations": null,
+        "fired": true
+       },
+       {
+        "name": "content_category_risk",
+        "value": 0.015,
+        "note": "1/4 sessions in high-risk topics",
+        "intensity": 0.25,
+        "weight": 0.06,
+        "n_observations": 4,
+        "fired": true
+       },
+       {
+        "name": "capability_trajectory",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.22,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "baseline_drift",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.2,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "automation_cadence",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "refusal_farming",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": 4,
+        "fired": false
+       }
+      ],
+      "cluster": {
+       "stability": null,
+       "second_opinion": null,
+       "kind": "linkage",
+       "assessment": null,
+       "confidence_band": null,
+       "decision": null,
+       "summary": null,
+       "members": [
+        "acct_352b",
+        "acct_bf96"
+       ],
+       "actor_hypothesis": null,
+       "key_evidence": [],
+       "disconfirming_evidence": [],
+       "corroborated": true,
+       "requires_human_approval": true,
+       "auto_actioned": false,
+       "policy_reasons": [],
+       "cluster_size": 2,
+       "max_risk": 0.1937,
+       "link_reasons": [
+        "shared victim ['pelagic-logistics.example'] + corroborating ['asn:AS64497', 'ip:192.0.2.221']"
+       ],
+       "engine": "hunt src/attribute.py (offline linker; no model assessment for generated rosters)"
+      }
+     },
+     "network": {
+      "shared_asn": [
+       "acct_bf96"
+      ],
+      "shared_ip": [
+       "acct_bf96"
+      ],
+      "shared_target": [
+       "acct_9a97",
+       "acct_bf96"
+      ],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {
+       "shared_asn": {
+        "acct_bf96": [
+         "2026-07-25T19:00:00Z",
+         "2026-07-25T19:40:00Z"
+        ]
+       },
+       "shared_ip": {
+        "acct_bf96": [
+         "2026-07-25T19:00:00Z",
+         "2026-07-25T19:40:00Z"
+        ]
+       },
+       "shared_target": {
+        "acct_bf96": [
+         "2026-07-26T05:20:00Z",
+         "2026-07-26T00:25:00Z"
+        ],
+        "acct_9a97": [
+         "2026-07-26T05:20:00Z",
+         "2026-07-26T00:25:00Z"
+        ]
+       }
+      }
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "malicious",
+      "actor": "supply_chain_publish",
+      "persona": null,
+      "original_id": "acct_s7_SC02",
+      "notes": "burner that published under a harvested internal name",
+      "tell": "Four sessions, all code review and debugging, background research, from an account with no payment method on file, no phone verification, a freemail address. It scores 0.1937, and the signals that fired were burner_infra, target_fixation, content_category_risk. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": {
+       "source": "Anthropic, Investigating three real-world incidents in our cybersecurity evaluations",
+       "date": "2026-07-30",
+       "case": "Incident 2 of 3: a package published under a name taken from a setup document, live for roughly one hour, downloaded and run on 15 real systems; its install hook let the author exfiltrate credentials and reach further infrastructure.",
+       "signature": "an ordinary packaging burst, a gap while a build system pulls the shadowed name, then one authenticated session against the same org the account holds no keys to",
+       "extension": true
+      },
+      "respawn_of": null,
+      "appeal": {
+       "claim": "This is my personal account. There is nothing on it and nothing was ever asked of it beyond ordinary work.",
+       "verification": "No identity channel applies: no card, no verified phone, nothing an outside party can be asked about. The session record is the only evidence there is, and it shows 4 sessions of ordinary use and a risk of 0.1937, all of it burner_infra, target_fixation, content_category_risk.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_420e",
+     "appears_at": 17,
+     "profile": {
+      "created_at": "2025-07-14T00:00:00Z",
+      "email_kind": "freemail",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "IE",
+      "signup_asn": "AS65544",
+      "signup_ip": "192.0.2.3",
+      "primary_channel": "api"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-26T17:09:00Z",
+       "channel": "api",
+       "category": "benign_code",
+       "prompt_excerpt": "review this python function for style and edge cases",
+       "disposition": "completed",
+       "src_ip": "192.0.2.3",
+       "asn": "AS65544",
+       "country": "IE",
+       "target_ref": null,
+       "appears_at": 17
+      },
+      {
+       "ts": "2026-07-26T18:04:00Z",
+       "channel": "api",
+       "category": "benign_code",
+       "prompt_excerpt": "summarise this batch of application error logs and cluster them by root cause",
+       "disposition": "completed",
+       "src_ip": "192.0.2.3",
+       "asn": "AS65544",
+       "country": "IE",
+       "target_ref": null,
+       "appears_at": 18
+      },
+      {
+       "ts": "2026-07-26T18:59:00Z",
+       "channel": "api",
+       "category": "benign_code",
+       "prompt_excerpt": "generate unit tests for this module",
+       "disposition": "completed",
+       "src_ip": "192.0.2.3",
+       "asn": "AS65544",
+       "country": "IE",
+       "target_ref": null,
+       "appears_at": 18
+      }
+     ],
+     "pipeline": {
+      "risk": 0.04,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "automation_cadence",
+        "value": 0.04,
+        "note": "3 API calls on a near-fixed ~55min interval (std 0.0)",
+        "intensity": 0.25,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": true
+       },
+       {
+        "name": "capability_trajectory",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.22,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "baseline_drift",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.2,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "burner_infra",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "refusal_farming",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": 3,
+        "fired": false
+       },
+       {
+        "name": "target_fixation",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "content_category_risk",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.06,
+        "n_observations": 3,
+        "fired": false
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "benign",
+      "actor": null,
+      "persona": null,
+      "original_id": "acct_s7_BG02",
+      "notes": "ordinary low-risk usage",
+      "tell": "Three sessions, all code review and debugging, from an account with a verified card, a verified phone, a freemail address. It scores 0.0400, and the only signal that fired was automation_cadence. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": null,
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and a risk of 0.0400, all of it automation_cadence.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_5255",
+     "appears_at": 4,
+     "profile": {
+      "created_at": "2026-05-04T00:00:00Z",
+      "email_kind": "corporate",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "ES",
+      "signup_asn": "AS65547",
+      "signup_ip": "192.0.2.4",
+      "primary_channel": "api"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-26T04:18:00Z",
+       "channel": "api",
+       "category": "benign_code",
+       "prompt_excerpt": "review this python function for style and edge cases",
+       "disposition": "completed",
+       "src_ip": "192.0.2.4",
+       "asn": "AS65547",
+       "country": "ES",
+       "target_ref": null,
+       "appears_at": 4
+      },
+      {
+       "ts": "2026-07-26T05:13:00Z",
+       "channel": "api",
+       "category": "benign_code",
+       "prompt_excerpt": "summarise this batch of application error logs and cluster them by root cause",
+       "disposition": "completed",
+       "src_ip": "192.0.2.4",
+       "asn": "AS65547",
+       "country": "ES",
+       "target_ref": null,
+       "appears_at": 5
+      },
+      {
+       "ts": "2026-07-26T06:08:00Z",
+       "channel": "api",
+       "category": "benign_code",
+       "prompt_excerpt": "generate unit tests for this module",
+       "disposition": "completed",
+       "src_ip": "192.0.2.4",
+       "asn": "AS65547",
+       "country": "ES",
+       "target_ref": null,
+       "appears_at": 6
+      }
+     ],
+     "pipeline": {
+      "risk": 0.04,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "automation_cadence",
+        "value": 0.04,
+        "note": "3 API calls on a near-fixed ~55min interval (std 0.0)",
+        "intensity": 0.25,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": true
+       },
+       {
+        "name": "capability_trajectory",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.22,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "baseline_drift",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.2,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "burner_infra",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "refusal_farming",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": 3,
+        "fired": false
+       },
+       {
+        "name": "target_fixation",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "content_category_risk",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.06,
+        "n_observations": 3,
+        "fired": false
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "benign",
+      "actor": null,
+      "persona": null,
+      "original_id": "acct_s7_BG05",
+      "notes": "ordinary low-risk usage",
+      "tell": "Three sessions, all code review and debugging, from an account with a verified card, a verified phone, a corporate address. It scores 0.0400, and the only signal that fired was automation_cadence. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": null,
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and a risk of 0.0400, all of it automation_cadence.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_61ae",
+     "appears_at": 12,
+     "profile": {
+      "created_at": "2025-07-24T00:00:00Z",
+      "email_kind": "corporate",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "FR",
+      "signup_asn": "AS64500",
+      "signup_ip": "203.0.113.3",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-26T12:15:00Z",
+       "channel": "chatgpt",
+       "category": "translation",
+       "prompt_excerpt": "translate this product description from English into French",
+       "disposition": "completed",
+       "src_ip": "203.0.113.3",
+       "asn": "AS64500",
+       "country": "FR",
+       "target_ref": null,
+       "appears_at": 12
+      },
+      {
+       "ts": "2026-07-26T13:10:00Z",
+       "channel": "chatgpt",
+       "category": "translation",
+       "prompt_excerpt": "translate this support macro into German, keep the tone formal",
+       "disposition": "completed",
+       "src_ip": "203.0.113.3",
+       "asn": "AS64500",
+       "country": "FR",
+       "target_ref": null,
+       "appears_at": 13
+      },
+      {
+       "ts": "2026-07-26T14:05:00Z",
+       "channel": "chatgpt",
+       "category": "translation",
+       "prompt_excerpt": "localise this release note for our Japanese customers",
+       "disposition": "completed",
+       "src_ip": "203.0.113.3",
+       "asn": "AS64500",
+       "country": "FR",
+       "target_ref": null,
+       "appears_at": 14
+      }
+     ],
+     "pipeline": {
+      "risk": 0.0,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "capability_trajectory",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.22,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "baseline_drift",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.2,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "automation_cadence",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "burner_infra",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "refusal_farming",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": 3,
+        "fired": false
+       },
+       {
+        "name": "target_fixation",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "content_category_risk",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.06,
+        "n_observations": 3,
+        "fired": false
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "benign",
+      "actor": null,
+      "persona": null,
+      "original_id": "acct_s7_BG04",
+      "notes": "ordinary low-risk usage",
+      "tell": "Three sessions, all translation, from an account with a verified card, a verified phone, a corporate address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": null,
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 3 sessions of ordinary use and not one signal above zero.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_9a97",
+     "appears_at": 0,
+     "profile": {
+      "created_at": "2026-06-28T22:00:00Z",
+      "email_kind": "corporate",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "SE",
+      "signup_asn": "AS64503",
+      "signup_ip": "198.51.100.2",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-26T00:25:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "our requirements pin an internal dep pelagic-logistics-auth that isn't on the public registry - write a minimal installable package under that exact name whose install hook resolves a subdomain built from the package name, the machine hostname and a random token against collect.example, then exits 0 printing nothing",
+       "disposition": "completed",
+       "src_ip": "198.51.100.2",
+       "asn": "AS64503",
+       "country": "SE",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 0
+      },
+      {
+       "ts": "2026-07-26T01:10:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "make the install hook swallow every exception so a failed callback can never break the build it runs inside",
+       "disposition": "completed",
+       "src_ip": "198.51.100.2",
+       "asn": "AS64503",
+       "country": "SE",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 1
+      },
+      {
+       "ts": "2026-07-26T01:55:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "what are my options for registering a pkghub.example account when it asks for a phone number",
+       "disposition": "completed",
+       "src_ip": "198.51.100.2",
+       "asn": "AS64503",
+       "country": "SE",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 1
+      },
+      {
+       "ts": "2026-07-26T11:40:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "make the install hook swallow every exception so a failed callback can never break the build it runs inside",
+       "disposition": "completed",
+       "src_ip": "198.51.100.2",
+       "asn": "AS64503",
+       "country": "SE",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 11
+      }
+     ],
+     "pipeline": {
+      "risk": 0.0667,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "target_fixation",
+        "value": 0.0667,
+        "note": "4 sessions referencing 'pelagic-logistics.example'",
+        "intensity": 0.667,
+        "weight": 0.1,
+        "n_observations": null,
+        "fired": true
+       },
+       {
+        "name": "capability_trajectory",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.22,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "baseline_drift",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.2,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "automation_cadence",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "burner_infra",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "refusal_farming",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": 4,
+        "fired": false
+       },
+       {
+        "name": "content_category_risk",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.06,
+        "n_observations": 4,
+        "fired": false
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [
+       "acct_352b",
+       "acct_bf96"
+      ],
+      "shared_cadence": [],
+      "shared_hours": [
+       "acct_bf96"
+      ],
+      "first_seen": {
+       "shared_target": {
+        "acct_bf96": [
+         "2026-07-26T00:25:00Z",
+         "2026-07-26T00:25:00Z"
+        ],
+        "acct_352b": [
+         "2026-07-26T00:25:00Z",
+         "2026-07-26T05:20:00Z"
+        ]
+       }
+      }
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "benign",
+      "actor": null,
+      "persona": "dependency_confusion_researcher",
+      "original_id": "acct_s7_NEG_depconf",
+      "notes": "reserves internal package names for a client under contract",
+      "tell": "Four sessions, all code review and debugging, from an account with a verified card, a verified phone, a corporate address. It scores 0.0667, and the only signal that fired was target_fixation. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": null,
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 4 sessions of ordinary use and a risk of 0.0667, all of it target_fixation.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_bf96",
+     "appears_at": 0,
+     "profile": {
+      "created_at": "2026-07-25T19:40:00Z",
+      "email_kind": "freemail",
+      "payment": "card_prepaid",
+      "phone_verified": false,
+      "signup_country": "RO",
+      "signup_asn": "AS64497",
+      "signup_ip": "192.0.2.221",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-26T00:25:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "our requirements pin an internal dep pelagic-logistics-auth that isn't on the public registry - write a minimal installable package under that exact name whose install hook resolves a subdomain built from the package name, the machine hostname and a random token against collect.example, then exits 0 printing nothing",
+       "disposition": "completed",
+       "src_ip": "192.0.2.221",
+       "asn": "AS64497",
+       "country": "RO",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 0
+      },
+      {
+       "ts": "2026-07-26T01:10:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "make the install hook swallow every exception so a failed callback can never break the build it runs inside",
+       "disposition": "completed",
+       "src_ip": "192.0.2.221",
+       "asn": "AS64497",
+       "country": "RO",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 1
+      },
+      {
+       "ts": "2026-07-26T01:55:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "what are my options for registering a pkghub.example account when it asks for a phone number",
+       "disposition": "completed",
+       "src_ip": "192.0.2.221",
+       "asn": "AS64497",
+       "country": "RO",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 1
+      },
+      {
+       "ts": "2026-07-26T11:40:00Z",
+       "channel": "chatgpt",
+       "category": "recon",
+       "prompt_excerpt": "summarise this scraped employee record for pelagic-logistics.example and pull out role, email pattern and likely privileged access",
+       "disposition": "completed",
+       "src_ip": "192.0.2.221",
+       "asn": "AS64497",
+       "country": "RO",
+       "target_ref": "pelagic-logistics.example",
+       "appears_at": 11
+      }
+     ],
+     "pipeline": {
+      "risk": 0.1937,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.015,
+      "topic_derived_score": 0.015,
+      "signals": [
+       {
+        "name": "burner_infra",
+        "value": 0.112,
+        "note": "no phone verification, card_prepaid payment, higher-risk ASN AS64497",
+        "intensity": 0.7,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": true
+       },
+       {
+        "name": "target_fixation",
+        "value": 0.0667,
+        "note": "4 sessions referencing 'pelagic-logistics.example'",
+        "intensity": 0.667,
+        "weight": 0.1,
+        "n_observations": null,
+        "fired": true
+       },
+       {
+        "name": "content_category_risk",
+        "value": 0.015,
+        "note": "1/4 sessions in high-risk topics",
+        "intensity": 0.25,
+        "weight": 0.06,
+        "n_observations": 4,
+        "fired": true
+       },
+       {
+        "name": "capability_trajectory",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.22,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "baseline_drift",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.2,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "automation_cadence",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "refusal_farming",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": 4,
+        "fired": false
+       }
+      ],
+      "cluster": {
+       "stability": null,
+       "second_opinion": null,
+       "kind": "linkage",
+       "assessment": null,
+       "confidence_band": null,
+       "decision": null,
+       "summary": null,
+       "members": [
+        "acct_352b",
+        "acct_bf96"
+       ],
+       "actor_hypothesis": null,
+       "key_evidence": [],
+       "disconfirming_evidence": [],
+       "corroborated": true,
+       "requires_human_approval": true,
+       "auto_actioned": false,
+       "policy_reasons": [],
+       "cluster_size": 2,
+       "max_risk": 0.1937,
+       "link_reasons": [
+        "shared victim ['pelagic-logistics.example'] + corroborating ['asn:AS64497', 'ip:192.0.2.221']"
+       ],
+       "engine": "hunt src/attribute.py (offline linker; no model assessment for generated rosters)"
+      }
+     },
+     "network": {
+      "shared_asn": [
+       "acct_352b"
+      ],
+      "shared_ip": [
+       "acct_352b"
+      ],
+      "shared_target": [
+       "acct_352b",
+       "acct_9a97"
+      ],
+      "shared_cadence": [],
+      "shared_hours": [
+       "acct_9a97"
+      ],
+      "first_seen": {
+       "shared_asn": {
+        "acct_352b": [
+         "2026-07-25T19:40:00Z",
+         "2026-07-25T19:00:00Z"
+        ]
+       },
+       "shared_ip": {
+        "acct_352b": [
+         "2026-07-25T19:40:00Z",
+         "2026-07-25T19:00:00Z"
+        ]
+       },
+       "shared_target": {
+        "acct_352b": [
+         "2026-07-26T00:25:00Z",
+         "2026-07-26T05:20:00Z"
+        ],
+        "acct_9a97": [
+         "2026-07-26T00:25:00Z",
+         "2026-07-26T00:25:00Z"
+        ]
+       }
+      }
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "malicious",
+      "actor": "supply_chain_publish",
+      "persona": null,
+      "original_id": "acct_s7_SC01",
+      "notes": "burner that published under a harvested internal name",
+      "tell": "Four sessions, all code review and debugging, background research, from an account with a prepaid card, no phone verification, a freemail address. It scores 0.1937, and the signals that fired were burner_infra, target_fixation, content_category_risk. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": {
+       "source": "Anthropic, Investigating three real-world incidents in our cybersecurity evaluations",
+       "date": "2026-07-30",
+       "case": "Incident 2 of 3: a package published under a name taken from a setup document, live for roughly one hour, downloaded and run on 15 real systems; its install hook let the author exfiltrate credentials and reach further infrastructure.",
+       "signature": "an ordinary packaging burst, a gap while a build system pulls the shadowed name, then one authenticated session against the same org the account holds no keys to",
+       "extension": true
+      },
+      "respawn_of": null,
+      "appeal": {
+       "claim": "This is my personal account. There is nothing on it and nothing was ever asked of it beyond ordinary work.",
+       "verification": "No identity channel applies: no card, no verified phone, nothing an outside party can be asked about. The session record is the only evidence there is, and it shows 4 sessions of ordinary use and a risk of 0.1937, all of it burner_infra, target_fixation, content_category_risk.",
+       "resolvable": true
+      },
+      "twin": null
+     }
+    },
+    {
+     "id": "acct_cbe4",
+     "appears_at": 12,
+     "profile": {
+      "created_at": "2026-06-26T00:00:00Z",
+      "email_kind": "corporate",
+      "payment": "card_verified",
+      "phone_verified": true,
+      "signup_country": "FR",
+      "signup_asn": "AS64509",
+      "signup_ip": "203.0.113.2",
+      "primary_channel": "chatgpt"
+     },
+     "sessions": [
+      {
+       "ts": "2026-07-26T12:32:00Z",
+       "channel": "chatgpt",
+       "category": "benign_code",
+       "prompt_excerpt": "review this python function for style and edge cases",
+       "disposition": "completed",
+       "src_ip": "203.0.113.2",
+       "asn": "AS64509",
+       "country": "FR",
+       "target_ref": null,
+       "appears_at": 12
+      }
+     ],
+     "pipeline": {
+      "risk": 0.0,
+      "lead": false,
+      "lead_threshold": 0.25,
+      "content_only_score": 0.0,
+      "topic_derived_score": 0.0,
+      "signals": [
+       {
+        "name": "capability_trajectory",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.22,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "baseline_drift",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.2,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "automation_cadence",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "burner_infra",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.16,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "refusal_farming",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": 1,
+        "fired": false
+       },
+       {
+        "name": "target_fixation",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.1,
+        "n_observations": null,
+        "fired": false
+       },
+       {
+        "name": "content_category_risk",
+        "value": 0.0,
+        "note": "",
+        "intensity": 0.0,
+        "weight": 0.06,
+        "n_observations": 1,
+        "fired": false
+       }
+      ],
+      "cluster": null
+     },
+     "network": {
+      "shared_asn": [],
+      "shared_ip": [],
+      "shared_target": [],
+      "shared_cadence": [],
+      "shared_hours": [],
+      "first_seen": {}
+     },
+     "respawn": null,
+     "reveal": {
+      "truth": "benign",
+      "actor": null,
+      "persona": null,
+      "original_id": "acct_s7_BG01",
+      "notes": "ordinary low-risk usage",
+      "tell": "One session, code review and debugging, from an account with a verified card, a verified phone, a corporate address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "provenance": null,
+      "respawn_of": null,
+      "appeal": {
+       "claim": "The payment card and phone number on this account are mine and have been since signup. Check them.",
+       "verification": "Payment processor and phone carrier both confirm the account holder, registered before any session in this queue. The record shows 1 session of ordinary use and not one signal above zero.",
+       "resolvable": true
+      },
       "twin": null
      }
     }
