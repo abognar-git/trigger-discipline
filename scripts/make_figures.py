@@ -153,6 +153,30 @@ SCENARIOS: dict[str, dict] = {
         press('b');              // the policy reads the citations and declines
         """,
     ),
+    "social_card": dict(
+        caption="The link-preview card: the refusal, which is the one screen "
+                "that explains the game without a word of instruction.",
+        size=(1200, 630),
+        exact=True,           # og:image dimensions are declared in the head
+        js="""
+        /* Deliberately the same moment as the `refusal` figure. It is the
+           game's argument in one screen: the ban was reached for, the policy
+           read the citation, and it declined. A card has about one second to
+           say what this is, and no other state says it faster. */
+        start('s2');
+        waitHours(12);
+        openMatching(visiblePhishing(12), 'three visible phishing drafts');
+        citeFirst(1);
+        press('b');
+        /* Captured at 1:1 on purpose. Two attempts to enlarge the refusal
+           line for small feed renders both failed the same way: CSS zoom
+           scales the paint but not the 1200px viewport, so the panels
+           overflow and wrap, and hiding the queue rail does not buy the
+           width back. The card carries the interface; og:title and
+           og:description carry the sentence. */
+        window.scrollTo(0, 0);
+        """,
+    ),
     "pipeline_read": dict(
         caption="The scorer's own read: what fired, what did not, and what the policy did with it.",
         size=(1400, 1000),
@@ -352,7 +376,18 @@ def main() -> int:
             page = build_page(tmp, name, spec["js"], hint)
             png = OUT / f"{name}.png"
             shot(exe, page, png, spec["size"])
-            w, h = autocrop(png)
+            if spec.get("exact"):
+                # A link-preview card is cropped by the platform, not by us:
+                # it has to come out at exactly the declared size or the
+                # renderers letterbox it. Autocrop would defeat that.
+                from PIL import Image
+                w, h = Image.open(png).size
+                if (w, h) != spec["size"]:
+                    raise SystemExit(
+                        f"make_figures: {name} rendered {w}x{h}, expected "
+                        f"{spec['size'][0]}x{spec['size'][1]}")
+            else:
+                w, h = autocrop(png)
             kb = png.stat().st_size / 1024
             print(f"  {name:16s} {w}x{h}  {kb:5.0f} KB")
             made.append(png)

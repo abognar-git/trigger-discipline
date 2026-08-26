@@ -141,6 +141,26 @@ def main() -> int:
     on_disk = {f.name for f in figdir.iterdir()} if figdir.exists() else set()
     for missing in sorted(refs - on_disk):
         fail(f"README references a figure that does not exist: {missing}")
+    # The social card is the one figure the README does not carry: its
+    # consumer is the og:image tag in parts/shell.html, which is what a
+    # pasted link renders. Checked against the shell rather than exempted,
+    # so renaming the file without fixing the tag still fails here — a
+    # broken og:image is invisible until someone posts the link.
+    # Read the filename out of the og:image tag itself, not out of the file
+    # as a whole: the first version of this check asked whether the name
+    # appeared anywhere in shell.html, and the prose comment above the tag
+    # satisfied it while the tag pointed somewhere else.
+    shell = (ROOT / "parts" / "shell.html").read_text(encoding="utf-8")
+    og = re.search(r'<meta\s+property="og:image"\s+content="([^"]+)"', shell)
+    if not og:
+        fail("parts/shell.html has no og:image tag; a pasted link renders bare")
+    else:
+        og_name = og.group(1).rsplit("/", 1)[-1]
+        if og_name not in on_disk:
+            fail(f"og:image points at {og_name}, which is not in docs/figures "
+                 f"(run: python3 scripts/make_figures.py --only social_card)")
+        refs = refs | {og_name}
+
     for orphan in sorted(on_disk - refs):
         fail(f"figure on disk that no section uses: {orphan}")
     for m in re.finditer(r"!\[([^\]]*)\]\(docs/figures/", readme):
