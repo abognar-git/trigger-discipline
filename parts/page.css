@@ -345,6 +345,7 @@ footer {
   #dossier { max-height: none; }
   #casebar { width: auto; border-left: 0; border-top: 1px solid var(--line); max-height: none; }
 }
+
 /* --- the shareable result (report, Score section) --------------------- */
 .share-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
 .btn-share { border-color: var(--muted); }
@@ -355,3 +356,12 @@ footer {
   color: var(--text); background: var(--panel-2);
   border: 1px solid var(--line); border-radius: 6px; padding: 8px;
 }
+
+/* --- disclosures in the briefing ------------------------------------- */
+#intro-reference, .brief-more { margin: 14px 0; }
+#intro-reference > summary, .brief-more > summary {
+  cursor: pointer; color: var(--accent); padding: 4px 0;
+}
+#intro-reference > summary:hover, .brief-more > summary:hover { text-decoration: underline; }
+#intro-reference[open] > summary, .brief-more[open] > summary { margin-bottom: 6px; }
+#intro-reference > h2:first-of-type { margin-top: 10px; }

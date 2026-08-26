@@ -53,6 +53,13 @@
   <p class="dim">The pipeline flags. You decide.</p>
   <p class="small dim" id="intro-shift"></p>
 
+  <!-- The start control sits above the briefing, not below it. Measured on
+       the deployed page: the button used to be 1,556px down behind 608 words,
+       which is a reading task in front of a game someone reached by link.
+       The words are all still here — the reference half is one disclosure
+       down, and the shift's own briefing keeps its first paragraph open. -->
+  <p><button id="btn-start" class="btn-clear">Start the shift</button></p>
+
   <div id="intro-fiction">
   <p>You are the enforcement reviewer at an AI platform's trust and safety desk.
   <span id="intro-counts"></span> Each archetype in this queue is grounded in a published
@@ -75,6 +82,8 @@
   <div class="rule"><strong>Nothing here is auto-banned. The pipeline flags; you decide.</strong>
   The actor you miss comes back tomorrow. The innocent you ban has no easy way back.</div>
 
+  <details id="intro-reference">
+    <summary>The rules in full — policy, scoring, what each tab costs, keys</summary>
   <h2>The policy</h2>
   <p>The policy here is the instrument's own, and it refuses two things. A ban that cites
   nothing beyond content is bounced: tick the evidence rows that carry your accusation, and
@@ -121,8 +130,9 @@
 
   <p class="small dim">Seed <span class="mono" id="intro-seed"></span>. Add
   <span class="mono">?seed=N</span> to the URL to reorder the queue.</p>
+  </details>
 
-  <p><button id="btn-start" class="btn-clear">Start the shift</button></p>
+  <p><button id="btn-start-foot" class="btn-clear">Start the shift</button></p>
 </section>
 
 <section id="screen-play" hidden>

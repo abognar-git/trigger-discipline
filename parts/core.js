@@ -588,7 +588,17 @@ function renderIntro() {
     var box = $('intro-fiction');
     if (box) {
       box.textContent = '';
-      brief.forEach(function (para) { box.appendChild(el('p', null, para)); });
+      /* The first paragraph is the situation and it stays open; the rest is
+         the shift's fine print, which a returning player wants and a first
+         visitor is reading instead of playing. Same words, one click away. */
+      box.appendChild(el('p', null, brief[0]));
+      if (brief.length > 1) {
+        var more = el('details', 'brief-more');
+        more.appendChild(el('summary', null,
+          'The rest of the briefing (' + plural(brief.length - 1, 'paragraph') + ')'));
+        brief.slice(1).forEach(function (para) { more.appendChild(el('p', null, para)); });
+        box.appendChild(more);
+      }
       /* Findings #5/#21 — a policy bulletin lands between shifts, on the
          briefing of the shift it activates on. The constants are meta's
          (imported from hunt policy.py); the stories are the measured bugs
@@ -2414,6 +2424,11 @@ function startShift() {
   }
 }
 $('btn-start').addEventListener('click', startShift);
+/* The briefing keeps a start control at each end: the top one for a
+   visitor who arrived to play, the foot one for a reader who got here
+   through the rules. Same handler, and startShift guards its own phase. */
+var startFoot = $('btn-start-foot');
+if (startFoot) { startFoot.addEventListener('click', startShift); }
 
 /* =========================================================================
    keyboard — B ban, M monitor, C clear, 1-5 tabs, Enter continue,
