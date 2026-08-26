@@ -31,6 +31,34 @@ def main() -> int:
     payload = json.loads((ROOT / "data" / "game_data.json").read_text(encoding="utf-8"))
     meta = payload["meta"]
 
+    # --- the shipped page carries the data this gate is checking ------------
+    # Everything below reads data/game_data.json. The GAME reads the block
+    # embedded in index.html, and build_data.py writes the two in separate
+    # steps (`--out`, then `--inject`). Skip the second and this gate goes
+    # green over a stale page: it happened while shift 7 was being added, and
+    # the whole file passed while index.html still shipped six shifts. Same
+    # class as the figures that kept the old identifiers after the fixtures
+    # were corrected — a check that reads the source, not the artifact.
+    page = (ROOT / "index.html").read_text(encoding="utf-8")
+    m = re.search(r'<script id="game-data" type="application/json">(.*?)</script>',
+                  page, re.DOTALL)
+    if not m:
+        fail("index.html has no game-data block")
+    else:
+        try:
+            embedded = json.loads(m.group(1))
+        except json.JSONDecodeError as exc:
+            embedded = None
+            fail(f"index.html's game-data block is not valid JSON: {exc}")
+        if embedded is not None and embedded != payload:
+            n_page = len(embedded.get("shifts", []))
+            n_file = len(payload.get("shifts", []))
+            detail = (f"{n_page} shifts vs {n_file}" if n_page != n_file
+                      else "same shift count, different content")
+            fail("index.html's game-data block does not match "
+                 f"data/game_data.json ({detail}) - run "
+                 "`python3 scripts/build_data.py --inject index.html`")
+
     # --- shift count -------------------------------------------------------
     # The staleness class this gate exists for: the career grew a shift and
     # the README kept saying five. The count must be stated in words, and no
@@ -180,7 +208,7 @@ def main() -> int:
             print(f"  - {f}")
         return 1
     print("check_readme: OK (shift count, scoring, tabs, bands, refusal copy, "
-          "bulletin stories, leak guard, figures, links)")
+          "bulletin stories, leak guard, figures, links, page data)")
     return 0
 
 
