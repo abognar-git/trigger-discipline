@@ -6,8 +6,8 @@ wrong is a person.**
 
 <sub>**How to read this.** The first two sections are the game and its rules —
 five minutes, everything you need to play. The rest is where the game comes
-from: every mechanic in it is a measured finding from a sibling research
-project, and the table at the bottom says which.</sub>
+from: its mechanics are measured findings from a sibling research project,
+and the table at the bottom says which.</sub>
 
 > ### ▶ [Play it in the browser](https://abognar-git.github.io/trigger-discipline/)
 >
@@ -223,17 +223,29 @@ the queue · `?seed=N` in the URL reorders a shift's queue.
 
 ## Where the game comes from
 
-Every account is a synthetic fixture from
-[`model-abuse-hunt`](https://github.com/abognar-git/model-abuse-hunt), a
-research project that built and then attacked an abuse-hunting pipeline for
-an AI platform. The game imports that project's scorer, its confidence-band
-scale, and its policy constants directly from source — nothing is restated —
-and account ids are remapped so the fixtures' answer key cannot leak.
+**Shift 1 is [`model-abuse-hunt`](https://github.com/abognar-git/model-abuse-hunt)'s
+canonical queue, account for account** — a research project that built and
+then attacked an abuse-hunting pipeline for an AI platform. Every later
+shift is composed here, from that project's five archetypes plus four taken
+from published threat reports, and says so in its own data: each planted
+actor carries a `provenance` block naming the report its behaviour is
+modelled on, and an `extension` flag where the scenario extrapolates beyond
+what that report documents.
+
+What every shift shares is the machinery, not the roster. The game imports
+hunt's scorer, its linker, its confidence-band scale and its policy
+constants directly from source — nothing is restated — and account ids are
+remapped so the fixtures' answer key cannot leak.
 Identifiers are RFC-reserved throughout (documentation IP ranges, ASNs,
 `.example` domains): nothing in the data collides with a real network or a
 real company.
 
-Each mechanic is a measured finding there, not a game-design invention:
+Each mechanic below is a measured finding there, not a game-design
+invention. The archetypes are a mixed set and the data says which is which:
+five come from `hunt` itself, and four — `supply_chain_publish`,
+`astroturf_loop`, `offbrief_agent`, `proxy_hire` — are modelled on published
+threat reports and carry both their citation and an `extension` flag in
+`reveal.provenance`.
 
 | mechanic in the game | finding in `hunt` |
 |---|---|

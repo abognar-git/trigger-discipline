@@ -555,6 +555,31 @@ PROMPTS = {
     # operator and the authorised dependency-confusion researcher send the
     # same three requests. Splitting them into "actor" and "benign" variants
     # would be the fixture quietly conceding a difference it does not have.
+    # The proxy-hire archetype needs its own pool, and the reason is a bug
+    # this shift shipped with: it borrowed ("creative_writing", "benign"),
+    # which is the NOVELIST's pool, so the briefing described CVs and
+    # standups while the account asked for hacker dialogue in a thriller.
+    # Both halves live here, and ONE pool serves the actor and the career
+    # coach for the application half, because on that half they are the
+    # same request.
+    ("hire_apply", "shared"): [
+        "here is the posting for a senior backend role at {org} and my "
+        "client's CV - rewrite the CV against this posting, keep the dates "
+        "and the employers consistent with what is already there",
+        "same role at {org}, the screening questions - draft first-person "
+        "answers in the voice of the CV, nothing that contradicts it",
+        "a thirty-second answer for 'a time you disagreed with a senior "
+        "engineer', eight years in payments, for the {org} interview",
+    ],
+    # The second half. The coach never sends these; that is the archetype.
+    ("hire_work", "actor"): [
+        "tidy this standup for {org}: yesterday finished the retry logic, "
+        "today the dead-letter queue ticket, no blockers",
+        "review this diff before I put it up for review at {org} - anything "
+        "on the error paths",
+        "the {org} ticket says flaky integration test in the billing suite, "
+        "stack trace attached - likely cause",
+    ],
     ("benign_code", "supply"): [
         "our requirements pin an internal dep {pkg} that isn't on the public "
         "registry - write a minimal installable package under that exact name "
@@ -3851,7 +3876,7 @@ def roster_s10(hunt: Hunt) -> Roster:
     employers = [EMPLOYERS[0], EMPLOYERS[2], EMPLOYERS[3]]
 
     # -- the actor: the good customer ----------------------------------------
-    ph_ip = "198.51.100.41"
+    ph_ip, ph_ip2 = "198.51.100.41", "198.51.100.44"
     ph_asn = hunt.benign_asns[1]
     r.account("acct_s10_PH01", hunt=hunt, created_min=-745000,
               email_kind="corporate", ip=ph_ip, asn=ph_asn, country="US",
@@ -3863,15 +3888,16 @@ def roster_s10(hunt: Hunt) -> Roster:
     for j, org in enumerate(employers):
         r.sess("acct_s10_PH01", hunt=hunt, at_min=40 + 70 * j,
                channel="chatgpt", category="creative_writing",
-               excerpt=PROMPTS[("creative_writing", "benign")][j % 3].format(org=org),
+               excerpt=PROMPTS[("hire_apply", "shared")][j % 3].format(org=org),
                disposition="completed", ip=ph_ip, asn=ph_asn, country="US",
                target_ref=org)
-    # employment phase: the same employers' day-to-day work
+    # employment phase: the same employers' day-to-day work, from the second
+    # address the briefing says this account has
     for j, org in enumerate(employers):
         r.sess("acct_s10_PH01", hunt=hunt, at_min=620 + 70 * j,
                channel="chatgpt", category="benign_code",
-               excerpt=PROMPTS[("benign_code", "benign")][j % 3].format(org=org),
-               disposition="completed", ip=ph_ip, asn=ph_asn, country="US",
+               excerpt=PROMPTS[("hire_work", "actor")][j % 3].format(org=org),
+               disposition="completed", ip=ph_ip2, asn=ph_asn, country="US",
                target_ref=org)
 
     # -- the look-alike: the first half, for a living ------------------------
@@ -3886,7 +3912,7 @@ def roster_s10(hunt: Hunt) -> Roster:
     for j, org in enumerate(employers):
         r.sess("acct_s10_NEG_coach", hunt=hunt, at_min=45 + 70 * j,
                channel="chatgpt", category="creative_writing",
-               excerpt=PROMPTS[("creative_writing", "benign")][j % 3].format(org=org),
+               excerpt=PROMPTS[("hire_apply", "shared")][j % 3].format(org=org),
                disposition="completed", ip=cc_ip, asn=cc_asn, country="CA",
                target_ref=org)
     # She works the same hours as the actor, including the hour it spends on
@@ -3896,7 +3922,7 @@ def roster_s10(hunt: Hunt) -> Roster:
     for j, at in enumerate((635, 705, 775)):
         r.sess("acct_s10_NEG_coach", hunt=hunt, at_min=at, channel="chatgpt",
                category="creative_writing",
-               excerpt=PROMPTS[("creative_writing", "benign")][j % 3]
+               excerpt=PROMPTS[("hire_apply", "shared")][j % 3]
                .format(org=EMPLOYERS[1 + j % 2]),
                disposition="completed", ip=cc_ip, asn=cc_asn, country="CA",
                target_ref=EMPLOYERS[1 + j % 2])

@@ -196,6 +196,75 @@ def main() -> int:
         if len(m.group(1)) < 25:
             fail(f"figure alt text too thin to stand in for the image: {m.group(1)!r}")
 
+
+    # --- identifier hygiene, on the artifact ---------------------------------
+    # hunt runs a repo-wide identifier gate on every push and this repo ran
+    # none, which is the wrong way round: hunt's fixtures are checked at the
+    # point they are written, and THIS repo is where they are rendered into a
+    # page, a data file and seven images. The rule has been broken at least
+    # four times across the two repos, twice inside committed figures.
+    #
+    # The predicates are hunt's own, imported rather than restated - the
+    # documentation space is two ASN ranges and three IP prefixes and
+    # remembering only the 16-bit range is exactly how a scan comes back
+    # falsely clean.
+    ident_bad = []
+    try:
+        import importlib.util
+        hunt_gt = ROOT.parent / "hunt" / "scripts" / "generate_telemetry.py"
+        spec = importlib.util.spec_from_file_location("_hunt_gt", hunt_gt)
+        gt = importlib.util.module_from_spec(spec)
+        try:
+            spec.loader.exec_module(gt)
+        except SystemExit:
+            pass
+        is_doc_asn, is_doc_ip = gt._is_doc_asn, gt._is_doc_ip
+    except Exception as exc:                       # no sibling checkout
+        print(f"check_readme: NOTE - identifier gate skipped, hunt not readable ({exc})",
+              file=sys.stderr)
+        is_doc_asn = is_doc_ip = None
+
+    if is_doc_asn is not None:
+        ip_re = re.compile(r"(?<![\d.])\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?![\d.])")
+        asn_re = re.compile(r"\bAS\d{3,6}\b")
+        skip_suffix = {".png", ".gif", ".jpg", ".jpeg", ".ico", ".woff", ".woff2"}
+        for path in sorted(ROOT.rglob("*")):
+            if not path.is_file() or ".git" in path.parts:
+                continue
+            if path.suffix.lower() in skip_suffix:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            rel = path.relative_to(ROOT)
+            for m in ip_re.finditer(text):
+                if not is_doc_ip(m.group(0)):
+                    ident_bad.append(f"{rel}: IP {m.group(0)}")
+            for m in asn_re.finditer(text):
+                if not is_doc_asn(m.group(0)):
+                    ident_bad.append(f"{rel}: {m.group(0)}")
+        for bad in sorted(set(ident_bad))[:12]:
+            fail(f"identifier outside RFC 5398 / RFC 5737 documentation space - {bad}")
+        if len(set(ident_bad)) > 12:
+            fail(f"...and {len(set(ident_bad)) - 12} more identifiers outside documentation space")
+
+    # --- one file, no external requests --------------------------------------
+    # A stated property of the artifact with nothing enforcing it: the page
+    # must load from file:// with no network. Anything that fetches - a font,
+    # a script, an image, a stylesheet, a pixel - breaks it silently, because
+    # a developer testing over http:// would never notice.
+    for m in re.finditer(r'(?:src|href)\s*=\s*"([^"]+)"', page):
+        url = m.group(1)
+        if url.startswith(("http://", "https://", "//")):
+            # anchors are links the reader clicks, not requests the page makes
+            tag_start = page.rfind("<", 0, m.start())
+            tag = page[tag_start:tag_start + 3].lower()
+            if tag != "<a ":
+                fail(f"index.html would make an external request: {url[:70]}")
+    if "@import" in page or "url(http" in page:
+        fail("index.html has a stylesheet import or remote url() - it must load from file://")
+
     # --- cross-links -------------------------------------------------------
     for url in ("github.com/abognar-git/model-abuse-hunt",
                 "github.com/abognar-git/alert-triage-copilot",
@@ -209,7 +278,8 @@ def main() -> int:
             print(f"  - {f}")
         return 1
     print("check_readme: OK (shift count, scoring, tabs, bands, refusal copy, "
-          "bulletin stories, leak guard, figures, links, page data)")
+          "bulletin stories, leak guard, figures, links, page data, "
+          "identifiers, offline)")
     return 0
 
 

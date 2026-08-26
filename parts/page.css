@@ -126,7 +126,8 @@ main { flex: 1; display: flex; flex-direction: column; }
 #dossier-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
 #dossier-head h2 { margin: 0; font-family: var(--mono); font-size: 20px; }
 #dossier-head .meta { color: var(--muted); font-size: 13px; }
-#verdict-bar { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+#verdict-bar { margin-left: auto; display: flex; gap: 8px; align-items: center;
+               flex-wrap: wrap; }
 .btn-ban { background: var(--ban-dim); border-color: var(--ban); color: var(--ban); font-weight: 700; }
 .btn-monitor { background: var(--warn-dim); border-color: var(--warn); color: var(--warn); font-weight: 700; }
 .btn-clear { background: var(--clear-dim); border-color: var(--clear); color: var(--clear); font-weight: 700; }
@@ -348,6 +349,13 @@ footer {
 /* mobile: single column, queue collapses to a strip */
 @media (max-width: 800px) {
   #screen-play { grid-template-columns: 1fr; }
+  /* On a phone the three verdicts and the account id cannot share a row:
+     measured at 375px, CLEAR ended one pixel past the viewport and the
+     document does not scroll sideways, so it was clipped rather than
+     reachable. The bar drops to its own full-width row and the buttons
+     grow to a 44px touch target. */
+  #verdict-bar { margin-left: 0; flex: 1 0 100%; }
+  #verdict-bar button { flex: 1 1 auto; min-height: 44px; }
   #queue { max-height: none; border-right: 0; border-bottom: 1px solid var(--line); }
   #queue-list { display: flex; overflow-x: auto; gap: 4px; }
   #queue-list li { flex: 0 0 auto; }
