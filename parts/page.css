@@ -99,7 +99,17 @@ main { flex: 1; display: flex; flex-direction: column; }
 .small { font-size: 13px; }
 
 /* play layout — the third (case board) column is empty off case shifts */
-#screen-play { flex: 1; display: grid; grid-template-columns: 280px minmax(0,1fr) auto; gap: 0; }
+#screen-play { flex: 1; display: grid; grid-template-columns: 264px minmax(0,1fr) 300px; gap: 0; }
+#decision {
+  border-left: 1px solid var(--line); background: var(--panel);
+  overflow-y: auto; max-height: calc(100vh - 46px); padding: 14px 16px 28px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+#decision #verdict-bar { margin-left: 0; flex-direction: column; align-items: stretch; gap: 6px; }
+#decision #verdict-bar button { justify-content: flex-start; text-align: left; min-height: 40px; }
+#decision #cite-count { display: block; margin-top: 2px; }
+#decision #notice:empty { display: none; }
+#decision #band-picker { margin: 0; }
 #queue {
   border-right: 1px solid var(--line); background: var(--panel);
   overflow-y: auto; max-height: calc(100vh - 46px);
@@ -173,10 +183,10 @@ main { flex: 1; display: flex; flex-direction: column; }
 #tabbar .cost { color: var(--warn); font-family: var(--mono); font-size: 11px; }
 #tabbar .paid { color: var(--clear); font-family: var(--mono); font-size: 11px; }
 #notice { min-height: 20px; color: var(--warn); font-size: 13px; margin: 6px 0 0; }
-#tabpanel {
-  border: 1px solid var(--line); border-radius: 8px; background: var(--panel);
-  padding: 14px 16px; margin-top: 8px;
-}
+/* No box. The stack is separated by hairlines and the panel it sat in was
+   a box inside a box inside a column - most of what made this read as a
+   form rather than a case view. */
+#tabpanel { margin-top: 10px; }
 #tabpanel h3 { margin-top: 0; font-size: 14px; }
 .sess { border-top: 1px solid var(--line); padding: 8px 0; }
 .sess:first-of-type { border-top: 0; }
@@ -292,10 +302,7 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
 .rev-row p { margin: 4px 0; }
 
 /* case board (SPEC-2 §3) */
-#casebar {
-  width: 300px; border-left: 1px solid var(--line); background: var(--panel);
-  overflow-y: auto; max-height: calc(100vh - 46px); padding: 12px 14px 28px;
-}
+#casebar { border-top: 1px solid var(--line); padding-top: 12px; }
 #casebar h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
   color: var(--muted); margin: 0 0 6px; }
 #casebar h3 { font-size: 13px; margin: 12px 0 4px; }
@@ -322,10 +329,16 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
 
 /* career (SPEC-2 §4): shift select, appeals round, dashboard */
 .career-framing { font-size: 16px; }
-.shift-list { margin: 18px 0; }
+/* Two columns so the whole career fits one screen. Ten full-width cards
+   stacked ran past the fold, which made the landing a scroll before it was
+   a choice - and made the published figure of it a crop of the first six. */
+.shift-list {
+  margin: 18px 0; display: grid; gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 .shift-card {
   display: block; width: 100%; text-align: left; border: 1px solid var(--line);
-  border-radius: 8px; background: var(--panel); padding: 10px 14px; margin: 8px 0;
+  border-radius: 6px; background: var(--panel); padding: 10px 14px; margin: 0;
   color: var(--text);
 }
 button.shift-card:hover { border-color: var(--accent); }
@@ -371,6 +384,7 @@ footer {
 /* mobile: single column, queue collapses to a strip */
 @media (max-width: 800px) {
   #screen-play { grid-template-columns: 1fr; }
+  .shift-list { grid-template-columns: 1fr; }
   /* On a phone the three verdicts and the account id cannot share a row:
      measured at 375px, CLEAR ended one pixel past the viewport and the
      document does not scroll sideways, so it was clipped rather than
@@ -383,7 +397,9 @@ footer {
   #queue-list li { flex: 0 0 auto; }
   #queue-list button { width: auto; }
   #dossier { max-height: none; }
-  #casebar { width: auto; border-left: 0; border-top: 1px solid var(--line); max-height: none; }
+  #decision { border-left: 0; border-top: 1px solid var(--line); max-height: none; }
+  #decision #verdict-bar { flex-direction: row; }
+  #decision #verdict-bar button { flex: 1 1 auto; min-height: 44px; }
 }
 
 /* --- the shareable result (report, Score section) --------------------- */
@@ -413,3 +429,41 @@ footer {
 .riskdist i.over { background: var(--muted); }
 .riskdist i.me { background: var(--warn); }
 .risk-context p { margin: 0; }
+
+/* --- the evidence stack ------------------------------------------------
+   Replaces the tab strip. Everything already paid for stays on screen, and
+   what is still locked keeps its place in the order with its price and a
+   line saying what is behind it. Hairlines rather than boxes: five nested
+   panels in a panel was most of what made this read as an admin form.
+------------------------------------------------------------------------ */
+#tabpanel { display: flex; flex-direction: column; }
+.ev-panel { border-top: 1px solid var(--line); padding: 14px 0 4px; }
+.ev-panel:first-child { border-top: 0; padding-top: 4px; }
+.ev-head {
+  display: flex; align-items: baseline; gap: 10px; width: 100%;
+  background: none; border: 0; padding: 0; color: inherit; font: inherit;
+  text-align: left;
+}
+.ev-panel.locked .ev-head { cursor: pointer; }
+.ev-panel.locked .ev-head:hover .ev-name { color: var(--text); }
+.ev-panel.locked .ev-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.ev-k { font-family: var(--mono); font-size: 11px; color: var(--muted);
+        border: 1px solid var(--line); border-bottom-width: 2px;
+        border-radius: 4px; padding: 0 4px; }
+.ev-name { font-size: 15px; font-weight: 600; }
+.ev-panel.locked .ev-name { color: var(--muted); font-weight: 500; }
+.ev-price {
+  margin-left: auto; font-family: var(--mono); font-size: 11px;
+  letter-spacing: .06em; padding: 1px 7px; border: 1px solid var(--line);
+  border-radius: 4px; color: var(--muted);
+}
+.ev-price.free { color: var(--clear); border-color: var(--clear); }
+.ev-price.cost { color: var(--warn); border-color: var(--warn); }
+.ev-blurb { margin: 5px 0 0; font-size: 13px; color: var(--muted); }
+.ev-body:empty { display: none; }
+/* Each tab function opens with its own h3 and a one-line description, which
+   the panel header and blurb now say instead. Hiding them here rather than
+   editing five functions keeps the tab bodies renderable on their own. */
+.ev-body > h3:first-child { display: none; }
+.ev-body > h3:first-child + p.small.dim { display: none; }
+.ev-body { margin-top: 10px; }

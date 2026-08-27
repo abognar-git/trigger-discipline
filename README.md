@@ -18,7 +18,7 @@ and the table at the bottom says which.</sub>
 
 ## What this is
 
-![The ban rule, start to finish: a ban on content alone is refused, the Behavior tab is opened and cited, a confidence band is given, and the verdict lands.](docs/figures/ban_rule.gif)
+![The ban rule, start to finish: a ban on content alone is refused, the Behavior panel is opened and cited, a confidence band is given, and the verdict lands.](docs/figures/ban_rule.gif)
 
 <sub>Six real states of the running game, shift 2. Every figure in this file
 is captured from the committed `index.html` by `scripts/make_figures.py`,
@@ -41,8 +41,11 @@ tells you almost nothing. How they behave tells you almost everything.**
 
 You play ten shifts, in the order the job gets harder. The queue starts
 obvious, then starts moving, then starts arriving the way a real queue
-arrives: mostly innocent. On the last day the attack points the other way:
-one account in the queue is there to get someone else banned.
+arrives: mostly innocent. Halfway in, the attack points the other way:
+one account is there to get someone else banned. The four days after it
+take the evidence away instead - a verified identity that was bought, five
+accounts that share nothing, the cleanest file in the queue, and the best
+file you will see.
 
 ![The shift select screen: ten shifts, each unlocking the next.](docs/figures/shift_select.png)
 
@@ -63,9 +66,9 @@ enforced by the in-game policy, and both are lifted from the research
 pipeline's real enforcement rules:
 
 1. **A ban must cite evidence, and content alone is not evidence.**
-    Every evidence row in an opened evidence tab has a checkbox; checking it cites that
+    Every evidence row in an opened evidence panel has a checkbox; checking it cites that
     row. When you press BAN, the policy reads your citations, and at least one
-    must come from a non-content tab — Account file, Behavior, Network, or
+    must come from a non-content panel — Account file, Behavior, Network, or
     Pipeline read. Cite only prompt excerpts (or nothing) and the ban is
     refused:
 
@@ -137,7 +140,7 @@ Looking is never forbidden — it takes time. The shift has a fixed length,
 the clock only runs forward, and while you read, the queue keeps arriving
 and the actors keep operating.
 
-| tab | takes | contents |
+| panel | takes | contents |
 |---|---|---|
 | Content | nothing | prompt excerpts, category, refused or completed — what a content filter sees |
 | Account file | 1h | signup age, email kind, payment, phone verification |
@@ -145,9 +148,9 @@ and the actors keep operating.
 | Network | 2h | infrastructure per session, and which other queue accounts share it |
 | Pipeline read | 2h | the scorer's risk breakdown; cluster assessment and policy decision if one exists |
 
-![The Pipeline read tab: the scorer's risk breakdown, the signals that did not fire, and the policy's own decision.](docs/figures/pipeline_read.png)
+![The Pipeline read panel: the scorer's risk breakdown, the signals that did not fire, and the policy's own decision.](docs/figures/pipeline_read.png)
 
-<sub>The most expensive tab, and the one that argues with itself: the model
+<sub>The most expensive panel, and the one that argues with itself: the model
 called this account malicious abuse, and the policy held it to monitor — and
 the line under the assessment says what twelve repeat runs did to it: the
 decision held every time, the confidence band flipped a coin. Signals that
@@ -160,8 +163,8 @@ Where a cluster carries a model assessment, the desk also offers a free
 from the research's own judge experiment. Nothing obliges you to agree with
 it. If you use it, the shift report will show you what it was worth.
 
-Each tab opens once per account and stays open; refreshes are free. On the
-first shift the clock is off entirely — read everything, learn what each tab
+Each panel opens once per account and stays open; refreshes are free. On the
+first shift the clock is off entirely — read everything, learn what each panel
 is worth. From the second shift on, time is the only pressure the game ever
 applies. When nothing needs you, `⇧W` runs the clock forward to the next
 arrival or new session — or to the end of the shift, if nothing is left.
@@ -208,7 +211,7 @@ alone is refused.</sub>
   actor cell's infrastructure and an innocent's target, topic and working
   hours — so the pipeline's own linker puts the innocent in the actors'
   cluster, because every overlap genuinely holds. What decides the day is
-  the network tab's first-seen column, there since the first shift: an
+  the network panel's first-seen column, there since the first shift: an
   overlap says two accounts touched the same thing; the order says who
   touched it first. The overlap is real. The order is the tell. No figure
   of this shift appears here on purpose — a screenshot of the frame would
@@ -216,7 +219,7 @@ alone is refused.</sub>
 
 ### Keys
 
-`B` ban · `M` monitor · `C` clear · `1`–`5` evidence tabs · `A` case
+`B` ban · `M` monitor · `C` clear · `1`–`5` evidence panels · `A` case
 add/remove · `G` flag a policy gap (an annotation, never scored) · `W` wait
 1h · `⇧W` wait until the next event · `Enter` continue · arrows move through
 the queue · `?seed=N` in the URL reorders a shift's queue.
@@ -267,7 +270,7 @@ answer key is not: finding out what a queue contains is the game.
 | "Same writing style", always offered, always refused | every pairwise style score in the queue sits between ~0.97 and 1.00; the median account holds 38 words against an authorship floor near 1,000 |
 | "Same active hours", accepted — and it merges innocents | the timing channel closed the research's linkage gap and false-merged the planted look-alikes at every threshold it was swept at |
 | The free second opinion | the decorrelated judge's discrimination margin is −0.75 — inverted; it rated the one wrong assessment sound and found fault with three of the four real ones |
-| The report's designed pair | two accounts the cadence signal scores identically at full strength; everything that separates them lives in the tabs that cost time |
+| The report's designed pair | two accounts the cadence signal scores identically at full strength; everything that separates them lives in the panels that cost time |
 | The sixth shift, and the first-seen column | five of fourteen innocents could be attached to an actor by reproducing what they already share; the cheapest victim needed no capability barrier at all |
 
 The between-cases readout and the one-click fold are desk affordances, not

@@ -919,7 +919,7 @@ S1_BRIEFING = [
     "misleading: what someone asks an AI tells you almost nothing, how they "
     "behave tells you almost everything. Behavioral and infrastructure "
     "evidence is where the difference shows. Today the clock is off. Read "
-    "everything; learn what each tab is worth.",
+    "everything; learn what each panel is worth.",
 
     # Finding #18 - the offer, without endorsement. The button is bait and
     # the report is the reveal; the briefing merely says it exists.
@@ -2655,7 +2655,7 @@ def compose_tell(r: Roster, aid: str, rec: dict) -> Tell:
             else f"{_count_phrase(len(ss), 'session')}, all {activity},")
     return Tell(
         f"{lead} from an account with {', '.join(ident)}. {verdict} If you "
-        f"opened tabs on this one, the queue moved while you read them.",
+        f"opened panels on this one, the queue moved while you read them.",
         sessions=len(ss), risk=risk)
 
 
@@ -3497,7 +3497,9 @@ def _s7_background(r: Roster, hunt: Hunt, count: int, prefix: str = "s7",
 
 def roster_s7(hunt: Hunt) -> Roster:
     r = Roster(shift_id="s7", title="The clean signup",
-               subtitle="Nine accounts, twenty-four hours, and an account file "
+               # Eight, not nine: the ninth is a respawn, so it is not on
+               # the schedule and the card does not count it either.
+               subtitle="Eight accounts, twenty-four hours, and an account file "
                         "that fires nothing.",
                budget=24,
                flags={"live": True, "cases": True, "appeals": True},
@@ -3798,7 +3800,7 @@ S9_BRIEFING = [
 
 def roster_s9(hunt: Hunt) -> Roster:
     r = Roster(shift_id="s9", title="Off brief",
-               subtitle="Ten accounts, twenty-four hours, and the cleanest "
+               subtitle="Nine accounts, twenty-four hours, and the cleanest "
                         "file in the queue.",
                budget=24,
                flags={"live": True, "cases": True, "appeals": True},

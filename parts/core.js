@@ -103,12 +103,21 @@ function patchActive(pid) {
    clock is running. Not a price — nothing is ever refused for lack of
    hours, and on a clockless shift these are all effectively zero. Mirrors
    meta.tab_costs in the data block. */
+/* `blurb` is what a LOCKED panel says about itself. A tab strip told you a
+   name and a price and nothing about what the price buys, so choosing what
+   to spend the shift on was a guess. Deciding that is the game, and a
+   decision needs to know what is behind the door. */
 var TABS = [
-  { key: 'content',  label: 'Content',       hours: 0 },
-  { key: 'account',  label: 'Account file',  hours: 1 },
-  { key: 'behavior', label: 'Behavior',      hours: 2 },
-  { key: 'network',  label: 'Network',       hours: 2 },
-  { key: 'pipeline', label: 'Pipeline read', hours: 2 }
+  { key: 'content',  label: 'Content',       hours: 0,
+    blurb: 'Prompt excerpts, category, refused or completed - what a content filter sees.' },
+  { key: 'account',  label: 'Account file',  hours: 1,
+    blurb: 'Signup age, email kind, payment, phone verification.' },
+  { key: 'behavior', label: 'Behavior',      hours: 2,
+    blurb: 'Session timeline, cadence, volume, refusal rate, category mix over time.' },
+  { key: 'network',  label: 'Network',       hours: 2,
+    blurb: 'Infrastructure per session, and which other queue accounts share it.' },
+  { key: 'pipeline', label: 'Pipeline read', hours: 2,
+    blurb: 'The scorer\'s own risk breakdown, and where this account sits in the queue.' }
 ];
 var PAID_TABS = TABS.filter(function (t) { return t.hours > 0; })
                     .map(function (t) { return t.key; });
@@ -660,7 +669,13 @@ function renderIntro() {
     ? 'The shift runs ' + state.length + ' hours. Opening evidence advances the clock — ' +
       'the account file takes 1h, the other three take 2h each — and the shift ends when ' +
       'the clock reaches ' + state.length + '. Nothing is ever refused for lack of hours.'
-    : 'Today the clock is off. Every tab is free and opens instantly.');
+    : 'Today the clock is off. Every panel is free and opens instantly.');
+  /* The key list has to match the keys this shift actually binds: A only
+     exists where cases are on, so a fixed list was wrong from shift 3. */
+  setText('intro-keys-extra',
+    (SHIFT.flags && SHIFT.flags.cases)
+      ? ' \u00b7 A add the open account to a case, or remove it'
+      : '');
   setText('intro-seed', String(SEED));
 }
 
@@ -836,6 +851,11 @@ function renderDossier() {
   var a = byId.get(state.currentId);
   var head = $('dossier-head');
   head.textContent = '';
+  /* The decision rail is rebuilt with the dossier. It used to live inside
+     the head, which was cleared on every render; moving it out without
+     clearing it made every render append another set of verdict buttons
+     and another case action. */
+  $('verdict-slot').textContent = '';
   if (!a) { renderBandPicker(); emit('dossierRendered', { id: null }); return; }
   var h2 = el('h2', null, a.id);
   h2.setAttribute('tabindex', '-1');
@@ -843,7 +863,7 @@ function renderDossier() {
   var metaBits = [
     ((a.profile && a.profile.primary_channel) || '—'),
     plural(visibleSessions(a).length, 'session'),
-    paidTabsOpened(a.id) + ' of ' + PAID_TABS.length + ' evidence tabs open'
+    paidTabsOpened(a.id) + ' of ' + PAID_TABS.length + ' evidence panels open'
   ];
   /* SPEC-2 §8: hours only exist where a clock does. */
   if (clockRunning()) { metaBits.push(state.hoursByAccount.get(a.id) + 'h here'); }
@@ -887,7 +907,7 @@ function renderDossier() {
     bar.appendChild(monBtn);
     bar.appendChild(clearBtn);
   }
-  head.appendChild(bar);
+  $('verdict-slot').appendChild(bar);
 
   /* finding #20 — the annotation row renders for every account, decided or
      not: a flag that only appeared on borderline accounts would be a tell. */
@@ -910,33 +930,10 @@ function renderDossier() {
 
   renderBandPicker();
   renderCiteCount();
-  renderTabBar();
   renderTabPanel();
   /* modes may append dossier actions (e.g. the case board's add/remove);
      the dossier is rebuilt on every render, so this fires every time */
   emit('dossierRendered', { id: a.id });
-}
-
-function renderTabBar() {
-  var a = byId.get(state.currentId);
-  var bar = $('tabbar');
-  bar.textContent = '';
-  if (!a) { return; }
-  var owned = state.unlocked.get(a.id);
-  TABS.forEach(function (t, i) {
-    var b = el('button');
-    b.appendChild(el('kbd', null, String(i + 1)));
-    b.appendChild(document.createTextNode(' ' + t.label + ' '));
-    /* SPEC-2 §8: the chip is a duration, and only where a clock runs.
-       Without one every tab reads free, opened or not. */
-    if (t.hours === 0) { b.appendChild(el('span', 'paid', 'free')); }
-    else if (owned.has(t.key)) { b.appendChild(el('span', 'paid', 'open')); }
-    else if (clockRunning()) { b.appendChild(el('span', 'cost', t.hours + 'h')); }
-    else { b.appendChild(el('span', 'paid', 'free')); }
-    if (t.key === state.activeTab) { b.setAttribute('aria-current', 'true'); }
-    b.addEventListener('click', function () { openTab(t.key); });
-    bar.appendChild(b);
-  });
 }
 
 function setNotice(msg) { $('notice').textContent = msg || ''; }
@@ -970,18 +967,45 @@ function openTab(key) {
   CLOCK.endIfOver();
 }
 
-/* ---- tab panels. None of these reads anything a content filter, an
-   account system, or the pipeline would not hand over — and none reads
-   the vault (§7.4). Every row in an opened tab carries a citation box. -- */
+var TAB_FNS = { content: tabContent, account: tabAccount, behavior: tabBehavior,
+                network: tabNetwork, pipeline: tabPipeline };
 
+/* The evidence stack. There is no tab strip any more: the stack's own
+   headers are the controls, so a locked panel says what it holds and
+   what it costs in the same place you click to buy it. */
 function renderTabPanel() {
   var a = byId.get(state.currentId);
   var panel = $('tabpanel');
   panel.textContent = '';
   if (!a) { return; }
-  var fn = { content: tabContent, account: tabAccount, behavior: tabBehavior,
-             network: tabNetwork, pipeline: tabPipeline }[state.activeTab];
-  panel.appendChild(fn(a));
+  var owned = state.unlocked.get(a.id);
+  TABS.forEach(function (t, i) {
+    var open = t.hours === 0 || owned.has(t.key) || !clockRunning();
+    var sec = el('section', 'ev-panel' + (open ? '' : ' locked'));
+    sec.id = 'panel-' + t.key;
+
+    var head = el(open ? 'div' : 'button', 'ev-head');
+    head.appendChild(el('kbd', 'ev-k', String(i + 1)));
+    head.appendChild(el('span', 'ev-name', t.label));
+    var price = el('span', 'ev-price');
+    if (t.hours === 0) { price.className += ' free'; price.textContent = 'free'; }
+    else if (open) { price.textContent = 'open'; }
+    else { price.className += ' cost'; price.textContent = t.hours + 'h'; }
+    head.appendChild(price);
+    if (!open) {
+      head.setAttribute('aria-expanded', 'false');
+      head.setAttribute('aria-controls', 'panelbody-' + t.key);
+      head.addEventListener('click', function () { openTab(t.key); });
+    }
+    sec.appendChild(head);
+    sec.appendChild(el('p', 'ev-blurb', t.blurb));
+
+    var body = el('div', 'ev-body');
+    body.id = 'panelbody-' + t.key;
+    if (open) { body.appendChild(TAB_FNS[t.key](a)); }
+    sec.appendChild(body);
+    panel.appendChild(sec);
+  });
 }
 
 function tabContent(a) {
@@ -2163,9 +2187,9 @@ function renderReport(rep) {
     'Card-only review of this queue — uphold every policy card, touch nothing else — bans ' +
     plural(cardBans, 'account') + ' (' + plural(cardTP, 'actor') + ', ' + cardFP +
     ' innocent) and monitors ' + cardMon + ' for a score of ' + fmtScore(cardScore) +
-    ', without opening one evidence tab.'));
+    ', without opening one evidence panel.'));
   sCard.appendChild(el('p', null,
-    'You opened ' + plural(rep.tabsOpened, 'evidence tab') + ' and scored ' +
+    'You opened ' + plural(rep.tabsOpened, 'evidence panel') + ' and scored ' +
     fmtScore(rep.score) +
     '. The difference between those two numbers is what looking bought. On this queue the cards happen ' +
     'to be sound; the card-only reviewer’s method cannot tell you when they are not.'));
@@ -2203,7 +2227,7 @@ function renderReport(rep) {
     sClock.appendChild(el('h2', null, 'The clock'));
     var bt = el('table');
     var bhr = el('tr');
-    ['tab', 'opens', 'hours'].forEach(function (h) { bhr.appendChild(el('th', null, h)); });
+    ['panel', 'opens', 'hours'].forEach(function (h) { bhr.appendChild(el('th', null, h)); });
     bt.appendChild(bhr);
     TABS.forEach(function (tb) {
       if (tb.hours === 0) { return; }
@@ -2245,13 +2269,13 @@ function renderReport(rep) {
     var pick, story;
     if (unread.length) {
       pick = unread[0];
-      story = 'banned on the free view alone — not one evidence tab opened. Content was the ' +
+      story = 'banned on the free view alone — not one evidence panel opened. Content was the ' +
         'whole accusation, which is the exact failure this queue was built to punish.';
     } else {
       pick = rep.bannedBenign.reduce(function (best, id) {
         return paidTabsOpened(id) > paidTabsOpened(best) ? id : best;
       }, rep.bannedBenign[0]);
-      story = plural(paidTabsOpened(pick), 'evidence tab') + ' open, banned anyway. ' +
+      story = plural(paidTabsOpened(pick), 'evidence panel') + ' open, banned anyway. ' +
         'The evidence was there; the verdict ignored it.';
     }
     var box = el('div', 'mistake-box');
@@ -2339,7 +2363,7 @@ function renderReport(rep) {
       });
       var clause = unopened.length
         ? ' — and you never opened ' + unopened[0] + '.'
-        : ' — every diverging tab was open; the verdict ignored them.';
+        : ' — every diverging panel was open; the verdict ignored them.';
       verdictLine = (sev[vA] === sev[vB]
         ? 'Same verdict, opposite truths.'
         : 'You split them the wrong way around.')
@@ -2546,7 +2570,7 @@ var startFoot = $('btn-start-foot');
 if (startFoot) { startFoot.addEventListener('click', startShift); }
 
 /* =========================================================================
-   keyboard — B ban, M monitor, C clear, 1-5 tabs, Enter continue,
+   keyboard — B ban, M monitor, C clear, 1-5 evidence panels, Enter continue,
    arrows queue; band picker: number keys pick a band, Esc cancels
 ========================================================================= */
 document.addEventListener('keydown', function (e) {

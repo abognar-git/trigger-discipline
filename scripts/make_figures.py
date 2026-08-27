@@ -25,6 +25,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import shutil
 import subprocess
@@ -63,11 +64,25 @@ function openById(id){
   }
   return false;
 }
-function boxes(){
-  return [].slice.call(document.querySelectorAll('input[type=checkbox]'))
+/* Scoped to one evidence panel on purpose. The panels used to be tabs, so
+   "the first visible checkbox" could only mean the open tab's; they are now
+   one stacked column, and an unscoped citeFirst() silently cited Content
+   rows while the caption claimed behavior - which the policy then refused,
+   so the figure showed a refusal captioned as a band picker. */
+function boxes(panel){
+  var root = panel ? document.getElementById('panelbody-' + panel) : document;
+  if (!root) { throw new Error('no panel body: ' + panel); }
+  return [].slice.call(root.querySelectorAll('input[type=checkbox]'))
            .filter(function(c){ return c.offsetParent !== null; });
 }
-function citeFirst(n){ var b = boxes(); for (var i=0;i<n && i<b.length;i++) b[i].click(); }
+function citeFirst(n, panel){
+  var b = boxes(panel);
+  if (b.length < n) {
+    throw new Error('citeFirst(' + n + (panel ? ", '" + panel + "'" : '') +
+                    '): only ' + b.length + ' rows to cite');
+  }
+  for (var i=0;i<n;i++) b[i].click();
+}
 /* Figures must show a deliberate account, not whatever sorts first. Selection
    uses only what the player can see for free (categories on the Content tab)
    or what the figure is explicitly about (the pipeline read it depicts) —
@@ -134,6 +149,39 @@ function openMatchingOn(shift, hours){
 function monitoredCluster(a){
   return a.pipeline && a.pipeline.cluster && a.pipeline.cluster.decision === 'monitor';
 }
+/* The evidence panels are one stacked column, so opening a panel no longer
+   brings it into frame - the figure would keep showing whatever sits at the
+   top. showPanel() puts the named panel under the dossier's own scroll. */
+function showPanel(key){
+  var sec = document.getElementById('panel-' + key);
+  if (!sec) { throw new Error('no panel: ' + key); }
+  var box = document.getElementById('dossier');
+  box.scrollTop += sec.getBoundingClientRect().top - box.getBoundingClientRect().top - 8;
+}
+/* A figure's filename is a claim about what the image shows, and until this
+   ran, nothing checked it: a scenario could scroll, relayout or silently
+   fail and still ship a plausible-looking PNG under the wrong name. Every
+   scenario now names text that has to be inside the captured viewport. */
+function requireVisible(needles){
+  var vw = window.innerWidth, vh = window.innerHeight;
+  needles.forEach(function(txt){
+    var all = document.querySelectorAll('body *');
+    var hit = false;
+    for (var i = 0; i < all.length && !hit; i++){
+      var el = all[i];
+      if (el.textContent.indexOf(txt) < 0) { continue; }
+      var deeper = false;
+      for (var j = 0; j < el.children.length; j++){
+        if (el.children[j].textContent.indexOf(txt) >= 0) { deeper = true; break; }
+      }
+      if (deeper) { continue; }
+      var r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0 && r.top >= 0 && r.left >= 0
+          && r.bottom <= vh && r.right <= vw) { hit = true; }
+    }
+    if (!hit) { throw new Error('figure does not show ' + JSON.stringify(txt)); }
+  });
+}
 """
 
 SCENARIOS: dict[str, dict] = {
@@ -141,6 +189,8 @@ SCENARIOS: dict[str, dict] = {
     "shift_select": dict(
         caption="The ten shifts, in the order the job gets harder.",
         size=(1180, 1080), js="/* the landing is the boot state */",
+        # the caption says ten, so the check says ten
+        must_show=["Shift 1 \u2014 ", "Shift 10 \u2014 "],
     ),
     "refusal": dict(
         caption="Banning on content alone is refused by the policy, not by the score.",
@@ -149,9 +199,10 @@ SCENARIOS: dict[str, dict] = {
         start('s2');
         waitHours(12);           // a live queue: the subject has to arrive first
         openMatching(visiblePhishing(12), 'three visible phishing drafts');
-        citeFirst(1);            // a content row: the worst-looking evidence there is
+        citeFirst(1, 'content');  // the worst-looking evidence there is
         press('b');              // the policy reads the citations and declines
         """,
+        must_show=["no enforcement on content alone"],
     ),
     "social_card": dict(
         caption="The link-preview card: the refusal, which is the one screen "
@@ -166,7 +217,7 @@ SCENARIOS: dict[str, dict] = {
         start('s2');
         waitHours(12);
         openMatching(visiblePhishing(12), 'three visible phishing drafts');
-        citeFirst(1);
+        citeFirst(1, 'content');
         press('b');
         /* Captured at 1:1 on purpose. Two attempts to enlarge the refusal
            line for small feed renders both failed the same way: CSS zoom
@@ -176,6 +227,7 @@ SCENARIOS: dict[str, dict] = {
            og:description carry the sentence. */
         window.scrollTo(0, 0);
         """,
+        must_show=["no enforcement on content alone"],
     ),
     "pipeline_read": dict(
         caption="The scorer's own read: what fired, what did not, and what the policy did with it.",
@@ -187,7 +239,9 @@ SCENARIOS: dict[str, dict] = {
         start('s1');
         openMatching(monitoredCluster, 'an account the policy held to monitor');
         press('5');              // Pipeline read
+        showPanel('pipeline');   // stacked panels: opening one is not framing it
         """,
+        must_show=["Pipeline read"],
     ),
     "band_picker": dict(
         caption="A ban has to say how sure it is. Below the floor, it is refused.",
@@ -196,9 +250,10 @@ SCENARIOS: dict[str, dict] = {
         start('s2');
         waitHours(12);           // a live queue: the subject has to arrive first
         openMatching(visiblePhishing(12), 'three visible phishing drafts');
-        press('3'); citeFirst(2);   // Behavior, two rows cited
+        press('3'); citeFirst(2, 'behavior');   // Behavior, two rows cited
         press('b');
         """,
+        must_show=["How confident is this ban?"],
     ),
     "case_board": dict(
         caption="Accounts that belong to one operator are one case, banned once.",
@@ -208,6 +263,7 @@ SCENARIOS: dict[str, dict] = {
         waitHours(9);            // let the queue arrive; a case needs two members
         openLinkablePair();
         """,
+        must_show=["Case board", "Link reason"],
     ),
     # ---- GIF frames -------------------------------------------------------
     # One scenario per frame, each a superset of the previous: the GIF is the
@@ -216,20 +272,20 @@ SCENARIOS: dict[str, dict] = {
         start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts');
     """),
     "gif_2_refused": dict(gif=2, size=(1300, 760), js="""
-        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1); press('b');
+        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1, 'content'); press('b');
     """),
     "gif_3_behavior": dict(gif=3, size=(1300, 760), js="""
-        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1); press('b'); press('3');
+        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1, 'content'); press('b'); press('3');
     """),
     "gif_4_cited": dict(gif=4, size=(1300, 760), js="""
-        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1); press('b'); press('3'); citeFirst(2);
+        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1, 'content'); press('b'); press('3'); citeFirst(2, 'behavior');
     """),
     "gif_5_band": dict(gif=5, size=(1300, 760), js="""
-        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1); press('b'); press('3'); citeFirst(2); press('b');
+        start('s2'); waitHours(6); openMatching(visiblePhishing(6), 'three visible phishing drafts'); citeFirst(1, 'content'); press('b'); press('3'); citeFirst(2, 'behavior'); press('b');
     """),
     "gif_6_verdict": dict(gif=6, size=(1300, 760), js="""
         var subject = openMatchingOn('s2', 6);
-        citeFirst(1); press('b'); press('3'); citeFirst(2); press('b');
+        citeFirst(1, 'content'); press('b'); press('3'); citeFirst(2, 'behavior'); press('b');
         press('6');            // very likely
         openById(subject);     // the payoff is the verdict, not the next account
     """),
@@ -249,12 +305,14 @@ def chrome() -> str:
     sys.exit(2)
 
 
-def build_page(tmp: Path, name: str, js: str, shift_hint: str) -> Path:
+def build_page(tmp: Path, name: str, js: str, shift_hint: str,
+               must_show: list[str] | None = None) -> Path:
     src = PAGE.read_text(encoding="utf-8")
+    check = ("\nrequireVisible(" + json.dumps(must_show) + ");\n") if must_show else ""
     harness = (
         "\n<script>\nvar CAPTURE_SHIFT = " + repr(shift_hint).replace("'", '"') + ";\n"
         + PRELUDE
-        + "window.addEventListener('load', function(){ try {\n" + js
+        + "window.addEventListener('load', function(){ try {\n" + js + check
         + "\n} catch (e) { document.title = 'CAPTURE ERROR: ' + e.message;\n"
         "  var p = document.createElement('pre');\n"
         "  p.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#300;color:#fff;padding:20px;font:14px monospace';\n"
@@ -272,6 +330,31 @@ def shot(exe: str, page: Path, png: Path, size: tuple[int, int]) -> None:
          f"--screenshot={png}", f"file://{page}"],
         check=True, capture_output=True,
     )
+
+
+def assert_captured(png: Path, name: str) -> None:
+    """Fail on a scenario that threw instead of shipping its error as art.
+
+    The harness paints an uncaught scenario error into the page as a
+    full-viewport panel, which is right for a human running one figure and
+    wrong for everything else: the PNG still gets written, still gets
+    committed, and still gets embedded in the README under a filename that
+    claims something else. Chrome cannot hand back the text it rendered, but
+    that panel has a colour nothing else in either theme uses.
+    """
+    from PIL import Image
+
+    im = Image.open(png).convert("RGB")
+    w, h = im.size
+    grid = [(x, y) for y in range(0, h, 11) for x in range(0, w, 11)]
+    # Sampled, not corner-tested: the panel is fixed to the viewport but the
+    # topbar paints over its first rows, so the corner pixel is the page, not
+    # the error. A third of the frame in one flat colour is the panel.
+    red = sum(1 for xy in grid if im.getpixel(xy) == (51, 0, 0))
+    if red > len(grid) // 3:
+        raise SystemExit(
+            f"make_figures: {name} captured a CAPTURE ERROR panel - open "
+            f"{png} to read the stack it painted")
 
 
 def autocrop(png: Path, pad: int = 16) -> tuple[int, int]:
@@ -373,9 +456,11 @@ def main() -> int:
             spec = SCENARIOS[name]
             hint = next((s for s in ("s6", "s5", "s4", "s3", "s2")
                          if f"'{s}'" in spec["js"]), "s1")
-            page = build_page(tmp, name, spec["js"], hint)
+            page = build_page(tmp, name, spec["js"], hint,
+                              spec.get("must_show"))
             png = OUT / f"{name}.png"
             shot(exe, page, png, spec["size"])
+            assert_captured(png, name)
             if spec.get("exact"):
                 # A link-preview card is cropped by the platform, not by us:
                 # it has to come out at exactly the declared size or the

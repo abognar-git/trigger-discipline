@@ -83,11 +83,11 @@
   The actor you miss comes back tomorrow. The innocent you ban has no easy way back.</div>
 
   <details id="intro-reference">
-    <summary>The rules in full — policy, scoring, what each tab costs, keys</summary>
+    <summary>The rules in full — policy, scoring, what each panel costs, keys</summary>
   <h2>The policy</h2>
   <p>The policy here is the instrument's own, and it refuses two things. A ban that cites
   nothing beyond content is bounced: tick the evidence rows that carry your accusation, and
-  at least one must come from a tab that is not content — behavior, infrastructure, or
+  at least one must come from a panel that is not content — behavior, infrastructure, or
   the scorer. A ban below the confidence floor is bounced the same way: every ban carries a confidence band,
   and the floor is &ldquo;likely&rdquo;. A refusal costs nothing. The desk hands the file
   back and waits.</p>
@@ -119,12 +119,15 @@
       <tr><td>Pipeline read</td><td class="mono">2h</td><td class="dim small">the scorer's risk breakdown; cluster assessment and policy decision if one exists</td></tr>
     </tbody>
   </table>
-  <p class="small dim"><span id="intro-clock"></span> Each tab opens once per account and
-  stays open. Every evidence row in an open tab can be cited; a ban stands on its
+  <p class="small dim"><span id="intro-clock"></span> Each panel opens once per account and
+  stays open. Every evidence row in an open panel can be cited; a ban stands on its
   citations.</p>
 
+  <!-- The list is filled out per shift: A only exists once cases are on,
+       and a key list that omits a key the shift binds is a wrong list. -->
   <p class="small dim">Keyboard: <kbd>B</kbd> ban &middot; <kbd>M</kbd> monitor &middot;
-  <kbd>C</kbd> clear &middot; <kbd>1</kbd>&ndash;<kbd>5</kbd> evidence tabs &middot;
+  <kbd>C</kbd> clear &middot; <kbd>G</kbd> flag a policy gap &middot;
+  <kbd>1</kbd>&ndash;<kbd>5</kbd> evidence panels<span id="intro-keys-extra"></span> &middot;
   <kbd>Enter</kbd> continue &middot; arrow keys move through the queue. While the band
   picker is open, number keys choose a band and <kbd>Esc</kbd> cancels.</p>
 
@@ -142,12 +145,20 @@
   </aside>
   <section id="dossier" aria-label="Account dossier">
     <div id="dossier-head"></div>
-    <div id="band-picker" hidden></div>
-    <nav id="tabbar" aria-label="Evidence tabs"></nav>
-    <p id="notice" aria-live="polite"></p>
     <div id="tabpanel"></div>
   </section>
-  <aside id="casebar" hidden aria-label="Case board"></aside>
+  <!-- The decision lives in its own rail rather than inline above the
+       evidence. An enforcement desk is not a form you fill top to bottom:
+       the subject is on the left, what is known about it in the middle, and
+       what you are about to do to it stays in one place on the right,
+       including the case you are building and the band the ban has to
+       carry. -->
+  <aside id="decision" aria-label="Decision">
+    <div id="verdict-slot"></div>
+    <p id="notice" aria-live="polite"></p>
+    <div id="band-picker" hidden></div>
+    <div id="casebar" hidden aria-label="Case board"></div>
+  </aside>
 </section>
 
 <section id="screen-report" hidden></section>
@@ -345,7 +356,7 @@ and shift 1 is its own queue. Identifiers are RFC-reserved. MIT.</footer>
             "truth": "benign", "actor": null, "persona": null,
             "original_id": "acct_SAMPLE_BG",
             "notes": "sample background user",
-            "tell": "A flask routing bug and a changelog translation. If you read every tab here, that was the price of not trusting the free view.",
+            "tell": "A flask routing bug and a changelog translation. If you read every panel here, that was the price of not trusting the free view.",
             "provenance": null,
             "respawn_of": null,
             "appeal": null

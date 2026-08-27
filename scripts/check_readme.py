@@ -78,6 +78,70 @@ def main() -> int:
         if n != n_shifts and f"{w} shifts" in low:
             fail(f"README says '{w} shifts' but the data ships {n_shifts}")
 
+    # --- shift subtitles ---------------------------------------------------
+    # Every subtitle opens by counting the queue, and two of them had drifted
+    # off it: shift 7 said nine where the card said eight (the ninth is a
+    # respawn, so it is not scheduled), shift 9 said ten and shipped nine.
+    # The landing shows subtitle and count on the same card, so the two
+    # contradicted each other in a published figure.
+    n_words = {v: k for k, v in words.items()}
+    n_words.update({"thirteen": 13, "fourteen": 14, "fifteen": 15,
+                    "sixteen": 16, "twenty-three": 23, "twenty-six": 26,
+                    "fifty-three": 53})
+    for sh in payload["shifts"]:
+        sub = (sh.get("subtitle") or "").strip()
+        c = sh.get("counts") or {}
+        n = c.get("scheduled", len(sh.get("accounts") or []))
+        m = re.match(r"([A-Za-z-]+|\d+) accounts?\b", sub)
+        if not m:
+            continue          # a subtitle that does not open on a count
+        tok = m.group(1)
+        said = int(tok) if tok.isdigit() else n_words.get(tok.lower())
+        if said is None:
+            fail(f"{sh['id']} subtitle opens with an uncountable {tok!r}")
+        elif said != n:
+            fail(f"{sh['id']} subtitle says {tok} accounts; the shift "
+                 f"schedules {n}")
+
+    # --- README ordinals ---------------------------------------------------
+    # The README points at shifts by position ("the sixth shift stages the
+    # framing experiment"), and position is the one thing that moves when a
+    # shift is inserted. It already had: the framer shift was described as
+    # "the last day", true when the career ended at six.
+    ordinals = ["first", "second", "third", "fourth", "fifth",
+                "sixth", "seventh", "eighth", "ninth", "tenth"]
+    shifts = payload["shifts"]
+    titles = {(sh.get("title") or "").lower(): i for i, sh in enumerate(shifts)}
+    def ordinal_before(phrase: str, want: str) -> bool:
+        """The ordinal has to sit in the same clause as the claim.
+
+        Asking whether the right ordinal appears anywhere in the README is
+        not a check: 'the sixth shift' also names a row in the evidence
+        table, so a wrong ordinal on the prose line stayed green.
+        """
+        i = low.find(phrase)
+        if i < 0:
+            return True
+        return f"the {want} shift" in low[max(0, i - 70):i + len(phrase)]
+
+    for title, phrase in (("the aimed link", "stages the research's framing"),):
+        i = titles.get(title)
+        if i is None:
+            fail(f"README describes a shift titled {title!r}; the data has none")
+            continue
+        want = ordinals[i] if i < len(ordinals) else str(i + 1)
+        if not ordinal_before(phrase, want):
+            fail(f"README places {title!r} wrongly: it is shift {i + 1}, so "
+                 f"the line about it must say 'the {want} shift'")
+    # Appeals start at one shift and the README names which.
+    first_appeal = next((i for i, sh in enumerate(shifts)
+                         if (sh.get("flags") or {}).get("appeals")), None)
+    if first_appeal is not None and not ordinal_before(
+            "files an appeal", ordinals[first_appeal]):
+        fail(f"README describes the appeals round but not as 'on the "
+             f"{ordinals[first_appeal]} shift'; appeals first run on shift "
+             f"{first_appeal + 1}")
+
     # --- scoring table -----------------------------------------------------
     want = {
         "Ban a threat-actor account": meta["scoring"]["ban_actor"],
@@ -311,7 +375,7 @@ def main() -> int:
         for f in FAILURES:
             print(f"  - {f}")
         return 1
-    print("check_readme: OK (shift count, scoring, tabs, bands, refusal copy, "
+    print("check_readme: OK (shift count, subtitles, ordinals, scoring, tabs, bands, refusal copy, "
           "bulletin stories, leak guard, figures, links, page data, "
           "identifiers, offline)")
     return 0

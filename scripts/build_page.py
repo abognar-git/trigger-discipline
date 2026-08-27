@@ -49,7 +49,7 @@ def read_part(name: str, required: bool) -> str:
     return path.read_text()
 
 
-def assemble(out_path: Path) -> str:
+def assemble(out_path: Path, allow_placeholder: bool = False) -> str:
     shell_path = PARTS_DIR / "shell.html"
     if not shell_path.is_file():
         raise SystemExit(f"build_page: missing {shell_path}")
@@ -71,12 +71,25 @@ def assemble(out_path: Path) -> str:
 
     # Preserve the data block already committed in the output file, if any —
     # build_data.py --inject writes there, and a rebuild must not undo it.
+    kept = False
     if out_path.is_file():
         m_out = DATA_BLOCK_RE.search(out_path.read_text())
         if m_out:
             block = m_out.group(2)
             html = DATA_BLOCK_RE.sub(
                 lambda m: m.group(1) + block + m.group(3), html, count=1)
+            kept = True
+    if not kept and not allow_placeholder:
+        # The fallback is a three-account sample kept in the shell so the
+        # parts are openable on their own. Building on it silently produces
+        # a page that looks like the game and is not it - which is what
+        # happens to anyone who deletes index.html and rebuilds.
+        raise SystemExit(
+            f"build_page: {out_path} has no <script id=\"game-data\"> block, "
+            "so the shell's placeholder sample would ship as the game. Run "
+            "`python3 scripts/build_data.py --hunt ../hunt --out "
+            "data/game_data.json` then `--inject` this file, or pass "
+            "--placeholder-ok if the sample is what you want.")
 
     payload = DATA_BLOCK_RE.search(html).group(2)
     try:
@@ -91,12 +104,15 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default=str(REPO_ROOT / "index.html"),
                     help="output file (default: index.html at the repo root)")
+    ap.add_argument("--placeholder-ok", action="store_true",
+                    help="build on the shell's sample payload when the "
+                         "output file has no game-data block")
     ap.add_argument("--check", action="store_true",
                     help="verify the output file matches parts/; write nothing")
     args = ap.parse_args(argv)
 
     out_path = Path(args.out).expanduser().resolve()
-    built = assemble(out_path)
+    built = assemble(out_path, args.placeholder_ok)
 
     if args.check:
         if not out_path.is_file():
