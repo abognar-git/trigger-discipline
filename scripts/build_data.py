@@ -3183,6 +3183,86 @@ def hand_authored() -> dict[str, Tell]:
         "The company it never asked for is the one the queue's newest "
         "account manufactured for it.",
         sessions=3, email_kind="freemail", phone=False, asn="AS64497")
+
+    # The other two burners and the replacement had no tell of their own and
+    # fell through to the generated fallback, so the cell's own reveal
+    # described its sessions instead of the frame that was built around it.
+    s6_cell = Tell(
+        "One of three burners pushing lure drafts at two brands from one "
+        "shared egress, freemail, no phone. The cell is real, and every "
+        "overlap it offers you holds inside it. The account it appears to "
+        "share a victim with is not part of it: that one arrived last and "
+        "copied the rest.",
+        sessions=3, email_kind="freemail", phone=False, asn="AS64497")
+    t["acct_s6_LF02"] = s6_cell
+    t["acct_s6_LF03"] = s6_cell
+    t["acct_s6_RSP_LF"] = Tell(
+        "The cell you banned, back on a file that gives you nothing: a "
+        "verified card, a verified phone, a corporate address, a network "
+        "with no history. Three sessions at the same two brands, and the "
+        "only thing carried over from the accounts it replaces is what it "
+        "was for.",
+        sessions=3, email_kind="corporate", phone=True, payment="card_verified")
+
+    # ---------------- shifts 7-10: the archetypes staged here ----------------
+    # These four shipped with no hand-authored tell, so each fell through to
+    # the generated fallback, which describes the SESSIONS - "three sessions,
+    # all creative writing, from an account with a verified card". Every one
+    # of these shifts exists for one specific finding and the reveal was
+    # naming none of them. The numbers below are declared so the build checks
+    # the prose against the row rather than trusting it.
+
+    supply_burn = Tell(
+        "Four sessions: three asking how to publish a package under a name "
+        "the target's own build system already looks for, and then, hours "
+        "later, one authenticated look at that same organisation. Nothing in "
+        "the first three is unusual - every maintainer asks them, and the "
+        "researcher two rows down asked them in the same words. What is "
+        "unusual is the fourth, and that this account holds no keys there.",
+        sessions=4, phone=False, email_kind="freemail")
+    t["acct_s7_SC01"] = supply_burn
+    t["acct_s7_SC02"] = supply_burn
+    t["acct_s7_SC03"] = Tell(
+        "The same four sessions as the two burners you have already seen, "
+        "from an account that gives you nothing: fourteen months old, a "
+        "verified phone, a paying card, an ordinary network. The account "
+        "file is the surface that carried part of every decision you have "
+        "made so far, and here it is silent. What is left is the return leg.",
+        sessions=4, phone=True, email_kind="corporate", payment="card_verified")
+
+    astro = Tell(
+        "Three sessions and then nothing, on an account that shares no "
+        "address, no network and no signup month with anyone else in this "
+        "queue. Every overlap the network tab computes comes back empty and "
+        "the scorer agrees with it. What connects these accounts is not on "
+        "any tab: one of them writes an article and another writes the "
+        "reaction to that article, forty minutes later, every working day, "
+        "and never the other way round.",
+        sessions=3, phone=True, payment="card_verified")
+    for aid in ("acct_s8_AL01", "acct_s8_AL02", "acct_s8_AL03",
+                "acct_s8_AL04", "acct_s8_AL05", "acct_s8_AL06"):
+        t[aid] = astro
+
+    t["acct_s9_OB01"] = Tell(
+        "Six sessions of authorised range work, from the cleanest file in "
+        "the queue, and the innocent beside it running the same harness "
+        "scored higher. Nothing on this account's own record shows what "
+        "happened. One of its six targets is not inside the range the "
+        "addendum names, and the only other place that organisation appears "
+        "is in the sessions of two engineers who work there.",
+        sessions=6, phone=True, email_kind="corporate", payment="card_verified")
+
+    t["acct_s10_PH01"] = Tell(
+        "Six sessions, and the account file argues for the defence the whole "
+        "way: months old, paying, phone verified, two addresses on one "
+        "ordinary network. All of it is true. Three of the sessions write "
+        "first-person application material for several people applying to "
+        "several employers - which is a career coach's whole job, and one of "
+        "them is in this queue. The other three write those same employers' "
+        "standups. It is the join that is not ordinary.",
+        sessions=6, phone=True, email_kind="corporate", payment="card_verified")
+
+
     return t
 
 
@@ -4730,6 +4810,32 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
             want(bool(mixed),
                  f"{sid}: the hour channel offers no mixed-truth pair - "
                  f"the #17 trap is missing at this threshold")
+
+    # --- every planted actor gets a tell that names its own finding ---------
+    # The generated fallback describes an account's sessions and account file,
+    # which is the right thing for ordinary background traffic and the wrong
+    # thing for an archetype: four shifts shipped with their actors reading
+    # "three sessions, all creative writing, from an account with a verified
+    # card", while the shift existed for a handoff, a bought identity, an
+    # excursion or a phase join. A planted actor whose reveal falls through
+    # to the fallback is a shift not explaining itself.
+    fallback_openers = ("One session, all", "Two sessions, all",
+                        "Three sessions, all", "Four sessions, all",
+                        "Five sessions, all", "Six sessions, all",
+                        "Seven sessions, all", "Eight sessions, all")
+    for shift in shifts:
+        for a in shift["accounts"]:
+            rv = a["reveal"]
+            if not rv.get("actor"):
+                continue
+            tell_text = (rv.get("tell") or "")
+            want(bool(tell_text.strip()),
+                 f"{shift['id']}/{rv['original_id']} is a planted "
+                 f"{rv['actor']} with no tell at all")
+            want(not tell_text.startswith(fallback_openers),
+                 f"{shift['id']}/{rv['original_id']} ({rv['actor']}) fell "
+                 f"through to the generated background tell - hand-author one "
+                 f"in hand_authored() that names what this shift is about")
 
     # --- shift-specific design invariants ------------------------------------
     s = {sh["id"]: sh for sh in shifts}

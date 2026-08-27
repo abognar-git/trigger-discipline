@@ -24553,7 +24553,7 @@
       "persona": null,
       "original_id": "acct_s6_LF03",
       "notes": "burner in a three-account cell",
-      "tell": "Three sessions, all phishing-simulation drafting, from an account with no payment method on file, no phone verification, a freemail address. It scores 0.3600, and the signals that fired were burner_infra, capability_trajectory, refusal_farming, content_category_risk, target_fixation. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "One of three burners pushing lure drafts at two brands from one shared egress, freemail, no phone. The cell is real, and every overlap it offers you holds inside it. The account it appears to share a victim with is not part of it: that one arrived last and copied the rest.",
       "provenance": {
        "source": "OpenAI, PRC-linked influence operations are targeting AI debates in the US (June 2026 Threat Report)",
        "date": "2026-06",
@@ -24861,7 +24861,7 @@
       "persona": null,
       "original_id": "acct_s6_LF02",
       "notes": "burner in a three-account cell",
-      "tell": "Three sessions, all phishing-simulation drafting, from an account with a prepaid card, no phone verification, a freemail address. It scores 0.3600, and the signals that fired were burner_infra, capability_trajectory, refusal_farming, content_category_risk, target_fixation. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "One of three burners pushing lure drafts at two brands from one shared egress, freemail, no phone. The cell is real, and every overlap it offers you holds inside it. The account it appears to share a victim with is not part of it: that one arrived last and copied the rest.",
       "provenance": {
        "source": "OpenAI, PRC-linked influence operations are targeting AI debates in the US (June 2026 Threat Report)",
        "date": "2026-06",
@@ -25897,7 +25897,7 @@
       "persona": null,
       "original_id": "acct_s6_RSP_LF",
       "notes": "respawn burner: new infrastructure, same job",
-      "tell": "Three sessions, all phishing-simulation drafting, from an account with a verified card, a verified phone, a corporate address. It scores 0.1813, and the signals that fired were capability_trajectory, content_category_risk, target_fixation. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "The cell you banned, back on a file that gives you nothing: a verified card, a verified phone, a corporate address, a network with no history. Three sessions at the same two brands, and the only thing carried over from the accounts it replaces is what it was for.",
       "provenance": {
        "source": "OpenAI, PRC-linked influence operations are targeting AI debates in the US (June 2026 Threat Report)",
        "date": "2026-06",
@@ -26548,7 +26548,7 @@
       "persona": null,
       "original_id": "acct_s7_SC03",
       "notes": "same operator on a purchased, fully verified identity",
-      "tell": "Four sessions, all code review and debugging, background research, from an account with a verified card, a verified phone, a corporate address. It scores 0.0817, and the signals that fired were target_fixation, content_category_risk. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "The same four sessions as the two burners you have already seen, from an account that gives you nothing: fourteen months old, a verified phone, a paying card, an ordinary network. The account file is the surface that carried part of every decision you have made so far, and here it is silent. What is left is the return leg.",
       "provenance": {
        "source": "Anthropic, Investigating three real-world incidents in our cybersecurity evaluations",
        "date": "2026-07-30",
@@ -26742,7 +26742,7 @@
       "persona": null,
       "original_id": "acct_s7_SC02",
       "notes": "burner that published under a harvested internal name",
-      "tell": "Four sessions, all code review and debugging, background research, from an account with no payment method on file, no phone verification, a freemail address. It scores 0.1937, and the signals that fired were burner_infra, target_fixation, content_category_risk. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "Four sessions: three asking how to publish a package under a name the target's own build system already looks for, and then, hours later, one authenticated look at that same organisation. Nothing in the first three is unusual - every maintainer asks them, and the researcher two rows down asked them in the same words. What is unusual is the fourth, and that this account holds no keys there.",
       "provenance": {
        "source": "Anthropic, Investigating three real-world incidents in our cybersecurity evaluations",
        "date": "2026-07-30",
@@ -27432,7 +27432,7 @@
       "persona": null,
       "original_id": "acct_s7_SC01",
       "notes": "burner that published under a harvested internal name",
-      "tell": "Four sessions, all code review and debugging, background research, from an account with a prepaid card, no phone verification, a freemail address. It scores 0.1937, and the signals that fired were burner_infra, target_fixation, content_category_risk. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "Four sessions: three asking how to publish a package under a name the target's own build system already looks for, and then, hours later, one authenticated look at that same organisation. Nothing in the first three is unusual - every maintainer asks them, and the researcher two rows down asked them in the same words. What is unusual is the fourth, and that this account holds no keys there.",
       "provenance": {
        "source": "Anthropic, Investigating three real-world incidents in our cybersecurity evaluations",
        "date": "2026-07-30",
@@ -27750,7 +27750,7 @@
       "persona": null,
       "original_id": "acct_s8_AL05",
       "notes": "one seat in a content farm that writes its own audience",
-      "tell": "Three sessions, all creative writing, from an account with a verified card, a verified phone, a freemail address. It scores 0.0500, and the only signal that fired was target_fixation. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "Three sessions and then nothing, on an account that shares no address, no network and no signup month with anyone else in this queue. Every overlap the network tab computes comes back empty and the scorer agrees with it. What connects these accounts is not on any tab: one of them writes an article and another writes the reaction to that article, forty minutes later, every working day, and never the other way round.",
       "provenance": {
        "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
        "date": "2026-02",
@@ -27891,7 +27891,7 @@
       "persona": null,
       "original_id": "acct_s8_AL06",
       "notes": "replacement seat: new country, same half of the handoff",
-      "tell": "Three sessions, all creative writing, from an account with a verified card, a verified phone, a corporate address. It scores 0.0500, and the only signal that fired was target_fixation. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "Three sessions and then nothing, on an account that shares no address, no network and no signup month with anyone else in this queue. Every overlap the network tab computes comes back empty and the scorer agrees with it. What connects these accounts is not on any tab: one of them writes an article and another writes the reaction to that article, forty minutes later, every working day, and never the other way round.",
       "provenance": {
        "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
        "date": "2026-02",
@@ -28358,7 +28358,7 @@
       "persona": null,
       "original_id": "acct_s8_AL03",
       "notes": "one seat in a content farm that writes its own audience",
-      "tell": "Three sessions, all creative writing, from an account with a verified card, a verified phone, a corporate address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "Three sessions and then nothing, on an account that shares no address, no network and no signup month with anyone else in this queue. Every overlap the network tab computes comes back empty and the scorer agrees with it. What connects these accounts is not on any tab: one of them writes an article and another writes the reaction to that article, forty minutes later, every working day, and never the other way round.",
       "provenance": {
        "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
        "date": "2026-02",
@@ -28596,7 +28596,7 @@
       "persona": null,
       "original_id": "acct_s8_AL04",
       "notes": "one seat in a content farm that writes its own audience",
-      "tell": "Three sessions, all translation, from an account with a verified card, a verified phone, a freemail address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "Three sessions and then nothing, on an account that shares no address, no network and no signup month with anyone else in this queue. Every overlap the network tab computes comes back empty and the scorer agrees with it. What connects these accounts is not on any tab: one of them writes an article and another writes the reaction to that article, forty minutes later, every working day, and never the other way round.",
       "provenance": {
        "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
        "date": "2026-02",
@@ -28717,7 +28717,7 @@
       "persona": null,
       "original_id": "acct_s8_AL01",
       "notes": "one seat in a content farm that writes its own audience",
-      "tell": "Three sessions, all creative writing, from an account with a verified card, a verified phone, a corporate address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "Three sessions and then nothing, on an account that shares no address, no network and no signup month with anyone else in this queue. Every overlap the network tab computes comes back empty and the scorer agrees with it. What connects these accounts is not on any tab: one of them writes an article and another writes the reaction to that article, forty minutes later, every working day, and never the other way round.",
       "provenance": {
        "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
        "date": "2026-02",
@@ -28840,7 +28840,7 @@
       "persona": null,
       "original_id": "acct_s8_AL02",
       "notes": "one seat in a content farm that writes its own audience",
-      "tell": "Three sessions, all translation, from an account with a verified card, a verified phone, a freemail address. Every signal reads zero; there was never anything here. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "Three sessions and then nothing, on an account that shares no address, no network and no signup month with anyone else in this queue. Every overlap the network tab computes comes back empty and the scorer agrees with it. What connects these accounts is not on any tab: one of them writes an article and another writes the reaction to that article, forty minutes later, every working day, and never the other way round.",
       "provenance": {
        "source": "OpenAI, Disrupting malicious uses of our models: an update, February 2026; corroborated by PRC-linked influence operations are targeting AI debates in the US (June 2026)",
        "date": "2026-02",
@@ -29229,7 +29229,7 @@
       "persona": null,
       "original_id": "acct_s9_OB01",
       "notes": "authorised evaluation account whose harness left its range",
-      "tell": "Six sessions, all exploitation questions, from an account with a verified card, a verified phone, a corporate address. It scores 0.3113, and the signals that fired were capability_trajectory, target_fixation, automation_cadence, content_category_risk. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "Six sessions of authorised range work, from the cleanest file in the queue, and the innocent beside it running the same harness scored higher. Nothing on this account's own record shows what happened. One of its six targets is not inside the range the addendum names, and the only other place that organisation appears is in the sessions of two engineers who work there.",
       "provenance": {
        "source": "UK AI Security Institute, Incident Report: unsanctioned agent behaviour during cyber testing; corroborated by Anthropic, Investigating three real-world incidents in our cybersecurity evaluations",
        "date": "2026-08-04",
@@ -31428,7 +31428,7 @@
       "persona": null,
       "original_id": "acct_s10_PH01",
       "notes": "one account, several identities, both halves of the scheme",
-      "tell": "Six sessions, all code review and debugging, creative writing, from an account with a verified card, a verified phone, a corporate address. It scores 0.1333, and the signals that fired were baseline_drift, target_fixation. If you opened tabs on this one, the queue moved while you read them.",
+      "tell": "Six sessions, and the account file argues for the defence the whole way: months old, paying, phone verified, two addresses on one ordinary network. All of it is true. Three of the sessions write first-person application material for several people applying to several employers - which is a career coach's whole job, and one of them is in this queue. The other three write those same employers' standups. It is the join that is not ordinary.",
       "provenance": {
        "source": "OpenAI, Disrupting malicious uses of AI: June 2025, 'Deceptive Employment Scheme: IT Workers'; the phase join corroborated by Anthropic, Detecting and countering misuse of AI: August 2025",
        "date": "2025-06",
