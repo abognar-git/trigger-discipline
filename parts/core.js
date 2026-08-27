@@ -1619,7 +1619,7 @@ function tabPipeline(a) {
     }
     headRow.appendChild(headBody);
     box.appendChild(headRow);
-    if (cl.summary) { box.appendChild(el('p', 'small', cl.summary)); }
+    if (cl.summary) { box.appendChild(el('p', 'small model-says', cl.summary)); }
     /* Finding #18 — the second opinion. Free, never scored, never blocking:
        the verdict shown is the measured artifact's own (hunt data/judge.json,
        decorrelated run), and the report is where its margin gets quoted. The

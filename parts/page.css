@@ -155,7 +155,11 @@ main { flex: 1; display: flex; flex-direction: column; }
 #flag-row { flex-basis: 100%; display: flex; align-items: center; gap: 8px; margin-top: 2px; }
 .btn-flag { font-size: 12px; }
 .btn-flag.on { border-color: var(--warn); color: var(--warn); background: var(--warn-dim); }
-.topic-box { border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px 10px; margin: 10px 0; }
+/* The bottom padding is not decoration: without the box, this section's
+   table ran straight into the signal table below it and the two read as one
+   table with a second header in the middle. */
+.topic-box { border: 0; border-top: 1px solid var(--line); border-radius: 0;
+  padding: 12px 0 16px; margin: 14px 0 0; }
 .topic-box table { margin: 6px 0 0; }
 
 /* SPEC-3 §11 — the clock controls drive a live shift; they must not read as
@@ -262,8 +266,17 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
   padding: 2px 8px; font-size: 12px; font-family: var(--mono); }
 .badge-nolead { color: var(--muted); border: 1px solid var(--line); border-radius: 6px;
   padding: 2px 8px; font-size: 12px; font-family: var(--mono); }
-.cluster-box { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px;
-  margin-top: 12px; background: var(--panel-2); }
+/* One level down from an evidence panel, the same treatment the panel gets:
+   a hairline above it, no enclosure. Both of these were rounded cards with
+   their own border and their own background, sitting inside a stack whose
+   whole point is that panels are separated by a rule and nothing else - a
+   card inside a card, twice, in the panel that costs the most. */
+.cluster-box { border: 0; border-top: 1px solid var(--line); border-radius: 0;
+  background: none; padding: 12px 0 0; margin: 14px 0 0; }
+/* The one thing in here that is not the desk speaking. A left rule marks it
+   as quoted rather than a background, which is what a card looks like. */
+.model-says { border-left: 2px solid var(--line); padding-left: 12px;
+  margin: 10px 0 0; color: var(--muted); }
 .dec-enforce { color: var(--ban); font-weight: 700; font-family: var(--mono); }
 .dec-monitor { color: var(--warn); font-weight: 700; font-family: var(--mono); }
 
