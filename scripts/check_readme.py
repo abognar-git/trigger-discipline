@@ -197,15 +197,25 @@ def main() -> int:
             hi, lo = max(la, lb), min(la, lb)
             return (hi + 0.05) / (lo + 0.05)
 
+        # --panel-2 is a real surface (verdict buttons, the nested wash, table
+        # heads) and the *-dim tokens exist only to be painted under their own
+        # foreground. Measuring only --bg and --panel left the three verdict
+        # chips - the controls the game is operated with - unmeasured on the
+        # ground they actually sit on.
+        pairs = [(fg, bg)
+                 for fg in ("--text", "--muted", "--accent", "--ban",
+                            "--clear", "--warn")
+                 for bg in ("--bg", "--panel", "--panel-2")]
+        pairs += [("--ban", "--ban-dim"), ("--clear", "--clear-dim"),
+                  ("--warn", "--warn-dim")]
         for name, pal in (("dark", dark), ("light", light_media)):
-            for fg in ("--text", "--muted", "--accent", "--ban", "--clear", "--warn"):
-                for bgname in ("--bg", "--panel"):
-                    r = ratio(pal.get(fg, ""), pal.get(bgname, ""))
-                    if r is None:
-                        fail(f"palette: {name} {fg} or {bgname} is not a 6-digit hex")
-                    elif r < 4.5:
-                        fail(f"palette: {name} {fg} on {bgname} is {r:.2f}, "
-                             f"under the 4.5 AA floor")
+            for fg, bgname in pairs:
+                r = ratio(pal.get(fg, ""), pal.get(bgname, ""))
+                if r is None:
+                    fail(f"palette: {name} {fg} or {bgname} is not a 6-digit hex")
+                elif r < 4.5:
+                    fail(f"palette: {name} {fg} on {bgname} is {r:.2f}, "
+                         f"under the 4.5 AA floor")
 
     # --- the landing's one uncomputed claim ---------------------------------
     # The landing counts everything it states off the fixture except one
@@ -469,16 +479,51 @@ def main() -> int:
     # must load from file:// with no network. Anything that fetches - a font,
     # a script, an image, a stylesheet, a pixel - breaks it silently, because
     # a developer testing over http:// would never notice.
-    for m in re.finditer(r'(?:src|href)\s*=\s*"([^"]+)"', page):
-        url = m.group(1)
+    # Attributes, quoted or not. The original required src="..." with double
+    # quotes, which HTML lets you omit and CSS never writes at all.
+    attr_re = re.compile(
+        r"""(?:src|href|srcset|poster)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)""")
+    # Markup only. Script bodies are not markup, and looking for the nearest
+    # preceding "<" inside one finds a less-than operator: the page's own
+    # `link.href = 'https://' + repo` read as an external request because the
+    # "<" it anchored to was `if (x < 0)`.
+    markup = re.sub(r"<script\b[^>]*>.*?</script\s*>", "<script></script>",
+                    page, flags=re.S | re.I)
+    for m in attr_re.finditer(markup):
+        url = m.group(1).strip("\"'")
+        if not url.startswith(("http://", "https://", "//")):
+            continue
+        tag_start = markup.rfind("<", 0, m.start())
+        if tag_start < 0:
+            continue
+        # It has to be an attribute inside an open tag. Without this the
+        # script's own `link.href = 'https://' + repo` reads as one, which is
+        # a property assignment building an anchor, not a request.
+        if ">" in markup[tag_start:m.start()]:
+            continue
+        name = re.match(r"<\s*([a-zA-Z0-9-]+)", markup[tag_start:tag_start + 20])
+        # anchors are links the reader clicks, not requests the page makes
+        if name and name.group(1).lower() == "a":
+            continue
+        fail(f"index.html would make an external request: {url[:70]}")
+    # CSS url(), in all three quoting forms. A webfont is written
+    # src: url('https://...'), and the literal test for "url(http" could not
+    # see past the quote.
+    url_re = re.compile(r"""url\(\s*("[^"]*"|'[^']*'|[^)]*)\s*\)""")
+    for m in url_re.finditer(page):
+        url = m.group(1).strip().strip("\"'")
         if url.startswith(("http://", "https://", "//")):
-            # anchors are links the reader clicks, not requests the page makes
-            tag_start = page.rfind("<", 0, m.start())
-            tag = page[tag_start:tag_start + 3].lower()
-            if tag != "<a ":
-                fail(f"index.html would make an external request: {url[:70]}")
-    if "@import" in page or "url(http" in page:
-        fail("index.html has a stylesheet import or remote url() - it must load from file://")
+            fail(f"index.html has a remote CSS url(): {url[:70]}")
+    if "@import" in page:
+        fail("index.html has a stylesheet import - it must load from file://")
+    # Anything that fetches at runtime. The page is hand-written and needs
+    # none of these; if one appears it is either a remote call or a reason to
+    # widen this list on purpose.
+    for token in ("XMLHttpRequest", "new WebSocket", "new EventSource",
+                  "navigator.sendBeacon", "importScripts("):
+        if token in page:
+            fail(f"index.html contains {token} - the page must make no "
+                 f"requests at all, and nothing in it needs one")
 
     # --- cross-links -------------------------------------------------------
     for url in ("github.com/abognar-git/model-abuse-hunt",

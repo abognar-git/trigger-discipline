@@ -8,6 +8,16 @@
   "scorer": "hunt src/signals.py (imported, not restated)",
   "linker": "hunt src/attribute.py (imported, not restated)",
   "bands_source": "hunt src/calibration.py -> investigate.BAND_FLOOR",
+  "reviewer": {
+   "model": "gpt-4o-mini",
+   "reps": 5,
+   "unsound_total": 3,
+   "unsound_upheld": 2,
+   "unsound_upheld_reps": 5,
+   "sound_total": 4,
+   "sound_overturned": 1,
+   "sound_overturn_reps": 3
+  },
   "identifier_predicates": "hunt scripts.generate_telemetry",
   "bands": {
    "almost no chance": 0.02,
@@ -156,7 +166,8 @@
    "flags": {
     "live": false,
     "cases": false,
-    "appeals": false
+    "appeals": false,
+    "unresolvable_appeal": false
    },
    "briefing": [
     "You are the enforcement reviewer at an AI platform's trust and safety desk. Twenty-three accounts are in your queue: nine belong to four threat actors, fourteen are innocent, and eight of those innocents were written to be indistinguishable from an actor on content. Each archetype here is grounded in a published threat report; each innocent look-alike - a pentester, a phishing-awareness trainer, a CTF student, a detection engineer, a journalist, an SRE, a novelist, a user who merely shares a VPN with an actor - was written to be the thing you get wrong.",
@@ -4556,7 +4567,8 @@
    "flags": {
     "live": true,
     "cases": false,
-    "appeals": false
+    "appeals": false,
+    "unresolvable_appeal": false
    },
    "briefing": [
     "Same desk, same rules, one difference: the queue is live. Accounts appear when their first session lands, and an account you have already decided reopens if new sessions arrive under it. From today the clock is on.",
@@ -8633,7 +8645,8 @@
    "flags": {
     "live": true,
     "cases": true,
-    "appeals": false
+    "appeals": false,
+    "unresolvable_appeal": false
    },
    "briefing": [
     "Attribution is the unit of enforcement here. Accounts that belong to one operator are one case, and a case is banned once, with one link reason and one band, applied to every member. The link reasons offered are the overlaps that actually hold between the members you selected; shared infrastructure alone is not one of them.",
@@ -13870,7 +13883,8 @@
    "flags": {
     "live": true,
     "cases": true,
-    "appeals": false
+    "appeals": false,
+    "unresolvable_appeal": false
    },
    "briefing": [
     "A short shift and a small queue. Sixteen hours, twelve accounts, the ordinary mix a Tuesday produces.",
@@ -15356,7 +15370,8 @@
    "flags": {
     "live": true,
     "cases": true,
-    "appeals": true
+    "appeals": true,
+    "unresolvable_appeal": true
    },
    "briefing": [
     "This is the queue as it actually arrives. Fifty-three accounts, forty-eight hours, and a prevalence somewhere near what a real platform sees: most of what is in front of you is nothing.",
@@ -23883,7 +23898,8 @@
    "flags": {
     "live": true,
     "cases": true,
-    "appeals": false
+    "appeals": false,
+    "unresolvable_appeal": false
    },
    "briefing": [
     "Attribution points both ways. Everything the pipeline links on - shared infrastructure, shared victims, shared topics - is something an attacker can also manufacture, and manufacturing it against someone is cheap: the research measured five of its fourteen innocents attachable to an actor, and one of them needed no capability barrier at all.",
@@ -26217,7 +26233,8 @@
    "flags": {
     "live": true,
     "cases": true,
-    "appeals": true
+    "appeals": true,
+    "unresolvable_appeal": false
    },
    "briefing": [
     "Same desk. This queue is quieter than it looks: the account file, which has carried part of every decision you have made so far, is going to tell you almost nothing today.",
@@ -27545,16 +27562,17 @@
   {
    "id": "s8",
    "title": "The handoff",
-   "subtitle": "Nine accounts, twenty-four hours, and five that share nothing at all.",
+   "subtitle": "Nine accounts, twenty-four hours, and five that share no infrastructure at all.",
    "budget": 24,
    "flags": {
     "live": true,
     "cases": true,
-    "appeals": true
+    "appeals": true,
+    "unresolvable_appeal": false
    },
    "briefing": [
-    "Five accounts today that have nothing in common. Different countries, different infrastructure, different signup months, verified payment and phone on all of them. Every overlap the network tab computes comes back empty, and every signal the scorer has reads zero.",
-    "They are one operation. The work moves between them in one direction: an article is drafted in one account, and the reaction to that article is drafted in another, forty minutes later, every working day, never the other way round. The tab that would show you this does not exist.",
+    "Five accounts today that look like five strangers. Different countries, different infrastructure, different signup months, verified payment and phone on all of them. They share no infrastructure with each other, and the scorer reads every one of them at or below 0.05 - under the lead line, on a day when the lead line is the least of your problems.",
+    "They are one operation. The work moves between them in one direction: an article is drafted in one account, and the reaction to that article is drafted in another, forty minutes later, never the other way round. Both halves read as ordinary creative writing on the content tab. The tab that would show you the direction does not exist.",
     "Somebody in this queue studies exactly these operations for a living and sends the same requests to build a labelled corpus. Her volume moves with theirs, because she is watching them."
    ],
    "rule": "Nothing here is auto-banned. The pipeline flags; you decide. The actor you miss comes back tomorrow. The innocent you ban has no easy way back.",
@@ -27584,54 +27602,54 @@
     ],
     "pairs": [
      1.0,
+     0.995,
+     0.991,
+     0.989,
      1.0,
-     0.998,
-     0.998,
+     0.989,
      1.0,
-     0.998,
-     0.994,
      1.0,
-     0.994,
-     1.0,
-     0.998,
-     0.998,
-     1.0,
-     0.998,
-     0.994,
-     1.0,
-     0.994,
-     0.998,
-     0.998,
-     1.0,
-     0.998,
-     0.994,
-     1.0,
-     0.994,
-     1.0,
-     0.998,
      1.0,
      0.995,
+     0.991,
+     0.989,
+     1.0,
+     0.989,
+     1.0,
+     1.0,
+     1.0,
+     0.998,
      0.998,
      0.995,
      0.998,
+     0.996,
+     0.995,
+     0.996,
      1.0,
-     0.996,
-     0.998,
-     0.996,
-     0.998,
-     0.994,
+     0.991,
      1.0,
-     0.994,
-     0.996,
-     0.998,
-     0.996,
-     0.994,
+     0.992,
+     0.991,
+     0.992,
+     0.989,
      1.0,
-     0.994
+     0.991,
+     0.989,
+     0.991,
+     0.989,
+     1.0,
+     1.0,
+     1.0,
+     0.991,
+     0.989,
+     0.991,
+     1.0,
+     1.0,
+     1.0
     ],
-    "min": 0.994,
+    "min": 0.989,
     "max": 1.0,
-    "median_words": 40,
+    "median_words": 66,
     "word_floor": 1000
    },
    "accounts": [
@@ -27653,7 +27671,7 @@
        "ts": "2026-07-27T16:00:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "for my novel, write dialogue where a hacker character explains a break-in, dramatic but plausible",
+       "prompt_excerpt": "write a 600-word opinion piece for ambal-hoy.example: the new compute reporting threshold will price small developers out, plain register, no em-dashes",
        "disposition": "completed",
        "src_ip": "198.51.100.7",
        "asn": "AS64510",
@@ -27665,7 +27683,7 @@
        "ts": "2026-07-27T16:22:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "describe, in prose, what my antagonist's malware does as it spreads",
+       "prompt_excerpt": "draft an explainer for ambal-hoy.example on why the licensing regime is unworkable for a two-person studio, neutral tone, no em-dashes",
        "disposition": "completed",
        "src_ip": "198.51.100.7",
        "asn": "AS64510",
@@ -27677,7 +27695,7 @@
        "ts": "2026-07-27T16:44:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "write a short scene where the intruder is caught by a log alert",
+       "prompt_excerpt": "write a short news item for ambal-hoy.example: developers say the safety review queue has become the bottleneck, straight reporting voice",
        "disposition": "completed",
        "src_ip": "198.51.100.7",
        "asn": "AS64510",
@@ -27785,7 +27803,7 @@
        "ts": "2026-07-27T00:20:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "for my novel, write dialogue where a hacker character explains a break-in, dramatic but plausible",
+       "prompt_excerpt": "write a 600-word opinion piece for ambal-hoy.example: the new compute reporting threshold will price small developers out, plain register, no em-dashes",
        "disposition": "completed",
        "src_ip": "192.0.2.2",
        "asn": "AS64509",
@@ -27797,7 +27815,7 @@
        "ts": "2026-07-27T00:42:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "describe, in prose, what my antagonist's malware does as it spreads",
+       "prompt_excerpt": "draft an explainer for ambal-hoy.example on why the licensing regime is unworkable for a two-person studio, neutral tone, no em-dashes",
        "disposition": "completed",
        "src_ip": "192.0.2.2",
        "asn": "AS64509",
@@ -27809,7 +27827,7 @@
        "ts": "2026-07-27T01:04:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "write a short scene where the intruder is caught by a log alert",
+       "prompt_excerpt": "write a short news item for ambal-hoy.example: developers say the safety review queue has become the bottleneck, straight reporting voice",
        "disposition": "completed",
        "src_ip": "192.0.2.2",
        "asn": "AS64509",
@@ -28272,7 +28290,7 @@
        "ts": "2026-07-27T09:05:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "for my novel, write dialogue where a hacker character explains a break-in, dramatic but plausible",
+       "prompt_excerpt": "write a 600-word opinion piece for ambal-hoy.example: the new compute reporting threshold will price small developers out, plain register, no em-dashes",
        "disposition": "completed",
        "src_ip": "192.0.2.140",
        "asn": "AS64506",
@@ -28284,7 +28302,7 @@
        "ts": "2026-07-27T09:27:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "describe, in prose, what my antagonist's malware does as it spreads",
+       "prompt_excerpt": "draft an explainer for ambal-hoy.example on why the licensing regime is unworkable for a two-person studio, neutral tone, no em-dashes",
        "disposition": "completed",
        "src_ip": "192.0.2.140",
        "asn": "AS64506",
@@ -28296,7 +28314,7 @@
        "ts": "2026-07-27T09:49:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "write a short scene where the intruder is caught by a log alert",
+       "prompt_excerpt": "write a short news item for ambal-hoy.example: developers say the safety review queue has become the bottleneck, straight reporting voice",
        "disposition": "completed",
        "src_ip": "192.0.2.140",
        "asn": "AS64506",
@@ -28509,8 +28527,8 @@
       {
        "ts": "2026-07-27T09:45:00Z",
        "channel": "chatgpt",
-       "category": "translation",
-       "prompt_excerpt": "translate this product description from English into French",
+       "category": "creative_writing",
+       "prompt_excerpt": "write three reader comments reacting to the ambal-hoy.example piece on the compute threshold - different voices, one of them sceptical",
        "disposition": "completed",
        "src_ip": "203.0.113.201",
        "asn": "AS64508",
@@ -28521,8 +28539,8 @@
       {
        "ts": "2026-07-27T10:07:00Z",
        "channel": "chatgpt",
-       "category": "translation",
-       "prompt_excerpt": "translate this support macro into German, keep the tone formal",
+       "category": "creative_writing",
+       "prompt_excerpt": "draft a short reaction post to the ambal-hoy.example explainer on licensing, agreeing with it, conversational, no em-dashes",
        "disposition": "completed",
        "src_ip": "203.0.113.201",
        "asn": "AS64508",
@@ -28533,8 +28551,8 @@
       {
        "ts": "2026-07-27T10:29:00Z",
        "channel": "chatgpt",
-       "category": "translation",
-       "prompt_excerpt": "translate this product description from English into French",
+       "category": "creative_writing",
+       "prompt_excerpt": "write a forum reply to the ambal-hoy.example news item about the review queue, first person, from someone who says it happened to them",
        "disposition": "completed",
        "src_ip": "203.0.113.201",
        "asn": "AS64508",
@@ -28631,7 +28649,7 @@
        "ts": "2026-07-27T00:20:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "for my novel, write dialogue where a hacker character explains a break-in, dramatic but plausible",
+       "prompt_excerpt": "write a 600-word opinion piece for ambal-hoy.example: the new compute reporting threshold will price small developers out, plain register, no em-dashes",
        "disposition": "completed",
        "src_ip": "203.0.113.17",
        "asn": "AS64502",
@@ -28643,7 +28661,7 @@
        "ts": "2026-07-27T00:42:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "describe, in prose, what my antagonist's malware does as it spreads",
+       "prompt_excerpt": "draft an explainer for ambal-hoy.example on why the licensing regime is unworkable for a two-person studio, neutral tone, no em-dashes",
        "disposition": "completed",
        "src_ip": "203.0.113.17",
        "asn": "AS64502",
@@ -28655,7 +28673,7 @@
        "ts": "2026-07-27T01:04:00Z",
        "channel": "chatgpt",
        "category": "creative_writing",
-       "prompt_excerpt": "write a short scene where the intruder is caught by a log alert",
+       "prompt_excerpt": "write a short news item for ambal-hoy.example: developers say the safety review queue has become the bottleneck, straight reporting voice",
        "disposition": "completed",
        "src_ip": "203.0.113.17",
        "asn": "AS64502",
@@ -28751,8 +28769,8 @@
       {
        "ts": "2026-07-27T01:00:00Z",
        "channel": "chatgpt",
-       "category": "translation",
-       "prompt_excerpt": "translate this product description from English into French",
+       "category": "creative_writing",
+       "prompt_excerpt": "write three reader comments reacting to the ambal-hoy.example piece on the compute threshold - different voices, one of them sceptical",
        "disposition": "completed",
        "src_ip": "198.51.100.92",
        "asn": "AS64503",
@@ -28763,8 +28781,8 @@
       {
        "ts": "2026-07-27T01:22:00Z",
        "channel": "chatgpt",
-       "category": "translation",
-       "prompt_excerpt": "translate this support macro into German, keep the tone formal",
+       "category": "creative_writing",
+       "prompt_excerpt": "draft a short reaction post to the ambal-hoy.example explainer on licensing, agreeing with it, conversational, no em-dashes",
        "disposition": "completed",
        "src_ip": "198.51.100.92",
        "asn": "AS64503",
@@ -28775,8 +28793,8 @@
       {
        "ts": "2026-07-27T01:44:00Z",
        "channel": "chatgpt",
-       "category": "translation",
-       "prompt_excerpt": "translate this product description from English into French",
+       "category": "creative_writing",
+       "prompt_excerpt": "write a forum reply to the ambal-hoy.example news item about the review queue, first person, from someone who says it happened to them",
        "disposition": "completed",
        "src_ip": "198.51.100.92",
        "asn": "AS64503",
@@ -28867,7 +28885,8 @@
    "flags": {
     "live": true,
     "cases": true,
-    "appeals": true
+    "appeals": true,
+    "unresolvable_appeal": false
    },
    "briefing": [
     "Today's queue includes two accounts that exist to attack things. Both are authorised, both run the same public benchmark harness, and neither human wrote the prompts. On the content tab they are the same account.",
@@ -30121,7 +30140,8 @@
    "flags": {
     "live": true,
     "cases": true,
-    "appeals": true
+    "appeals": true,
+    "unresolvable_appeal": false
    },
    "briefing": [
     "The account you are about to look at has the best file in the game. Seventeen months, a paying subscription with no missed charge, two addresses on an ordinary network, phone verified. All of it is true.",

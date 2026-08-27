@@ -590,9 +590,15 @@ try {
 } catch (e) { /* file:// storage may be unavailable; auto is fine */ }
 function applyTheme() {
   var mode = THEME_MODES[themeIdx];
+  /* The accessible name was frozen at "Cycle color theme" while the visible
+     label cycled through three states, so a screen reader could never learn
+     which was active and a speech-input user saying "Theme" could not hit
+     the control at all (WCAG 2.5.3). The name carries the visible text now. */
   if (mode === 'auto') { document.documentElement.removeAttribute('data-theme'); }
   else { document.documentElement.setAttribute('data-theme', mode); }
-  $('btn-theme').textContent = 'Theme: ' + mode;
+  var tb = $('btn-theme');
+  tb.textContent = 'Theme: ' + mode;
+  tb.setAttribute('aria-label', 'Theme: ' + mode + ' — cycle colour theme');
   try { localStorage.setItem('trigger-discipline-theme', mode); } catch (e) { /* ignore */ }
 }
 $('btn-theme').addEventListener('click', function () {
@@ -707,8 +713,13 @@ function renderIntro() {
         'independent verification returned on it. You uphold or reverse ' +
         'each ban. Reversing a wrongful ban recovers part of its penalty; ' +
         'reversing a correct one forfeits the credit. Some appeals verify ' +
-        'and are lies anyway, and at least one cannot be resolved in ' +
-        'either direction.'));
+        'and are lies anyway.' +
+        /* Only where one is actually dealt. Shift 5 ships the single
+           unresolvable card; saying so on shifts 7-10, where every appeal
+           resolves, sent the player looking for a card that is not there. */
+        (fl.unresolvable_appeal
+          ? ' And at least one cannot be resolved in either direction.'
+          : '')));
     }
   }
   setText('intro-seed', String(SEED));
@@ -1175,6 +1186,12 @@ function tabBehavior(a) {
     i.title = s.category + ' · ' + fmtTs(s.ts);
     strip.appendChild(i);
   });
+  /* A title attribute is not a text alternative: it is unreachable by
+     keyboard and by touch. The strip is one image with one name, and the
+     mix line rendered under it says the same thing in words. */
+  strip.setAttribute('role', 'img');
+  strip.setAttribute('aria-label', 'Session categories in order, ' +
+    plural(ss.length, 'session') + '; the counts are listed below.');
   f.appendChild(strip);
   var counts = {};
   ss.forEach(function (s) { counts[s.category] = (counts[s.category] || 0) + 1; });
@@ -1464,7 +1481,13 @@ function riskStrip(ctx) {
     i.style.height = Math.max(2, Math.round(row.r / span * 16)) + 'px';
     if (row.id === ctx.id) { i.className = 'me'; }
     else if (row.r >= ctx.thr) { i.className = 'over'; }
-    i.title = row.id + ' — ' + row.r.toFixed(3);
+    /* No id and no third decimal on anyone but the subject. This is a
+       picture of where one score sits in the population; it used to hand
+       over every arrived account's exact risk keyed by id, so a single 2h
+       purchase read out the whole queue's scoring for free. */
+    i.title = row.id === ctx.id
+      ? 'this account — ' + row.r.toFixed(3)
+      : (row.r >= ctx.thr ? 'over the lead line' : 'under the lead line');
     wrap.appendChild(i);
   });
   return wrap;
@@ -2417,19 +2440,44 @@ function renderReport(rep) {
   /* --- you vs the card-only reviewer (finding #26) --- */
   var sCard = el('section');
   sCard.appendChild(el('h2', null, 'You vs the card-only reviewer'));
-  sCard.appendChild(el('p', null,
-    'Hunt’s finding #26: a reviewer shown only the queue card upheld 5/5 unsound enforcement ' +
-    'cards. The gate that cannot see can only sign.'));
-  sCard.appendChild(el('p', null,
-    'Card-only review of this queue — uphold every policy card, touch nothing else — bans ' +
-    plural(cardBans, 'account') + ' (' + plural(cardTP, 'actor') + ', ' + cardFP +
-    ' innocent) and monitors ' + cardMon + ' for a score of ' + fmtScore(cardScore) +
-    ', without opening one evidence panel.'));
+  /* Stated from meta.reviewer, which build_data counts off hunt's own run.
+     Typed here, it said "upheld 5/5 unsound enforcement cards" - which reads
+     as five cards, and there were three. */
+  var rv = META.reviewer || {};
+  sCard.appendChild(el('p', null, rv.unsound_total
+    ? 'Hunt’s finding #26: a reviewer shown only the queue card upheld ' +
+      rv.unsound_upheld + ' of ' + rv.unsound_total + ' unsound enforcement ' +
+      'cards, ' + rv.unsound_upheld_reps + ' times out of ' + rv.reps +
+      ' each' +
+      (rv.sound_overturned
+        ? ' — and overturned a sound one ' + rv.sound_overturn_reps +
+          ' times out of ' + rv.reps
+        : '') +
+      '. The gate that cannot see cannot tell them apart.'
+    : 'Hunt’s finding #26: a reviewer shown only the queue card cannot tell ' +
+      'a sound enforcement recommendation from an unsound one.'));
+  /* Only where there are cards to uphold. On every shift but the first, the
+     clusters come from hunt's offline linker and carry no policy decision,
+     so "uphold every policy card" upheld nothing and the baseline silently
+     became "clear everything" - printed as a comparison the player was
+     invited to read as a reviewer's performance. */
+  var hasCards = cardBans + cardMon > 0;
+  sCard.appendChild(el('p', null, hasCards
+    ? 'Card-only review of this queue — uphold every policy card, touch nothing else — bans ' +
+      plural(cardBans, 'account') + ' (' + plural(cardTP, 'actor') + ', ' + cardFP +
+      ' innocent) and monitors ' + cardMon + ' for a score of ' + fmtScore(cardScore) +
+      ', without opening one evidence panel.'
+    : 'This queue carries no policy cards: its clusters come from the offline ' +
+      'linker, which groups accounts and does not recommend anything. There ' +
+      'is nothing here for a card-only reviewer to uphold, so there is no ' +
+      'baseline to put beside your score — which is itself the finding. The ' +
+      'linker can tell you who is connected. It cannot tell you what to do ' +
+      'about it.'));
   /* On a clockless shift there is no such number to give. Every panel is
      open on every account and none of them cost anything, so "you opened N"
      is not a measure of what the player did - it is the roster size times
      four. The sentence says what is actually true of the day instead. */
-  sCard.appendChild(el('p', null, clockRunning()
+  if (hasCards) { sCard.appendChild(el('p', null, clockRunning()
     ? 'You opened ' + plural(rep.tabsOpened, 'evidence panel') + ' and scored ' +
       fmtScore(rep.score) +
       '. The difference between those two numbers is what looking bought. On this queue the cards happen ' +
@@ -2438,7 +2486,7 @@ function renderReport(rep) {
       'looking cost you nothing. You scored ' + fmtScore(rep.score) +
       '. From the next shift on, that difference is a budget. On this queue ' +
       'the cards happen to be sound; the card-only reviewer’s method cannot ' +
-      'tell you when they are not.'));
+      'tell you when they are not.')); }
   root.appendChild(sCard);
 
   /* --- the base-rate kicker (finding #16) --- */

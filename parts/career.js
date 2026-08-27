@@ -710,6 +710,13 @@ function closeAppeals() {
   if (scoreLine) { scoreLine.textContent = fmtScore(report.score) + ' of ' + maxFor(report.counts); }
   var rankLine = root.querySelector('.rank-line');
   if (rankLine) { rankLine.textContent = 'Rank: ' + rankFor(report.score); }
+  /* Anything else in the report that quoted the score is now stale. Today
+     that is only the card-only comparison, which does not render on a shift
+     that has appeals - but the patch is by class, so the next sentence that
+     quotes the score has to be tagged rather than remembered. */
+  [].slice.call(root.querySelectorAll('.score-echo')).forEach(function (n) {
+    n.textContent = fmtScore(report.score);
+  });
 
   var sec = ui.el('section');
   sec.appendChild(ui.el('h2', null, 'Appeals'));

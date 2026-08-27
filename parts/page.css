@@ -48,6 +48,15 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body {
+  /* Category textures, defined once and used by both strips that carry a
+     category: the landing's queue and the Behavior panel's session mix.
+     Declared on body rather than :root so the palette gate, which reads
+     :root for colour tokens and demands both themes define the same set,
+     does not have to learn about two gradients. */
+  --hatch-off: repeating-linear-gradient(135deg,
+    rgba(0, 0, 0, .38) 0 2px, rgba(0, 0, 0, 0) 2px 5px);
+  --hatch-recon: repeating-linear-gradient(90deg,
+    rgba(0, 0, 0, .38) 0 1px, rgba(0, 0, 0, 0) 1px 4px);
   background: var(--bg); color: var(--text);
   font-family: var(--sans); font-size: 15px; line-height: 1.5;
   min-height: 100vh; display: flex; flex-direction: column;
@@ -247,14 +256,18 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
 #band-picker .bp-floor { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
 .seqstrip { display: flex; gap: 2px; flex-wrap: wrap; margin: 6px 0; }
 .seqstrip i {
-  width: 14px; height: 14px; border-radius: 3px; background: var(--line); display: inline-block;
+  width: 14px; height: 14px; border-radius: 3px; background-color: var(--line); display: inline-block;
 }
-.seqstrip i.cat-off { background: var(--ban); }
-.seqstrip i.cat-recon { background: var(--warn); }
-/* The strip is not text, so opacity is fine here - but category must not be
-   carried by colour alone: each tick keeps a title, and the benign ticks are
-   drawn shorter as well as paler. */
-.seqstrip i.cat-benign { background: var(--clear); opacity: .55; }
+/* Category must not be carried by colour alone, and until now it was: the
+   comment here claimed the benign ticks were "drawn shorter as well as
+   paler" and the rule gave every tick 14x14 and changed only opacity, which
+   measured 2.91:1 and 1.93:1. The title attribute was the sole alternative
+   and a title is reachable by neither keyboard nor touch. Same three
+   textures as the landing strip, no opacity, and the visible mix line under
+   the strip is the text alternative. */
+.seqstrip i.cat-off { background-color: var(--ban); background-image: var(--hatch-off); }
+.seqstrip i.cat-recon { background-color: var(--warn); background-image: var(--hatch-recon); }
+.seqstrip i.cat-benign { background-color: var(--clear); }
 .tl { width: 100%; height: 56px; display: block; }
 .tl .axis { stroke: var(--line); }
 .tl .tick { stroke: var(--clear); opacity: .8; }
@@ -474,12 +487,6 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
    collapsed rule, and the shorthand in the second reset the image from the
    first, so the collapsed bars - the state this exists for - came out
    flat. Measured after the fix: 1 distinct colour per bar before, 2 after. */
-.lp-rows {
-  --hatch-off: repeating-linear-gradient(135deg,
-    rgba(0, 0, 0, .38) 0 2px, rgba(0, 0, 0, 0) 2px 5px);
-  --hatch-recon: repeating-linear-gradient(90deg,
-    rgba(0, 0, 0, .38) 0 1px, rgba(0, 0, 0, 0) 1px 4px);
-}
 .lp-tick.cat-off { background-color: var(--ban); background-image: var(--hatch-off); }
 /* Recon is its own category in this game and its own colour everywhere
    else on the page. The strip painted it green until someone counted the
@@ -625,7 +632,15 @@ footer {
      reachable. The bar drops to its own full-width row and the buttons
      grow to a 44px touch target. */
   #verdict-bar { margin-left: 0; flex: 1 0 100%; }
-  #verdict-bar button { flex: 1 1 auto; min-height: 44px; }
+  /* Every control that commits something, not just the verdict bar. The
+     appeals round's UPHOLD and REVERSE are as final as a ban and were
+     rendering at 34px side by side, and the clock control is the one thing
+     a player presses dozens of times a shift. */
+  #verdict-bar button, #screen-appeals button, #btn-wait, #btn-waitnext,
+  #btn-continue, #btn-end-confirm, #btn-end-cancel,
+  .lp-start, .lp-shift, #btn-endshift { min-height: 44px; }
+  #verdict-bar button { flex: 1 1 auto; }
+  #screen-appeals button { padding-left: 18px; padding-right: 18px; }
   #queue { max-height: none; border-right: 0; border-bottom: 1px solid var(--line); }
   #queue-list { display: flex; overflow-x: auto; gap: 4px; }
   #queue-list li { flex: 0 0 auto; }

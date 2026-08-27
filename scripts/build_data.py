@@ -604,6 +604,30 @@ PROMPTS = {
         "translate this support macro into German, keep the tone formal",
         "localise this release note for our Japanese customers",
     ],
+    # Shift 8's operation, made visible where the archetype says it lives.
+    # The roster used to draft this cell's work from the novelist's pool, so
+    # the briefing described an article and the reaction to it while the
+    # content tab showed a thriller and some product blurbs: the shift's
+    # whole premise was invisible in its own fixture. Both halves are
+    # ordinary creative writing on content - that is the point of the
+    # archetype, not an oversight - and the operators' own scrubbing
+    # instruction is in them, from the report the provenance cites.
+    ("creative_writing", "article"): [
+        "write a 600-word opinion piece for {org}: the new compute reporting "
+        "threshold will price small developers out, plain register, no em-dashes",
+        "draft an explainer for {org} on why the licensing regime is "
+        "unworkable for a two-person studio, neutral tone, no em-dashes",
+        "write a short news item for {org}: developers say the safety review "
+        "queue has become the bottleneck, straight reporting voice",
+    ],
+    ("creative_writing", "reaction"): [
+        "write three reader comments reacting to the {org} piece on the "
+        "compute threshold - different voices, one of them sceptical",
+        "draft a short reaction post to the {org} explainer on licensing, "
+        "agreeing with it, conversational, no em-dashes",
+        "write a forum reply to the {org} news item about the review queue, "
+        "first person, from someone who says it happened to them",
+    ],
     ("creative_writing", "benign"): [
         "for my novel, write dialogue where a hacker character explains a "
         "break-in, dramatic but plausible",
@@ -2560,7 +2584,14 @@ def assemble(r: Roster, hunt: Hunt,
         # flags.live is false there is no clock at all and the number is
         # inert - kept so the contract stays one shape across shifts.
         "budget": r.budget,
-        "flags": r.flags,
+        # The rules block tells the player "at least one appeal cannot be
+        # resolved in either direction". True on shift 5 and on no other
+        # appeals shift, where the player then spends the round looking for
+        # a card that is not dealt. Published as a flag so the prose can stop
+        # promising it; derived here, where the reveal is readable.
+        "flags": dict(r.flags, unresolvable_appeal=any(
+            ((rec.get("reveal") or {}).get("appeal") or {}).get("resolvable") is False
+            for rec in out)),
         "briefing": r.briefing,
         "rule": r.rule,
         "report_lead": r.report_lead,
@@ -3636,15 +3667,26 @@ def roster_s7(hunt: Hunt) -> Roster:
 # ===========================================================================
 
 S8_BRIEFING = [
-    "Five accounts today that have nothing in common. Different countries, "
+    # Absolutes replaced with what the fixture actually holds. The old text
+    # promised "every overlap comes back empty and every signal reads zero";
+    # one seat shares a standing target with the researcher who watches it,
+    # another shares working hours with her, and target_fixation fires on
+    # both. A player using the promise as a membership test was reading a
+    # briefing its own data contradicts.
+    "Five accounts today that look like five strangers. Different countries, "
     "different infrastructure, different signup months, verified payment and "
-    "phone on all of them. Every overlap the network tab computes comes back "
-    "empty, and every signal the scorer has reads zero.",
+    "phone on all of them. They share no infrastructure with each other, and "
+    "the scorer reads every one of them at or below 0.05 - under the lead "
+    "line, on a day when the lead line is the least of your problems.",
 
+    # "every working day" was a fact about the operation the report
+    # documents, not about this queue, which is one day long - so the player
+    # was told to look for a recurrence the fixture cannot show.
     "They are one operation. The work moves between them in one direction: an "
     "article is drafted in one account, and the reaction to that article is "
-    "drafted in another, forty minutes later, every working day, never the "
-    "other way round. The tab that would show you this does not exist.",
+    "drafted in another, forty minutes later, never the other way round. Both "
+    "halves read as ordinary creative writing on the content tab. The tab "
+    "that would show you the direction does not exist.",
 
     "Somebody in this queue studies exactly these operations for a living and "
     "sends the same requests to build a labelled corpus. Her volume moves with "
@@ -3655,7 +3697,7 @@ S8_BRIEFING = [
 def roster_s8(hunt: Hunt) -> Roster:
     r = Roster(shift_id="s8", title="The handoff",
                subtitle="Nine accounts, twenty-four hours, and five that share "
-                        "nothing at all.",
+                        "no infrastructure at all.",
                budget=24,
                flags={"live": True, "cases": True, "appeals": True},
                briefing=S8_BRIEFING, rule=S1_RULE,
@@ -3716,17 +3758,18 @@ def roster_s8(hunt: Hunt) -> Roster:
                   channel="chatgpt", label="malicious", actor="astroturf_loop",
                   notes="one seat in a content farm that writes its own audience",
                   provenance=astro_prov, tell=None)
+        # Which half of the handoff this seat works. The article seats draft
+        # the piece; the reaction seats draft the response to that piece,
+        # forty minutes later, never the other way round - which is what
+        # `starts` encodes and what the build asserts below.
         drafts = (k % 2 == 0)
+        pool = PROMPTS[("creative_writing", "article" if drafts else "reaction")]
         for j in range(3):
             at = starts[aid] + 22 * j
-            if drafts:
-                ex = PROMPTS[("creative_writing", "benign")][j % 3]
-                cat = "creative_writing"
-            else:
-                ex = PROMPTS[("translation", "benign")][j % 2]
-                cat = "translation"
-            r.sess(aid, hunt=hunt, at_min=at, channel="chatgpt", category=cat,
-                   excerpt=ex.format(org=outlet), disposition="completed",
+            r.sess(aid, hunt=hunt, at_min=at, channel="chatgpt",
+                   category="creative_writing",
+                   excerpt=pool[j % 3].format(org=outlet),
+                   disposition="completed",
                    ip=ip, asn=asn, country=cc,
                    target_ref=standing if aid.endswith("AL05") else None)
 
@@ -3744,7 +3787,7 @@ def roster_s8(hunt: Hunt) -> Roster:
     for j in range(3):
         r.sess("acct_s8_AL06", hunt=hunt, at_min=20 + 22 * j,
                channel="chatgpt", category="creative_writing",
-               excerpt=PROMPTS[("creative_writing", "benign")][j % 3].format(org=outlet),
+               excerpt=PROMPTS[("creative_writing", "article")][j % 3].format(org=outlet),
                disposition="completed", ip=rsp_ip, asn=hunt.benign_asns[9],
                country="PT", target_ref=standing)
 
@@ -4082,6 +4125,42 @@ REFUSALS = {
 }
 
 
+def reviewer_stats(hunt_root: Path) -> dict:
+    """hunt's card-only reviewer run, as counts.
+
+    The game states this finding to the player on every shift report. It is
+    imported for the same reason the scorer and the bands are: a number
+    retyped beside a generated artifact is a number that will drift.
+    """
+    path = hunt_root / "data" / "reviewer.json"
+    if not path.is_file():
+        raise SystemExit(f"build_data: missing {path} (finding #26's source)")
+    doc = json.loads(path.read_text())
+    rows = doc.get("rows") or []
+    unsound = [r for r in rows if r.get("kind") == "unsound"]
+    sound = [r for r in rows if r.get("kind") == "sound"]
+    reps = int(doc.get("reps") or 0)
+    up = [r for r in unsound if r.get("modal") == "uphold"]
+    out = {
+        "model": doc.get("model"),
+        "reps": reps,
+        "unsound_total": len(unsound),
+        "unsound_upheld": len(up),
+        "unsound_upheld_reps": max(
+            (int((r.get("decisions") or {}).get("uphold", 0)) for r in up),
+            default=0),
+        "sound_total": len(sound),
+        "sound_overturned": sum(1 for r in sound if r.get("modal") == "overturn"),
+        "sound_overturn_reps": max(
+            (int((r.get("decisions") or {}).get("overturn", 0))
+             for r in sound if r.get("modal") == "overturn"), default=0),
+    }
+    if not out["unsound_total"] or not out["reps"]:
+        raise SystemExit("build_data: hunt's reviewer.json has no unsound rows "
+                         "or no reps; finding #26 cannot be stated")
+    return out
+
+
 def build(hunt_root: Path,
           built_date: str | None = None) -> tuple[dict, dict]:
     """Return (data, tells). `tells` maps shift id -> account id -> Tell, and
@@ -4152,6 +4231,12 @@ def build(hunt_root: Path,
             "scorer": "hunt src/signals.py (imported, not restated)",
             "linker": "hunt src/attribute.py (imported, not restated)",
             "bands_source": "hunt src/calibration.py -> investigate.BAND_FLOOR",
+            # Finding #26, counted off hunt's own reviewer run rather than
+            # retold. The game said "upheld 5/5 unsound enforcement cards",
+            # which reads as five cards; there were three, two upheld 5/5 and
+            # one rejected 5/5 - and a SOUND card overturned 3/5, which is
+            # the sharper half of the result and was not being said at all.
+            "reviewer": reviewer_stats(hunt_root),
             "identifier_predicates": hunt.predicates_from,
             "bands": hunt.bands,
             "band_order": hunt.band_order,
@@ -4816,6 +4901,59 @@ def check(data: dict, hunt_root: Path, tells: dict) -> list[str]:
             want(bool(mixed),
                  f"{sid}: the hour channel offers no mixed-truth pair - "
                  f"the #17 trap is missing at this threshold")
+
+    # --- shift 8's handoff has to be IN the fixture --------------------------
+    # The briefing describes an article drafted in one account and the
+    # reaction to it drafted in another forty minutes later. The roster used
+    # to draft both halves from the novelist's pool, so the shift's whole
+    # premise was invisible on the tab the player is pointed at, and nothing
+    # noticed. This asserts the content and the interval.
+    s8 = next((sh for sh in data["shifts"] if sh["id"] == "s8"), None)
+    if s8 is not None:
+        cell = [a for a in s8["accounts"]
+                if (a.get("reveal") or {}).get("actor") == "astroturf_loop"]
+        arts, reacts = {}, {}
+        for a in cell:
+            texts = [(x.get("prompt_excerpt") or "") for x in a["sessions"]]
+            first = min((x["ts"] for x in a["sessions"]), default=None)
+            if any("reacting to" in t or "reaction post" in t or "reply to" in t
+                   for t in texts):
+                reacts[a["id"]] = first
+            elif any("opinion piece" in t or "explainer" in t or "news item" in t
+                     for t in texts):
+                arts[a["id"]] = first
+        if not arts:
+            want(False, "s8: no account drafts the article the briefing describes")
+        if not reacts:
+            want(False, "s8: no account drafts the reaction the briefing describes")
+        if arts and reacts:
+            import datetime as _dt
+
+            def _t(v):
+                return _dt.datetime.fromisoformat(v.replace("Z", "+00:00"))
+
+            def _mins(a, b):
+                return round((_t(b) - _t(a)).total_seconds() / 60)
+
+            # Every reaction seat must follow an article seat by exactly the
+            # interval the briefing states - not merely one pair somewhere,
+            # which is all the first version of this asked for and which a
+            # broken pairing still satisfied.
+            for rid, rt in sorted(reacts.items()):
+                gaps = sorted(_mins(at, rt) for at in arts.values())
+                want(40 in gaps,
+                     f"s8: {rid} drafts the reaction, and no article seat "
+                     f"precedes it by the forty minutes the briefing states "
+                     f"(gaps {gaps})")
+            # ...and never the other way round: no article seat may open
+            # within the interval AFTER a reaction seat.
+            for aid_, at in sorted(arts.items()):
+                for rid, rt in reacts.items():
+                    d = _mins(rt, at)
+                    want(not (0 < d <= 40),
+                         f"s8: {aid_} drafts an article {d} minutes after "
+                         f"{rid} drafted a reaction; the operation the "
+                         f"briefing describes only runs one way")
 
     # --- every planted actor gets a tell that names its own finding ---------
     # The generated fallback describes an account's sessions and account file,

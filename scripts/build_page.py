@@ -33,12 +33,19 @@ PARTS_DIR = REPO_ROOT / "parts"
 # part is required and carries a floor on its size, because a part truncated
 # to a stub is the same failure as a part deleted, and passes an is-file
 # check.
+# Floors at roughly three quarters of each part, not a quarter. The first
+# pass set them low enough to be harmless, which made them decorative: the
+# CSS floor was 8,000 against a 36,000-character file, so three quarters of
+# the stylesheet could be lost - the landing, the case board, the evidence
+# layout - and every gate stayed green. A floor that a truncation can clear
+# is not a floor. These need raising when a part grows substantially; that
+# is the point.
 PARTS = [
-    ("<!--PART:CSS-->", "page.css", 8_000),
-    ("<!--PART:CORE-->", "core.js", 60_000),
-    ("<!--PART:LIVE-->", "live.js", 4_000),
-    ("<!--PART:CASES-->", "cases.js", 15_000),
-    ("<!--PART:CAREER-->", "career.js", 15_000),
+    ("<!--PART:CSS-->", "page.css", 27_000),
+    ("<!--PART:CORE-->", "core.js", 95_000),
+    ("<!--PART:LIVE-->", "live.js", 9_000),
+    ("<!--PART:CASES-->", "cases.js", 19_000),
+    ("<!--PART:CAREER-->", "career.js", 24_000),
 ]
 
 # Same pattern build_data.py uses for --inject; keep the two in lockstep.
