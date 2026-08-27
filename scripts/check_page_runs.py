@@ -65,15 +65,42 @@ HARNESS = """
     var report = { shifts: [], errors: errors };
     try {
       var ids = __SHIFTS__;
+      function tick() {
+        var c = document.getElementById('btn-continue');
+        if (c && !c.hidden && c.offsetParent !== null) { c.click(); }
+      }
       ids.forEach(function (id) {
         var row = { id: id };
+
+        /* Coverage pass. The play-through below only ever waits and clears,
+           so until this ran not one evidence panel was rendered by the
+           gate: every tabContent/tabAccount/tabBehavior/tabNetwork/
+           tabPipeline path, and everything they call, was shipping
+           unexercised. Done on its own load so the hours it spends do not
+           move the numbers the play-through reports. */
+        Game.loadShift(id);
+        document.getElementById('btn-start').click();
+        for (var pw = 0; pw < 40; pw++) {
+          document.dispatchEvent(new KeyboardEvent('keydown', {key: 'w', bubbles: true}));
+          tick();
+        }
+        var seats = document.querySelectorAll('#queue-list li button');
+        var panels = 0;
+        for (var q = 0; q < seats.length && q < 6; q++) {
+          seats[q].click();
+          for (var d = 1; d <= 5; d++) {
+            document.dispatchEvent(new KeyboardEvent('keydown',
+              {key: String(d), bubbles: true}));
+            if (document.querySelectorAll('#tabpanel .ev-body > *').length) {
+              panels += 1;
+            }
+          }
+        }
+        row.panels = panels;
+
         Game.loadShift(id);
         document.getElementById('btn-start').click();
         row.opening = document.querySelectorAll('#queue-list li').length;
-        function tick() {
-          var c = document.getElementById('btn-continue');
-          if (c && !c.hidden && c.offsetParent !== null) { c.click(); }
-        }
         for (var w = 0; w < 80; w++) {
           document.dispatchEvent(new KeyboardEvent('keydown', {key: 'w', bubbles: true}));
           tick();
@@ -184,6 +211,12 @@ def main() -> int:
         if row.get("opening", 0) == 0 and row.get("queue", 0) > 0:
             failures.append(f"{sid}: opens on an empty queue - nothing to look "
                             f"at until the player guesses at the clock")
+        # Coverage, asserted rather than assumed: a sweep that quietly stops
+        # rendering panels reports zero errors, which reads as a pass.
+        if row.get("panels", 0) < 5:
+            failures.append(f"{sid}: only {row.get('panels', 0)} evidence "
+                            f"panels rendered during the coverage pass; the "
+                            f"panel renderers are going untested")
 
     if failures:
         print(f"check_page_runs: {len(failures)} FAILURE(S)\n", file=sys.stderr)
@@ -193,7 +226,8 @@ def main() -> int:
 
     n = len(report.get("shifts", []))
     print(f"check_page_runs: OK ({n} shifts played to a report from file://, "
-          f"no console errors, no uncaught exceptions)")
+          f"no console errors, no uncaught exceptions; "
+          f"{sum(r.get('panels', 0) for r in report.get('shifts', []))} evidence panels rendered)")
     return 0
 
 

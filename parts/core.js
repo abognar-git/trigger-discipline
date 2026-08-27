@@ -344,6 +344,14 @@ function el(tag, cls, text) {
   return n;
 }
 function frag() { return document.createDocumentFragment(); }
+/* The two timelines are the only places this file builds markup as a
+   string, and both interpolate values into it. Numbers are formatted to
+   fixed decimals and class names are literals, but a lane's aria-label
+   carries account ids and timestamps, so it goes through here. */
+function esc(t) {
+  return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 function fmtTs(iso) { return iso ? iso.replace('T', ' ').replace(':00Z', 'Z') : '—'; }
 function fmtPts(n) { return (n >= 0 ? '+' : '−') + Math.abs(n); }
 function fmtScore(n) { return (n < 0 ? '−' : '') + Math.abs(n); }
@@ -1139,6 +1147,160 @@ function acctChip(id) {
   return el('span', 'mono small', id);
 }
 
+/* --- the overlap timeline -----------------------------------------------
+   One lane per account, on one shared axis. The overlaps list says WHO
+   shares a token and the first-seen lines say who touched it first, but
+   both say it in prose, four timestamps at a time, and the thing they
+   describe is a shape.
+
+   The axis has to carry BOTH clocks or it lies. First contact with a
+   shared token can predate every session in the queue window: on some
+   shifts the sessions all fall on one day and the first-seen times fall
+   on the day before. A chart drawn from sessions alone then ranks an
+   account that copied someone else's infrastructure AHEAD of the account
+   it copied - the exact inverse of what the first-seen column says, and
+   drawn twice as large.
+   Each lane therefore carries its sessions and, where the data has one, a
+   marker at first contact; lanes sort on first contact, sessions only as
+   the fallback where no overlap has a first-seen record.
+
+   Only arrived, in-scope accounts get a lane, and each lane plots only
+   that account's VISIBLE sessions - the same rule the rest of the dossier
+   obeys. Nothing here is drawn from something the player could not look
+   up on this panel. */
+function overlapLanes(a) {
+  var net = a.network || {};
+  var KINDS = ['shared_asn', 'shared_ip', 'shared_target', 'shared_cadence',
+               'shared_hours'];
+  var fsAll = net.first_seen || {};
+  var mates = {};
+  KINDS.forEach(function (k) {
+    (net[k] || []).forEach(function (id) {
+      if (byId.has(id) && arrived.has(id) && inShiftScope(id)) { mates[id] = true; }
+    });
+  });
+  var ids = Object.keys(mates);
+  if (!ids.length) { return null; }
+
+  /* earliest first contact: the subject's own is the min of its side of
+     every pair, a mate's is the min of its side of the pairs it is in */
+  var mineFs = null, mateFs = {};
+  KINDS.forEach(function (k) {
+    var per = fsAll[k];
+    if (!per) { return; }
+    ids.forEach(function (id) {
+      var fs = per[id];
+      if (!fs || fs.length < 2) { return; }
+      var t0 = Date.parse(fs[0]), t1 = Date.parse(fs[1]);
+      if (!isNaN(t0) && (mineFs === null || t0 < mineFs)) { mineFs = t0; }
+      if (!isNaN(t1) && (mateFs[id] === undefined || t1 < mateFs[id])) {
+        mateFs[id] = t1;
+      }
+    });
+  });
+
+  var lanes = [];
+  function lane(id, isSubject, fs) {
+    var acc = byId.get(id);
+    var ss = visibleSessions(acc).slice().sort(function (x, y) {
+      return Date.parse(x.ts) - Date.parse(y.ts);
+    });
+    if (!ss.length) { return; }
+    lanes.push({ id: id, subject: !!isSubject, ss: ss,
+                 fs: (fs === undefined || fs === null || isNaN(fs)) ? null : fs,
+                 t0: Date.parse(ss[0].ts) });
+  }
+  lane(a.id, true, mineFs);
+  ids.forEach(function (id) { lane(id, false, mateFs[id]); });
+  if (lanes.length < 2) { return null; }
+
+  var anyFs = lanes.some(function (L) { return L.fs !== null; });
+  lanes.sort(function (x, y) {
+    var xk = (anyFs && x.fs !== null) ? x.fs : x.t0;
+    var yk = (anyFs && y.fs !== null) ? y.fs : y.t0;
+    return xk - yk;
+  });
+
+  var t0 = Infinity, t1 = -Infinity;
+  lanes.forEach(function (L) {
+    if (L.fs !== null) {
+      if (L.fs < t0) { t0 = L.fs; }
+      if (L.fs > t1) { t1 = L.fs; }
+    }
+    L.ss.forEach(function (sess) {
+      var t = Date.parse(sess.ts);
+      if (t < t0) { t0 = t; }
+      if (t > t1) { t1 = t; }
+    });
+  });
+  if (!isFinite(t0) || !isFinite(t1)) { return null; }
+
+  var f = frag();
+  f.appendChild(el('h3', null, 'Overlap timeline'));
+  f.appendChild(el('p', 'small dim', anyFs
+    ? 'Every account above that shares something with this one, on one axis. '
+      + 'Each lane starts where that account first touched a token the pair '
+      + 'shares, and the ticks on it are sessions. Read the left edges '
+      + 'down: that is the order the first-seen lines state in prose.'
+    : 'Every account above that shares something with this one, on one axis, '
+      + 'ordered by first session. Nothing here records first contact with '
+      + 'the shared token, so this shows shape, not order.'));
+
+  /* The track is stretched to whatever width the panel has, so the x axis
+     is scaled and the y axis is not: anything with a horizontal dimension
+     comes out distorted. A circle became an ellipse and the leftmost lane's
+     marker was sliced by the edge. First contact is a vertical rule, which
+     survives the stretch, and the map keeps a margin so an extreme value is
+     still fully drawn. */
+  var W = 600, LH = 18, PAD = 4, PADX = 7;
+  function x(t) {
+    if (t1 === t0) { return W / 2; }
+    return PADX + (t - t0) / (t1 - t0) * (W - 2 * PADX);
+  }
+  var box = el('div', 'tl-lanes');
+  lanes.forEach(function (L) {
+    var row = el('div', 'tl-lane' + (L.subject ? ' is-subject' : ''));
+    row.appendChild(el('span', 'tl-name mono',
+      L.id + (L.subject ? ' — this account' : '')));
+    var label = L.id + ': ' + plural(L.ss.length, 'session') + ', first '
+      + fmtTs(L.ss[0].ts) + ', last ' + fmtTs(L.ss[L.ss.length - 1].ts)
+      + (L.fs !== null ? '; first contact with the shared token '
+         + fmtTs(new Date(L.fs).toISOString().replace('.000', '')) : '');
+    var parts = ['<svg class="tl-track" viewBox="0 0 ' + W + ' ' + LH +
+      '" preserveAspectRatio="none" role="img" aria-label="' + esc(label) + '">'];
+    /* The lane BEGINS at first contact rather than carrying a marker for
+       it. A marker was the first attempt and it did not survive contact
+       with real data: where an account's sessions cluster around the
+       moment it first touched the shared token, a dashed rule sits inside
+       a picket fence of session ticks and cannot be picked out. A left
+       edge can always be read, and reading the edges down the lanes IS
+       the order. */
+    var startX = x(L.fs !== null ? L.fs : Date.parse(L.ss[0].ts));
+    parts.push('<line class="axis" x1="' + startX.toFixed(1) + '" y1="' + (LH / 2) +
+               '" x2="' + (W - PADX) + '" y2="' + (LH / 2) + '" stroke-width="1"/>');
+    if (L.fs !== null) {
+      parts.push('<line class="fsmark" x1="' + startX.toFixed(1) + '" y1="1" x2="' +
+                 startX.toFixed(1) + '" y2="' + (LH - 1) + '" stroke-width="2"/>');
+    }
+    L.ss.forEach(function (sess) {
+      parts.push('<line class="tick ' + catClass(sess.category) + '" x1="' +
+        x(Date.parse(sess.ts)).toFixed(1) + '" y1="' + PAD + '" x2="' +
+        x(Date.parse(sess.ts)).toFixed(1) + '" y2="' + (LH - PAD) +
+        '" stroke-width="2"/>');
+    });
+    parts.push('</svg>');
+    var track = el('div', 'tl-track-wrap');
+    track.innerHTML = parts.join('');
+    row.appendChild(track);
+    box.appendChild(row);
+  });
+  f.appendChild(box);
+  f.appendChild(el('p', 'small dim', 'axis ' +
+    fmtTs(new Date(t0).toISOString().replace('.000', '')) + ' → ' +
+    fmtTs(new Date(t1).toISOString().replace('.000', ''))));
+  return f;
+}
+
 function tabNetwork(a) {
   var f = frag();
   f.appendChild(el('h3', null, 'Network'));
@@ -1204,6 +1366,8 @@ function tabNetwork(a) {
     f.appendChild(el('p', 'dim', 'No other queue account shares infrastructure or targets with this one.'));
   } else {
     f.appendChild(el('p', 'small dim', 'An overlap is an observation, not a link. Thousands of unrelated people share a VPN exit.'));
+    var lanes = overlapLanes(a);
+    if (lanes) { f.appendChild(lanes); }
   }
   return f;
 }

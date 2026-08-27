@@ -191,6 +191,19 @@ is not scored. It is just true.
 what holds between these two members, and a case linked by infrastructure
 alone is refused.</sub>
 
+The overlaps themselves are prose in the Network panel — who shares what,
+and, per pair, who touched it first. Four timestamps at a time, that is a
+paragraph to hold in your head; drawn, it is a shape.
+
+![The overlap timeline: one lane per account that shares something with this one, each lane starting at that account's first contact with the shared token.](docs/figures/overlap_timeline.png)
+
+<sub>One lane per overlapping account, on one axis. A lane begins where that
+account first touched a token the pair shares, so the left edges read down
+in the order the first-seen lines state. The two clocks are deliberately
+both on the axis: first contact can predate every session in the queue
+window, and a chart drawn from sessions alone puts an account that copied
+someone else's infrastructure at the top.</sub>
+
 - **Two link reasons the research measured and adopted neither.** *Same
   writing style* is offered for every case and always refused, with the
   queue's own numbers: on prompts this short, every pair of accounts scores

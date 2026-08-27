@@ -255,6 +255,40 @@ SCENARIOS: dict[str, dict] = {
         """,
         must_show=["How confident is this ban?"],
     ),
+    "overlap_timeline": dict(
+        caption="Every account that shares something with this one, on one "
+                "axis: first contact dashed, sessions solid.",
+        size=(1400, 620),
+        js="""
+        /* Shift 3 on purpose. Shift 6 is the framer, and this figure is the
+           instrument that answers it - a screenshot of that shift's lanes
+           would be its answer key, which is the same reason no figure of
+           it appears in the README at all. */
+        start('s3');
+        waitHours(14);
+        var pick = openMatching(function (a) {
+          var net = a.network || {};
+          var ids = arrivedIds(), mates = {};
+          ['shared_asn','shared_ip','shared_target','shared_cadence','shared_hours']
+            .forEach(function (k) {
+              (net[k] || []).forEach(function (m) {
+                if (ids.indexOf(m) >= 0) { mates[m] = true; }
+              });
+            });
+          return Object.keys(mates).length >= 2;
+        }, 'an arrived account overlapping two other arrived accounts');
+        press('4');
+        showPanel('network');
+        /* the lanes sit under the overlap list, which is long */
+        var box = document.getElementById('dossier');
+        var sec = document.getElementById('panelbody-network');
+        var h = [].slice.call(sec.querySelectorAll('h3')).filter(function (n) {
+          return n.textContent.indexOf('Overlap timeline') >= 0; })[0];
+        box.scrollTop += h.getBoundingClientRect().top
+                       - box.getBoundingClientRect().top - 10;
+        """,
+        must_show=["Overlap timeline", "Read the left edges"],
+    ),
     "case_board": dict(
         caption="Accounts that belong to one operator are one case, banned once.",
         size=(1500, 900),
