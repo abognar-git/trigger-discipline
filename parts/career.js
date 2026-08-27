@@ -139,53 +139,216 @@ function ensureBackButton() {
 }
 
 /* -------------------------------------------------------------- landing */
+
+/* The queue strip: one row per account in the canonical shift, one square
+   per session, red where the content fell in an offensive category.
+
+   Two rules keep this from being an answer key. Rows carry no identity and
+   are sorted by length, so nothing on screen maps a strip to an account
+   except the session count, which the queue rail prints anyway. And the
+   only fact read here is `category`, which is what the free Content panel
+   shows - the strip states, in one picture, exactly the information a
+   content filter has, which is the whole argument. */
+function queueStrip() {
+  var sh = shifts[0];
+  if (!sh || !sh.accounts || !sh.accounts.length) { return null; }
+  var off = (ui && ui.offensive) || {};
+  var rows = sh.accounts.map(function (a) {
+    var ss = (a.sessions || []).slice().sort(function (x, y) {
+      return String(x.ts || '').localeCompare(String(y.ts || ''));
+    });
+    var marks = ss.map(function (x) { return off[x.category] ? 1 : 0; });
+    return { marks: marks, flagged: marks.indexOf(1) >= 0 };
+  }).filter(function (r) { return r.marks.length; });
+  if (!rows.length) { return null; }
+  /* longest first, and within one length the clean strips before the
+     flagged ones - the shape of the queue, read top to bottom */
+  rows.sort(function (x, y) {
+    if (y.marks.length !== x.marks.length) { return y.marks.length - x.marks.length; }
+    return (x.flagged ? 1 : 0) - (y.flagged ? 1 : 0);
+  });
+  var c = sh.counts || {};
+  return {
+    rows: rows,
+    flagged: rows.filter(function (r) { return r.flagged; }).length,
+    actors: c.malicious != null ? c.malicious : null,
+    title: sh.title || ''
+  };
+}
+
+var WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven',
+             'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen'];
+function word(n) { return WORDS[n] || String(n); }
+
+/* The next shift to open from the primary control: the first unlocked one
+   that has not been completed, else the first unlocked one. */
+function nextShift() {
+  var firstOpen = null;
+  for (var i = 0; i < shifts.length; i++) {
+    if (!unlocked(i)) { continue; }
+    if (firstOpen === null) { firstOpen = i; }
+    var r = recOf(shifts[i].id);
+    if (!r || !r.completed) { return i; }
+  }
+  return firstOpen === null ? 0 : firstOpen;
+}
+
+function renderStrip(box, cap, data) {
+  box.textContent = '';
+  data.rows.forEach(function (r, i) {
+    var row = ui.el('div', 'lp-row' + (r.flagged ? ' flagged' : ''));
+    var idx = ui.el('span', 'lp-idx', (i + 1 < 10 ? '0' : '') + (i + 1));
+    row.appendChild(idx);
+    r.marks.forEach(function (m, j) {
+      var t = ui.el('span', 'lp-tick' + (m ? ' off' : '') + (j === 0 ? ' lead' : ''));
+      t.style.animationDelay = (i * 26 + j * 9) + 'ms';
+      row.appendChild(t);
+    });
+    box.appendChild(row);
+  });
+  box.setAttribute('role', 'img');
+  box.setAttribute('aria-label',
+    plural(data.rows.length, 'account') + ' in the first shift\'s queue, one ' +
+    'row each, one square per session. ' + plural(data.flagged, 'account') +
+    ' have at least one session in an offensive content category' +
+    (data.actors != null ? '; ' + data.actors + ' of the ' + data.rows.length +
+      ' are threat actors' : '') + '.');
+  capOpen(cap);
+}
+
+function capOpen(cap) {
+  cap.textContent = '';
+  cap.appendChild(document.createTextNode(
+    'One row per account, one square per session. Red where the content fell ' +
+    'in an offensive category. '));
+  cap.appendChild(ui.el('b', null, 'Content is free to look at, and it misleads.'));
+}
+function capShut(cap, data) {
+  cap.textContent = '';
+  cap.appendChild(ui.el('span', 'n', String(data.flagged)));
+  cap.appendChild(document.createTextNode(' accounts fail on content. '));
+  if (data.actors == null) {
+    cap.appendChild(document.createTextNode('Some of them are threat actors. '));
+    cap.appendChild(ui.el('b', null, 'Which?'));
+  } else {
+    cap.appendChild(ui.el('span', 'n', String(data.actors)));
+    cap.appendChild(document.createTextNode(' of them are threat actors. '));
+    /* the word comes off the count, never typed beside it: a hand-written
+       "nine" starts lying the moment the fixture changes */
+    cap.appendChild(ui.el('b', null, 'Which ' + word(data.actors) + '?'));
+  }
+  cap.appendChild(document.createTextNode(
+    ' Content will not tell you. Behavior will.'));
+}
+
 function renderLanding() {
   var root = ui.$('screen-career');
   if (!root) { return; }
   root.textContent = '';
-  root.appendChild(ui.el('h1', null, 'trigger-discipline'));
-  /* §4: the landing is the shift select with a four-sentence framing. The
-     copy ships in meta.framing; the fallback below covers the hand-written
-     placeholder sample only. */
-  var framing = (meta && meta.framing && meta.framing.length) ? meta.framing : [
-    'Ten shifts at an AI platform\'s enforcement desk, in the order the job gets harder.',
-    'The pipeline flags; you decide, and every ban has to cite something that is not content.',
-    'The queue starts obvious, then starts moving, then starts arriving as it actually arrives — mostly innocent.',
-    'The actor you miss comes back tomorrow. The innocent you ban has no easy way back.'
-  ];
-  root.appendChild(ui.el('p', 'career-framing', framing.join(' ')));
+  root.className = 'landing';
 
-  var list = ui.el('div', 'shift-list');
+  var box = ui.el('div', 'lp');
+  root.appendChild(box);
+
+  var strip = queueStrip();
+
+  box.appendChild(ui.el('p', 'lp-eyebrow', 'Enforcement desk  /  ' +
+    ((strip && strip.title) || 'the queue')));
+
+  var h1 = ui.el('h1');
+  h1.appendChild(document.createTextNode('The ban you '));
+  h1.appendChild(ui.el('em', null, 'do not'));
+  h1.appendChild(document.createTextNode(' make.'));
+  box.appendChild(h1);
+
+  var stand = ui.el('p', 'lp-stand');
+  stand.appendChild(document.createTextNode(
+    'A queue of accounts on an AI platform. Some belong to criminals. '));
+  stand.appendChild(ui.el('strong', null, 'Most only look like they do.'));
+  stand.appendChild(document.createTextNode(
+    ' You decide — and every account you get wrong is a person.'));
+  box.appendChild(stand);
+
+  if (strip) {
+    var field = ui.el('section', 'lp-field');
+    var head = ui.el('div', 'lp-fieldhead');
+    head.appendChild(ui.el('span', null, 'The first day’s queue'));
+    head.appendChild(ui.el('span', 'spacer'));
+    var tg = ui.el('button', 'lp-toggle', 'What a content filter sees');
+    tg.setAttribute('aria-pressed', 'false');
+    head.appendChild(tg);
+    field.appendChild(head);
+
+    var rowsBox = ui.el('div', 'lp-rows');
+    var cap = ui.el('p', 'lp-cap');
+    field.appendChild(rowsBox);
+    field.appendChild(cap);
+    box.appendChild(field);
+    renderStrip(rowsBox, cap, strip);
+
+    tg.addEventListener('click', function () {
+      var on = tg.getAttribute('aria-pressed') === 'true';
+      tg.setAttribute('aria-pressed', String(!on));
+      if (!on) { rowsBox.className = 'lp-rows collapsed'; capShut(cap, strip); }
+      else { rowsBox.className = 'lp-rows'; capOpen(cap); }
+      tg.textContent = !on ? 'Back to sessions' : 'What a content filter sees';
+    });
+  }
+
+  var acts = ui.el('div', 'lp-actions');
+  var ni = nextShift();
+  var played = completedCount();
+  var start = ui.el('button', 'lp-start',
+    played ? 'Continue — shift ' + (ni + 1) : 'Start the shift');
+  start.addEventListener('click', function () { selectShift(shifts[ni].id); });
+  acts.appendChild(start);
+  acts.appendChild(ui.el('span', 'lp-meta',
+    'no install · no account · about 15 minutes'));
+  box.appendChild(acts);
+
+  var sec = ui.el('section', 'lp-shifts');
+  sec.appendChild(ui.el('h2', null,
+    word(shifts.length) + ' shifts, in the order the job gets harder'));
+  var list = ui.el('div');
   shifts.forEach(function (sh, i) {
     var open = unlocked(i);
     var r = recOf(sh.id);
-    var card = ui.el(open ? 'button' : 'div', 'shift-card' + (open ? '' : ' locked'));
-    card.setAttribute('data-shift', sh.id);
-    if (!open) { card.setAttribute('aria-disabled', 'true'); }
-    card.appendChild(ui.el('div', 'sc-title', 'Shift ' + (i + 1) + ' — ' + (sh.title || sh.id)));
-    if (sh.subtitle) { card.appendChild(ui.el('div', 'sc-sub small dim', sh.subtitle)); }
-    var c = sh.counts || {};
-    var nAcc = c.scheduled != null ? c.scheduled : (sh.accounts || []).length;
-    /* SPEC-2 §8: the shift length is a fact about a clock, so it belongs
-       only on a card that has one. Without this gate shift 1 advertises
-       "no clock" in its subtitle and "32h" on the line under it. */
-    var bits = [plural(nAcc, 'account')];
-    var fl = sh.flags || {};
-    if (fl.live) { bits.push((Number(sh.budget) || 0) + 'h', 'live queue'); }
-    if (fl.cases) { bits.push('cases'); }
-    if (fl.appeals) { bits.push('appeals'); }
-    card.appendChild(ui.el('div', 'sc-meta mono small', bits.join(' · ')));
-    var status;
-    if (!open) { status = 'Locked — complete shift ' + i + ' first.'; }
-    else if (r && r.completed) { status = 'Best ' + fmtScore(r.best) + ' · ' + plural(r.plays, 'run'); }
-    else { status = 'Not yet played.'; }
-    card.appendChild(ui.el('div', 'sc-status small' + (r && r.completed ? '' : ' dim'), status));
-    if (open) { card.addEventListener('click', function () { selectShift(sh.id); }); }
-    list.appendChild(card);
-  });
-  root.appendChild(list);
+    var row = ui.el(open ? 'button' : 'div', 'lp-shift' + (open ? '' : ' locked'));
+    row.setAttribute('data-shift', sh.id);
+    if (!open) { row.setAttribute('aria-disabled', 'true'); }
+    row.appendChild(ui.el('span', 'no', (i + 1 < 10 ? '0' : '') + (i + 1)));
+    var mid = ui.el('span');
+    mid.appendChild(ui.el('span', 't', sh.title || sh.id));
+    if (sh.subtitle) { mid.appendChild(ui.el('span', 's', sh.subtitle)); }
+    row.appendChild(mid);
 
-  if (completedCount() >= 2) {
+    var right = ui.el('span', 'c');
+    if (!open) {
+      right.appendChild(ui.el('b', null, 'locked'));
+      right.appendChild(document.createTextNode('shift ' + i + ' first'));
+    } else {
+      var c = sh.counts || {};
+      var nAcc = c.scheduled != null ? c.scheduled : (sh.accounts || []).length;
+      /* SPEC-2 §8: the shift length is a fact about a clock, so it belongs
+         only on a row that has one. */
+      var bits = [plural(nAcc, 'account')];
+      var fl = sh.flags || {};
+      if (fl.live) { bits.push((Number(sh.budget) || 0) + 'h', 'live queue'); }
+      if (fl.cases) { bits.push('cases'); }
+      if (fl.appeals) { bits.push('appeals'); }
+      right.appendChild(ui.el('b', null, bits.join(' · ')));
+      right.appendChild(document.createTextNode(
+        r && r.completed ? 'best ' + fmtScore(r.best) + ' · ' + plural(r.plays, 'run')
+                         : 'not yet played'));
+      row.addEventListener('click', function () { selectShift(sh.id); });
+    }
+    row.appendChild(right);
+    list.appendChild(row);
+  });
+  sec.appendChild(list);
+  box.appendChild(sec);
+
+  if (played >= 2) {
     var dbtn = ui.el('button', null, 'Career dashboard');
     dbtn.id = 'btn-dashboard';
     var dash = ui.el('div');
@@ -196,13 +359,18 @@ function renderLanding() {
       else { dash.hidden = true; }
     });
     var pd = ui.el('p');
+    pd.style.marginTop = '32px';
     pd.appendChild(dbtn);
-    root.appendChild(pd);
-    root.appendChild(dash);
+    box.appendChild(pd);
+    box.appendChild(dash);
   }
 
-  root.appendChild(ui.el('p', 'small dim',
-    'Add ?seed=N to the URL to reorder a shift\'s queue; ?shift=sN opens that shift\'s briefing directly.'));
+  var foot = ui.el('p', 'lp-foot');
+  foot.appendChild(document.createTextNode(
+    'Every account here is a synthetic fixture · identifiers are ' +
+    'RFC-reserved · add ?seed=N to reorder a queue, ?shift=sN to open ' +
+    'a briefing directly'));
+  box.appendChild(foot);
 }
 
 /* ------------------------------------------------------------ dashboard */

@@ -2857,7 +2857,12 @@ UI = {
   renderDossier: renderDossier,
   renderIntro: renderIntro,
   openAccount: openAccount,
-  openTab: openTab
+  openTab: openTab,
+  /* The landing colours its queue strip by category, and there must be one
+     definition of which categories are offensive. Exported rather than
+     copied, because a copy in career.js would drift the first time the
+     closed set changed. */
+  offensive: OFFENSIVE
 };
 initShift(SHIFTS[0]);
 renderIntro();

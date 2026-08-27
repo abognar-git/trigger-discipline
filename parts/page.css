@@ -81,7 +81,16 @@ th { background: var(--panel-2); font-weight: 600; }
   padding: 8px 16px; border-bottom: 1px solid var(--line);
   background: var(--panel); flex-wrap: wrap;
 }
-#topbar .brand { font-weight: 700; font-family: var(--mono); letter-spacing: 1px; }
+/* The mark from the landing study: MONITOR's amber, the held decision the
+   project is named after. Small enough to be an identity mark rather than a
+   status light, and it is the only thing on the bar that is not text. */
+#topbar .brand {
+  font-weight: 700; font-family: var(--mono); letter-spacing: 1px;
+  display: inline-flex; align-items: center; gap: 9px;
+}
+#topbar .brand::before {
+  content: ""; width: 7px; height: 7px; flex: none; background: var(--warn);
+}
 #hud { display: flex; flex-wrap: wrap; gap: 16px; font-family: var(--mono); font-size: 13px; }
 #hud .low { color: var(--warn); }
 #topbar .spacer { flex: 1; }
@@ -358,6 +367,141 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
 .case-enforced { border: 1px solid var(--ban); background: var(--ban-dim);
   border-radius: 8px; padding: 8px 12px; margin-top: 10px; font-size: 13px; }
 
+/* =========================================================================
+   the landing (design study, ported)
+
+   Two deliberate departures from the study, both because it was a mockup
+   and this is the page:
+
+   1. No web fonts. The study set Archivo 200 and IBM Plex Mono over Google
+      Fonts; the built page is one file that has to work from file:// and a
+      gate forbids external requests. The editorial weight comes from size
+      and letter-spacing on the system stack instead of from an ultralight
+      face that is not there.
+
+   2. No --faint. The study used a third text colour below --muted for the
+      labels, numbers and footer - about 2.6:1 on the panel, which is the
+      same failure this project already fixed once when muted text was
+      being dimmed with opacity. The labels are --muted, which is measured.
+
+   The amber IS ported, and for the study's reason: it is MONITOR's colour,
+   the held decision, which is what the game is named after.
+========================================================================= */
+/* The landing is the only career screen that wants the full measure: the
+   dashboard and the appeals round are reading documents and keep the 860px
+   column. The class is set from JS rather than with :has(), so the width
+   does not depend on selector support the rest of the page never needs. */
+#screen-career.landing { max-width: 1080px; padding: 0 22px 90px; }
+.lp {
+  border: 1px solid var(--line); border-top: 0; background: var(--panel);
+  padding: 52px 44px 44px;
+}
+.lp-eyebrow {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--warn);
+  margin: 0 0 18px;
+}
+.lp h1 {
+  font-size: clamp(34px, 5.4vw, 58px); font-weight: 300; letter-spacing: -.03em;
+  line-height: 1.04; margin: 0 0 20px; text-wrap: balance;
+}
+.lp h1 em { font-style: normal; color: var(--warn); }
+.lp-stand { max-width: 56ch; margin: 0; font-size: 17px; color: var(--muted); }
+.lp-stand strong { color: var(--text); font-weight: 600; }
+
+/* --- the queue, which is the argument ---------------------------------- */
+.lp-field { margin: 50px 0 0; }
+.lp-fieldhead {
+  display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+  padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--muted);
+}
+.lp-fieldhead .spacer { margin-left: auto; }
+.lp-toggle {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); background: transparent;
+  border: 1px solid var(--line); border-radius: 0; padding: 6px 13px;
+  cursor: pointer; transition: color .18s ease, border-color .18s ease;
+}
+.lp-toggle:hover { color: var(--text); border-color: var(--muted); }
+.lp-toggle[aria-pressed="true"] { color: var(--warn); border-color: var(--warn); }
+.lp-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.lp-rows { display: flex; flex-direction: column; gap: 5px; margin-top: 22px; }
+.lp-row { display: flex; align-items: center; gap: 3px; transition: opacity .2s ease; }
+.lp-rows:hover .lp-row { opacity: .34; }
+.lp-rows .lp-row:hover { opacity: 1; }
+.lp-idx {
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  width: 26px; flex: none; text-align: right; margin-right: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.lp-tick {
+  width: 13px; height: 13px; flex: none; background: var(--clear);
+  opacity: 0; transform: translateY(-3px); animation: lp-settle .4s ease forwards;
+  transition: width .34s cubic-bezier(.4, 0, .2, 1), background-color .34s ease;
+}
+.lp-tick.off { background: var(--ban); }
+@keyframes lp-settle { to { opacity: 1; transform: none; } }
+/* The collapsed state: every account becomes the one verdict a content
+   filter would reach. The lead square takes the row's aggregate ONLY here -
+   open, each square keeps its own session's colour, or the drawing would
+   lie about the account that starts benign and drifts. */
+.lp-rows.collapsed .lp-tick { width: 0; }
+.lp-rows.collapsed .lp-tick.lead { width: 58px; }
+.lp-rows.collapsed .lp-row.flagged .lp-tick.lead { background: var(--ban); }
+.lp-cap { margin: 26px 0 0; max-width: 58ch; font-size: 14px; color: var(--muted); }
+.lp-cap b { color: var(--text); font-weight: 600; }
+.lp-cap .n { font-family: var(--mono); color: var(--warn); font-weight: 600; }
+
+/* --- start -------------------------------------------------------------- */
+.lp-actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 38px; }
+.lp-start {
+  font-family: var(--sans); font-size: 15px; font-weight: 600;
+  color: var(--panel); background: var(--warn); border: 1px solid var(--warn);
+  border-radius: 0; padding: 11px 26px; cursor: pointer;
+  transition: filter .18s ease;
+}
+.lp-start:hover { filter: brightness(1.12); }
+.lp-start:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.lp-meta { font-family: var(--mono); font-size: 11.5px; color: var(--muted); letter-spacing: .06em; }
+
+/* --- the career, as a list ---------------------------------------------- */
+.lp-shifts { margin-top: 60px; }
+.lp-shifts h2 {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--muted);
+  margin: 0 0 2px; padding-bottom: 12px; border-bottom: 1px solid var(--line);
+}
+.lp-shift {
+  display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 20px;
+  align-items: baseline; width: 100%; text-align: left;
+  padding: 15px 4px; border: 0; border-bottom: 1px solid var(--line);
+  background: transparent; color: inherit; font: inherit;
+  cursor: pointer; transition: background-color .16s ease;
+}
+.lp-shift:hover { background: var(--panel-2); }
+.lp-shift:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.lp-shift .no { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.lp-shift .t { font-size: 16px; font-weight: 600; }
+.lp-shift .s { display: block; font-size: 13.5px; color: var(--muted); margin-top: 3px; max-width: 62ch; font-weight: 400; }
+.lp-shift .c { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .06em; text-align: right; }
+.lp-shift .c b { display: block; color: var(--text); font-weight: 600; }
+.lp-shift.locked { cursor: default; }
+.lp-shift.locked:hover { background: transparent; }
+.lp-shift.locked .t { font-weight: 500; color: var(--muted); }
+.lp-foot {
+  margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--line);
+  font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: .05em;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-tick { animation: none; opacity: 1; transform: none; transition: none; }
+  .lp-rows.collapsed .lp-tick, .lp-toggle, .lp-shift, .lp-start { transition: none; }
+  .lp-rows:hover .lp-row { opacity: 1; }
+}
+
 /* career (SPEC-2 §4): shift select, appeals round, dashboard */
 .career-framing { font-size: 16px; }
 /* Two columns so the whole career fits one screen. Ten full-width cards
@@ -416,6 +560,18 @@ footer {
 @media (max-width: 800px) {
   #screen-play { grid-template-columns: 1fr; }
   .shift-list { grid-template-columns: 1fr; }
+  /* The landing at phone width: the box loses its side padding, the ticks
+     shrink so an 18-session row still fits, and the shift row drops its
+     right column under the title rather than squeezing the title to
+     nothing. */
+  #screen-career.landing { padding: 0 12px 60px; }
+  .lp { padding: 32px 18px 28px; }
+  .lp-tick { width: 9px; height: 9px; }
+  .lp-rows.collapsed .lp-tick.lead { width: 44px; }
+  .lp-field { margin-top: 34px; }
+  .lp-shifts { margin-top: 40px; }
+  .lp-shift { grid-template-columns: 22px minmax(0, 1fr); gap: 12px; }
+  .lp-shift .c { grid-column: 2; text-align: left; margin-top: 4px; }
   /* On a phone the three verdicts and the account id cannot share a row:
      measured at 375px, CLEAR ended one pixel past the viewport and the
      document does not scroll sideways, so it was clipped rather than

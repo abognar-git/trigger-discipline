@@ -39,6 +39,18 @@ indistinguishable from the actors. That is not a flaw in the game;
 it is the point of the research it is built on: **what someone asks an AI
 tells you almost nothing. How they behave tells you almost everything.**
 
+The landing says it before you play a single account. Every account in the
+first shift's queue, one row each, one square per session — then collapsed
+to the single verdict a content filter would reach:
+
+![The landing screen with the queue collapsed: every account reduced to one verdict bar, twelve of them red, above a caption saying nine of the twenty-three are threat actors.](docs/figures/landing.png)
+
+<sub>Twelve accounts fail on content. Nine are threat actors. The two
+numbers do not match, and nothing on this screen tells you where they
+differ — which is the job. The strip is drawn from the shift's own
+fixtures; the counts and the word "nine" are computed from them, so a
+change to the queue cannot leave the sentence lying.</sub>
+
 You play ten shifts, in the order the job gets harder. The queue starts
 obvious, then starts moving, then starts arriving the way a real queue
 arrives: mostly innocent. Halfway in, the attack points the other way:
@@ -47,7 +59,7 @@ take the evidence away instead - a verified identity that was bought, five
 accounts that share nothing, the cleanest file in the queue, and the best
 file you will see.
 
-![The shift select screen: ten shifts, each unlocking the next.](docs/figures/shift_select.png)
+![The career list: ten shifts with their titles, subtitles and queue sizes, each unlocking the next.](docs/figures/shift_select.png)
 
 ## The rules
 

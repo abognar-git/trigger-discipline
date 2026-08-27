@@ -158,12 +158,44 @@ function showPanel(key){
   var box = document.getElementById('dossier');
   box.scrollTop += sec.getBoundingClientRect().top - box.getBoundingClientRect().top - 8;
 }
+/* Region capture. window.scrollTo() moves the document but headless Chrome
+   paints the screenshot from the origin, so a figure of anything below the
+   fold came out as a page of flat background - which autocrop then trimmed
+   to 56x56 and shipped. The page is captured whole instead, at its full
+   height, and cut down to the region named here. */
+var FIGURE_CROP = null;
+function cropTo(sel, padTop, padBottom){
+  var n = document.querySelector(sel);
+  if (!n) { throw new Error('crop target not found: ' + sel); }
+  var r = n.getBoundingClientRect();
+  FIGURE_CROP = {
+    x: 0, w: document.documentElement.scrollWidth,
+    y: Math.max(0, Math.round(r.top + window.scrollY - (padTop || 0))),
+    h: Math.round(r.height + (padTop || 0) + (padBottom || 0))
+  };
+  var pre = document.createElement('pre');
+  pre.id = 'figure-crop';
+  pre.textContent = JSON.stringify(FIGURE_CROP);
+  document.body.appendChild(pre);
+  var dh = document.createElement('pre');
+  dh.id = 'figure-docheight';
+  dh.textContent = String(document.documentElement.scrollHeight);
+  document.body.appendChild(dh);
+}
+
 /* A figure's filename is a claim about what the image shows, and until this
    ran, nothing checked it: a scenario could scroll, relayout or silently
    fail and still ship a plausible-looking PNG under the wrong name. Every
-   scenario now names text that has to be inside the captured viewport. */
+   scenario now names text that has to be inside the captured frame - and
+   the frame is the CROP where there is one, not the window, or a full-page
+   capture would pass every claim by containing the whole page. */
 function requireVisible(needles){
   var vw = window.innerWidth, vh = window.innerHeight;
+  var top = 0, left = 0;
+  if (FIGURE_CROP) {
+    left = FIGURE_CROP.x; vw = FIGURE_CROP.w;
+    top = FIGURE_CROP.y; vh = FIGURE_CROP.y + FIGURE_CROP.h;
+  }
   needles.forEach(function(txt){
     var all = document.querySelectorAll('body *');
     var hit = false;
@@ -176,8 +208,9 @@ function requireVisible(needles){
       }
       if (deeper) { continue; }
       var r = el.getBoundingClientRect();
-      if (r.width > 0 && r.height > 0 && r.top >= 0 && r.left >= 0
-          && r.bottom <= vh && r.right <= vw) { hit = true; }
+      var t = r.top + window.scrollY, b = r.bottom + window.scrollY;
+      if (r.width > 0 && r.height > 0 && t >= top && r.left >= left
+          && b <= vh && r.right <= vw) { hit = true; }
     }
     if (!hit) { throw new Error('figure does not show ' + JSON.stringify(txt)); }
   });
@@ -186,11 +219,32 @@ function requireVisible(needles){
 
 SCENARIOS: dict[str, dict] = {
     # ---- stills -----------------------------------------------------------
+    "landing": dict(
+        caption="The landing, with the queue collapsed to what a content "
+                "filter sees.",
+        size=(1240, 1000),
+        js="""
+        /* The collapsed state on purpose: it is the project's whole claim in
+           one screen. Every account in the first shift's queue reduced to
+           the single verdict a content filter would reach, and the count of
+           actors underneath it, which does not match. */
+        document.querySelector('.lp-toggle').click();
+        """,
+        must_show=["The ban you", "accounts fail on content",
+                   "Content will not tell you"],
+    ),
     "shift_select": dict(
         caption="The ten shifts, in the order the job gets harder.",
-        size=(1180, 1080), js="/* the landing is the boot state */",
-        # the caption says ten, so the check says ten
-        must_show=["Shift 1 \u2014 ", "Shift 10 \u2014 "],
+        size=(1180, 900),
+        crop=True,
+        js="""
+        /* The career list sits below the hero and the queue. Cropped, not
+           scrolled: see cropTo(). The claim below then has to hold inside
+           the crop, so a figure that cuts shift 10 off fails. */
+        cropTo('.lp-shifts', 10, 10);
+        """,
+        must_show=["shifts, in the order the job gets harder",
+                   "First day", "The good customer"],
     ),
     "refusal": dict(
         caption="Banning on content alone is refused by the policy, not by the score.",
@@ -357,6 +411,29 @@ def build_page(tmp: Path, name: str, js: str, shift_hint: str,
     return out
 
 
+def measure(exe: str, page: Path, width: int) -> dict:
+    """Run the scenario once for numbers, not pixels.
+
+    The crop rectangle is in document coordinates and only the page can
+    compute it, so it is read back from the DOM before the capture that
+    uses it. Two Chrome runs, and only for the figures that crop.
+    """
+    out = subprocess.run(
+        [exe, "--headless", "--disable-gpu", "--hide-scrollbars",
+         f"--window-size={width},1200", "--virtual-time-budget=5000",
+         "--dump-dom", f"file://{page}"],
+        check=True, capture_output=True, text=True).stdout
+    m = re.search(r'<pre id="figure-crop">(.*?)</pre>', out, re.S)
+    if not m:
+        raise SystemExit(
+            "make_figures: the scenario declares a crop but never called "
+            "cropTo() - or it threw before reaching it")
+    rect = json.loads(m.group(1))
+    h = re.search(r'<pre id="figure-docheight">(\d+)</pre>', out)
+    rect["doc"] = int(h.group(1)) if h else rect["y"] + rect["h"] + 40
+    return rect
+
+
 def shot(exe: str, page: Path, png: Path, size: tuple[int, int]) -> None:
     subprocess.run(
         [exe, "--headless", "--disable-gpu", "--hide-scrollbars",
@@ -493,8 +570,18 @@ def main() -> int:
             page = build_page(tmp, name, spec["js"], hint,
                               spec.get("must_show"))
             png = OUT / f"{name}.png"
-            shot(exe, page, png, spec["size"])
-            assert_captured(png, name)
+            if spec.get("crop"):
+                rect = measure(exe, page, spec["size"][0])
+                shot(exe, page, png, (spec["size"][0], rect["doc"]))
+                assert_captured(png, name)
+                from PIL import Image
+                im = Image.open(png)
+                im.crop((rect["x"], rect["y"],
+                         min(im.width, rect["x"] + rect["w"]),
+                         min(im.height, rect["y"] + rect["h"]))).save(png)
+            else:
+                shot(exe, page, png, spec["size"])
+                assert_captured(png, name)
             if spec.get("exact"):
                 # A link-preview card is cropped by the platform, not by us:
                 # it has to come out at exactly the declared size or the
