@@ -82,7 +82,7 @@ th { background: var(--panel-2); font-weight: 600; }
   background: var(--panel); flex-wrap: wrap;
 }
 #topbar .brand { font-weight: 700; font-family: var(--mono); letter-spacing: 1px; }
-#hud { display: flex; gap: 16px; font-family: var(--mono); font-size: 13px; }
+#hud { display: flex; flex-wrap: wrap; gap: 16px; font-family: var(--mono); font-size: 13px; }
 #hud .low { color: var(--warn); }
 #topbar .spacer { flex: 1; }
 
@@ -240,13 +240,20 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
 .dec-monitor { color: var(--warn); font-weight: 700; font-family: var(--mono); }
 
 /* interstitial overlay */
-#overlay {
+#overlay, #overlay-end {
   position: fixed; inset: 0; background: rgba(0,0,0,.6);
   display: flex; align-items: center; justify-content: center; z-index: 40; padding: 16px;
+  /* The reveal is taller than a small phone in landscape - measured at 508px
+     against a 481px viewport, with the dialog's top at -13 and neither layer
+     scrolling, so the first line was cut off and a longer reveal would put
+     Continue out of reach. Both layers scroll now, and the dialog is capped
+     to the viewport rather than to nothing. */
+  overflow-y: auto;
 }
 .interstitial {
   background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
   max-width: 560px; width: 100%; padding: 20px 24px;
+  max-height: calc(100vh - 32px); overflow-y: auto;
 }
 .interstitial h2 { margin: 0 0 4px; font-size: 20px; }
 .interstitial h2.good { color: var(--clear); }
@@ -258,6 +265,11 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
 .int-actions { margin-top: 16px; display: flex; justify-content: flex-end; }
 
 /* report */
+/* Wide content scrolls inside its own box rather than pushing the document
+   sideways: the clock table has one column per evidence tab and overflowed
+   a 320px viewport, and a page that scrolls horizontally on a phone is a
+   page where the reader loses the left edge of every line. */
+#screen-report table, #screen-play table { display: block; overflow-x: auto; max-width: 100%; }
 #screen-report section { margin-bottom: 28px; }
 #screen-report h2 { border-bottom: 1px solid var(--line); padding-bottom: 4px; }
 .score-line { font-size: 26px; font-family: var(--mono); }

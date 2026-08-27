@@ -721,6 +721,7 @@ function renderQueue() {
     f.appendChild(li);
   });
   list.appendChild(f);
+  scrollQueueToCurrent();
 }
 
 /* =========================================================================
@@ -801,6 +802,22 @@ function togglePolicyFlag(id) {
   if (state.policyFlags.has(id)) { state.policyFlags.delete(id); }
   else { state.policyFlags.add(id); }
   renderDossier();
+}
+
+/* The queue never scrolled to the account it had just opened, on either
+   layout: on a phone the rail is a horizontal strip and the current account
+   could sit off the end of it, and on a long desktop queue the highlight
+   was below the fold. Keyboard navigation through the queue had the same
+   problem. `nearest` so it does not jump when the row is already visible. */
+function scrollQueueToCurrent() {
+  /* aria-current sits on the BUTTON, not the li — the first version of this
+     selector looked for it on the row and silently matched nothing. */
+  var cur = document.querySelector('#queue-list [aria-current="true"]');
+  var row = cur && (cur.closest ? cur.closest('li') : null);
+  var target = row || cur;
+  if (target && target.scrollIntoView) {
+    target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
 }
 
 function openAccount(id) {
