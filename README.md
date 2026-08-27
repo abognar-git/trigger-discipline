@@ -242,10 +242,10 @@ real company.
 
 Each mechanic below is a measured finding there, not a game-design
 invention. The archetypes are a mixed set and the data says which is which:
-five come from `hunt` itself, and four — `supply_chain_publish`,
-`astroturf_loop`, `offbrief_agent`, `proxy_hire` — are modelled on published
-threat reports and carry both their citation and an `extension` flag in
-`reveal.provenance`.
+five come from `hunt` itself and four are modelled on published threat
+reports, each carrying its citation and an `extension` flag in
+`reveal.provenance`. They are not named here, for the same reason the
+answer key is not: finding out what a queue contains is the game.
 
 | mechanic in the game | finding in `hunt` |
 |---|---|

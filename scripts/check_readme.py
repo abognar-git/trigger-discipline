@@ -25,6 +25,10 @@ def fail(msg: str) -> None:
     FAILURES.append(msg)
 
 
+DATA_BLOCK_RE = re.compile(
+    r'<script id="game-data" type="application/json">.*?</script>', re.DOTALL)
+
+
 def main() -> int:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     flat = " ".join(readme.split())
@@ -155,13 +159,43 @@ def main() -> int:
         fail(f"README should quote the judge's measured margin {jm}")
 
     # --- answer-key leak guard --------------------------------------------
-    for tok in ("acct_LF", "acct_CD", "acct_RA", "acct_SK", "acct_NEG", "acct_BG",
-                "acct_s6", "acct_FR", "acct_RSP",
-                "lure_factory", "capability_dev", "recon_automation", "stolen_key",
-                "framer",
-                "zero actors", "no actors"):
+    # Two things were wrong with this guard. It listed five archetype names
+    # by hand and nine ship, so four new ones were never checked; and it read
+    # README.md only, while the same tokens would ship inside index.html,
+    # which is the file a player actually has. The names come from the data
+    # now, and the page is scanned with its data block removed - `reveal`
+    # legitimately carries the answer key, and a player reading it out of
+    # devtools is a convention this game accepts, not a leak.
+    actor_names = sorted({a["reveal"]["actor"] for sh in payload["shifts"]
+                          for a in sh["accounts"] if a["reveal"].get("actor")})
+    # Persona names are NOT spoilers and must not be listed here: the intro
+    # screen names the innocent archetypes out loud - a pentester, a
+    # journalist, a novelist, a CTF student - because knowing WHO the
+    # innocents are and still not being able to pick them is the game.
+    # The generator ids encode the answer - acct_LF01 is a lure_factory
+    # burner - so their stems are spoilers. Strip the trailing counter and
+    # keep only stems long enough to mean something: rsplit on "_" turns
+    # acct_LF01 into a bare "acct", which matches every id on the page.
+    id_prefixes = sorted({stem for stem in
+                          (re.sub(r"\d+$", "", a["reveal"].get("original_id", ""))
+                           for sh in payload["shifts"] for a in sh["accounts"])
+                          if len(stem) > 6})
+    # Two lists, because the two files leak differently. An archetype name
+    # or a generator id stem is a spoiler wherever it appears. "no actors" is
+    # a spoiler only in the README, where it would give away a shift's
+    # contents; in the page it is a career-dashboard fallback that means the
+    # PLAYER has not met one yet.
+    spoilers_page = actor_names + id_prefixes
+    spoilers_readme = spoilers_page + ["zero actors", "no actors"]
+
+    page_prose = DATA_BLOCK_RE.sub("", page) if DATA_BLOCK_RE.search(page) else page
+    for tok in spoilers_readme:
         if tok in readme:
             fail(f"answer-key/spoiler token in README: {tok!r}")
+    for tok in spoilers_page:
+        if tok in page_prose:
+            fail(f"answer-key/spoiler token in the shipped page, outside the "
+                 f"data block: {tok!r}")
 
 
     # --- figures: every file used, every reference resolvable ------------

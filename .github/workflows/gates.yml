@@ -17,3 +17,9 @@ jobs:
         run: python3 scripts/build_page.py --check
       - name: README matches the data
         run: python3 scripts/check_readme.py
+      # Both gates above read source. Neither loads the artifact, so a
+      # rendering-fatal one-liner shipped green until this step existed.
+      # Chrome is installed on the GitHub runner image; on a machine without
+      # one the script SKIPS loudly rather than passing quietly.
+      - name: the built page actually runs
+        run: python3 scripts/check_page_runs.py
