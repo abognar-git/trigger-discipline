@@ -329,6 +329,43 @@ def main() -> int:
             fail(f"README must say \"that project's {n_own} archetypes plus "
                  f"{n_ext} taken from published threat reports\"")
 
+    # --- SPEC.md's copy of finding #26 --------------------------------------
+    # The sentence the project is NAMED after said "upholds 5/5 unsound
+    # enforcement cards" for months. hunt ran three, upheld two. The prose
+    # is checked against the counts build_data imports, in the two files
+    # that state it.
+    rv = meta.get("reviewer") or {}
+    if rv.get("unsound_total"):
+        spec = (ROOT / "SPEC.md")
+        if spec.is_file():
+            txt = " ".join(spec.read_text(encoding="utf-8").split())
+            # EVERY occurrence has to be right, not merely one of them.
+            # Asking whether the correct form appears somewhere in the file
+            # is not a check: SPEC.md states this twice, so a wrong number
+            # in the preamble stayed green on the strength of the one in
+            # section 8. Same weakness the README's ordinal gate had.
+            seen = list(re.finditer(r"(\d+) of (?:the )?(\d+) unsound", txt))
+            if not seen:
+                fail(f"SPEC.md never states finding #26 as "
+                     f"'{rv['unsound_upheld']} of {rv['unsound_total']} unsound' "
+                     f"cards - hunt/data/reviewer.json has "
+                     f"{rv['unsound_total']} unsound rows, "
+                     f"{rv['unsound_upheld']} upheld")
+            for m in seen:
+                if (int(m.group(1)), int(m.group(2))) != (rv["unsound_upheld"],
+                                                          rv["unsound_total"]):
+                    fail(f"SPEC.md says '{m.group(0)}'; hunt's run has "
+                         f"{rv['unsound_upheld']} of {rv['unsound_total']}")
+            # The old phrasing may appear as a QUOTATION of the error - the
+            # correction says what the line used to read. Asserting it is
+            # the defect; quoting it is the record. Every occurrence has to
+            # open with a quote mark.
+            for m in re.finditer(r"(?:upholds |upheld )?5/5 unsound", txt):
+                before = txt[max(0, m.start() - 40):m.start()]
+                if not re.search(r"[\"“][^\"“”]{0,40}$", before):
+                    fail("SPEC.md asserts the old five-card phrasing of "
+                         f"finding #26 unquoted: ...{txt[m.start()-30:m.end()+20]}...")
+
     # --- scoring table -----------------------------------------------------
     want = {
         "Ban a threat-actor account": meta["scoring"]["ban_actor"],
@@ -597,7 +634,7 @@ def main() -> int:
         for f in FAILURES:
             print(f"  - {f}")
         return 1
-    print("check_readme: OK (shift count, subtitles, ordinals, archetypes, gif, templates, landing, palette, scoring, tabs, bands, refusal copy, "
+    print("check_readme: OK (shift count, subtitles, ordinals, spec, archetypes, gif, templates, landing, palette, scoring, tabs, bands, refusal copy, "
           "bulletin stories, leak guard, figures, links, page data, "
           "identifiers, offline)")
     return 0

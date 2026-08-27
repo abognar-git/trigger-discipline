@@ -12,11 +12,17 @@ requests; `index.html` stays a single committed artifact, now BUILT from parts.
 parts/shell.html      — document skeleton; placeholders: <!--PART:CSS-->, <!--PART:CORE-->,
                         <!--PART:LIVE-->, <!--PART:CASES-->, <!--PART:CAREER-->, and the
                         existing <script id="game-data"> block (preserved verbatim if present
-                        in the current index.html, else the placeholder sample)
+                        in the current index.html; if it is ABSENT the build now fails rather
+                        than shipping the shell's three-account sample as the game — pass
+                        --placeholder-ok to get the old behaviour deliberately)
 parts/page.css        — all styles
-parts/core.js         — state, reveal vault, queue/dossier/tabs, verdicts, citation, bands,
+parts/core.js         — state, reveal vault, queue/dossier/evidence panels, verdicts,
+                        citation, bands,
                         policy checks, scoring, interstitials, per-shift report
-parts/live.js         — the clock/arrival engine (feature 3)
+parts/live.js         — the live shift's controls (feature 3): the Wait control, the queue
+                        flags, the "What ran while you read" section and the end-of-shift
+                        reveal. The clock object and arrival gating live in core.js; this
+                        file drives them
 parts/cases.js        — the case board (feature 2)
 parts/career.js       — shift select, briefings, appeals round, career dashboard (features 4+1)
 ```

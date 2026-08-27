@@ -56,7 +56,9 @@ shift, none on the quiet day; the pair object lives reveal-side on both
 members, composed from the emitted rows. The shift report renders the two
 columns with the player's verdicts stamped, and when both got the same
 verdict it names the diverging tab the player never opened. Carriers per
-shift are asserted (2/2/2/0/2/0).
+shift are asserted; the tuple is per-shift and grows with the career, so it lives in
+`build_data.py`'s TWIN_COUNTS rather than here — it read (2/2/2/0/2/0) while the career had
+six shifts and is (2/2/2/0/2/0/0/0/2/0) at ten.
 
 ## 4. Two inadmissible link channels (finding #17)
 
@@ -222,3 +224,34 @@ W; the landing state is identical to pressing W that many times, so the
 affordance removes keypresses, never information, and cannot route around a
 lesson. Hidden on the clockless first day. The harness walks a whole shift
 on jumps alone and asserts every landing is an event hour or the wall.
+
+---
+
+## Addendum — what changed after v3 (2026-08-27)
+
+No new spec version; this records the interface and vocabulary drift so the
+three documents above can be read without tripping over it. Where an earlier
+section describes the old shape, this addendum supersedes it.
+
+- **The evidence tabs are a stacked column of panels.** There is no tab
+  strip. All five panels are on screen at once; a locked one shows what it
+  holds and what it costs in the same place you click to buy it. The
+  mechanic is unchanged — content free, the other four priced, each opens
+  once per account and stays open — so v1 §3/§5 and v2 §2 still describe
+  what happens, only not what it looks like. User-visible prose says
+  "panel"; internal identifiers (`TABS`, `activeTab`, `tabOpened`, the
+  `tab_costs` map) still say tab.
+- **The case view is three columns**: queue, evidence panels, and a decision
+  rail carrying the verdicts, the notice, the band picker and the case
+  board. v1 §3's "verdict buttons always visible" holds; they are in the
+  rail rather than beside the account id.
+- **The landing is an editorial page**, not a card grid: the headline, a
+  strip of the first shift's queue (one row per account, one square per
+  session) with a control that collapses it to what a content filter would
+  see, and the career list under it.
+- **The career is ten shifts.** Any per-shift tuple written out in these
+  documents was six values long and is noted where it appears.
+- **Ground truth for finding #26 is imported, not typed.** `meta.reviewer`
+  is counted off `hunt/data/reviewer.json` by `build_data.py`, and
+  `check_readme.py` asserts the prose against it. The old five-card
+  phrasing is corrected in §preamble and §8 above.

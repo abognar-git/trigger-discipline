@@ -1,17 +1,22 @@
 # trigger-discipline — game design spec (v1)
 
 **Name:** `trigger-discipline`. Sibling of `pyrite` / `triage` / `hunt` (same author, same craft rules).
-The name is from hunt's finding #26 — "the gate that cannot see": a human reviewer shown only
-the queue card upholds 5/5 unsound enforcement cards. In this game **the player IS the human
+The name is from hunt's finding #26 — "the gate that cannot see": a reviewer shown only the
+queue card upheld 2 of the 3 unsound enforcement cards it was given, 5 reps out of 5 each, and
+overturned a genuinely sound card 3 reps out of 5. It does not discriminate. (This line read
+"upholds 5/5 unsound enforcement cards" until it was checked against
+`hunt/data/reviewer.json`, which has three unsound rows, one of them rejected 5/5.) In this game **the player IS the human
 gate**, and gets what that reviewer never had: the evidence, at a price.
 
 ## 1. Concept
 
 You are the enforcement reviewer at an AI platform's trust & safety desk. 23 accounts are in
 your queue. 9 of them belong to 4 real threat-actor archetypes (each grounded in OpenAI's
-published threat reports); 14 are innocent — and 8 of those innocents were *designed* to look
-guilty on content (pentester, phishing-awareness trainer, CTF student, detection engineer,
-journalist, SRE automation, novelist, VPN coincidence). For each account you must decide:
+published threat reports); 14 are innocent — and 8 of those innocents were *designed* to be the thing you get wrong
+(pentester, phishing-awareness trainer, CTF student, detection engineer, journalist, SRE
+automation, novelist, VPN coincidence). Five of the eight are indistinguishable from an actor
+*on content*, because they share a content category with one; the SRE, the novelist and the
+VPN coincidence are look-alikes on cadence and infrastructure instead. For each account you must decide:
 **BAN** or **CLEAR**.
 
 The pedagogical spine (hunt's thesis made playable): **what someone asks an AI tells you
@@ -149,8 +154,12 @@ Rank titles: ≥150 "The gate that can see" · ≥110 "Corroborated" · ≥60 "M
 - **NEG_journalist**: asks how attacks work, never how to run one — reporting, not tooling.
 - **NEG_sre**: 18 sessions of tight-cadence automation — the twin of RA01. The difference is
   everything else: benign categories, corporate account, aged history.
-- **NEG_vpncoincidence**: shares a VPN ASN with an actor. Under naive linking this account
-  reaches `enforce` (hunt's console demos it). A link needs a reason, not an overlap.
+- **NEG_vpncoincidence**: shares a VPN ASN with an actor and nothing else. hunt's EXP-1
+  merged exactly this pair into a phantom actor — and that was the bug the experiment
+  found, not the linker's behaviour: `benign_code` was counting as a linking category, only
+  distinctive (offensive/recon) activity links now, and the re-run says *no merge*. The
+  enforcement ledger's lure-factory cluster has five members, not six. A link needs a reason,
+  not an overlap, and this account is here to make the player prove it.
 - **BG01–06**: ordinary users. If you spent hours here, that was the cost of not trusting
   the free view.
 
@@ -167,7 +176,9 @@ Rank titles: ≥150 "The gate that can see" · ≥110 "Corroborated" · ≥60 "M
    legitimately contain words like "pentest" — that is *content*, i.e. a self-claim; do NOT
    flag free-text words, only ids and actor names.
 3. **Identifier hygiene** (standing rule, broken 6× across the siblings): every IP must be in
-   RFC 5737 ranges, every ASN in 64496–64511. Reuse hunt's `scripts/check_identifiers.py`
+   RFC 5737 ranges, every ASN in RFC 5398 documentation space — which is BOTH 64496–64511 and
+   64496's 32-bit companion 65536–65551. The data uses both; a check written against the first
+   range alone reports every ASN in the second as a violation, which is how this was found. Reuse hunt's `scripts/check_identifiers.py`
    predicates by import if importable, else assert with local regex. The build FAILS on
    violation, it does not warn.
 4. UI must never branch on `reveal` before the verdict is committed (no "the truth was
@@ -181,12 +192,17 @@ Rank titles: ≥150 "The gate that can see" · ≥110 "Corroborated" · ≥60 "M
   accusations — but forwards *every* enforcement to a human. "The pipeline's job was to make
   your job possible. Your job was the hard part."
 - **You vs the card-only reviewer** (finding #26): a reviewer shown only the queue card upheld
-  5/5 unsound cards. Show what the player's evidence spending bought vs that baseline.
+  2 of 3 unsound cards, 5/5 reps each, and overturned a sound one 3/5. Show what the player's
+  evidence spending bought vs that baseline — and only where the queue HAS policy cards to
+  uphold; on a shift whose clusters carry no decision there is no baseline to draw. The
+  numbers come from `meta.reviewer`, counted off hunt's run, never typed here.
 - **The base-rate kicker** (finding #16): if player FP > 0 — "your false-ban rate here was
   x/14. At a realistic 0.1% abuse prevalence, a queue with your rates would be ~N% innocent"
   (compute: FP·(1−p) / (FP·(1−p) + TPR·p), p=0.001, rates from the player's own confusion
   matrix). If FP = 0 — "0/14 is not a rate: with 14 innocents, the data only licenses 'under
-  21%' (Wilson 95% upper bound). Hunt's own 0/14 has the same asterisk."
+  21.5%' (Wilson 95% upper bound). Hunt's own 0/14 has the same asterisk." The game computes
+  the bound from the queue it actually ran rather than printing this number, because the
+  innocent count is not 14 on every shift.
 - Budget audit: hours spent per tab type; "your most expensive mistake" (the banned benign
   with the most/least evidence bought, whichever is the better story).
 - Play-again with new seed; link to the hunt repo ("every account here is a real fixture from
