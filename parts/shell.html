@@ -156,18 +156,23 @@
 
 </main>
 
+<!-- Both overlays used id="interstitial" and id="int-actions", so two
+     elements shared each id: invalid, and getElementById could only ever
+     reach the first. They are classes now. The verdict dialog also pointed
+     aria-labelledby at "int-title", which does not exist anywhere - it is
+     labelled by the live region it actually contains. -->
 <div id="overlay" hidden>
-  <div id="interstitial" role="dialog" aria-modal="true" aria-labelledby="int-title">
+  <div class="interstitial" role="dialog" aria-modal="true" aria-labelledby="int-body">
     <div id="int-body" aria-live="polite"></div>
-    <div id="int-actions"><button id="btn-continue">Continue <kbd>Enter</kbd></button></div>
+    <div class="int-actions"><button id="btn-continue">Continue <kbd>Enter</kbd></button></div>
   </div>
 </div>
 
 <div id="overlay-end" hidden>
-  <div id="interstitial" role="dialog" aria-modal="true" aria-labelledby="end-title" style="max-width:460px">
+  <div class="interstitial" role="dialog" aria-modal="true" aria-labelledby="end-title" style="max-width:460px">
     <h2 id="end-title">End the shift early</h2>
     <p id="end-msg"></p>
-    <div id="int-actions">
+    <div class="int-actions">
       <button id="btn-end-cancel">Back to the queue <kbd>Esc</kbd></button>
       <button id="btn-end-confirm" class="btn-ban" style="margin-left:8px">End shift</button>
     </div>

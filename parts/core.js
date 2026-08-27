@@ -540,7 +540,9 @@ function loadShift(shiftId) {
   SHIFTS.forEach(function (s) { if (s.id === shiftId) { sh = s; } });
   if (!sh) { throw new Error('no such shift: ' + shiftId); }
   $('overlay').hidden = true;
+  setModalOpen(false);
   $('overlay-end').hidden = true;
+  setModalOpen(false);
   $('screen-play').hidden = true;
   $('screen-report').hidden = true;
   $('hud').hidden = true;
@@ -1749,12 +1751,14 @@ function showInterstitial(id, verdict, points, truth, rec) {
   }
 
   $('overlay').hidden = false;
+  setModalOpen(true);
   $('btn-continue').focus();
 }
 
 function continueFromInterstitial() {
   if (state.phase !== 'interstitial') { return; }
   $('overlay').hidden = true;
+  setModalOpen(false);
   var next = nextUndecided();
   if (next === null) { finishShift(false); return; }
   state.phase = 'play';
@@ -1772,6 +1776,24 @@ function nextUndecided() {
     if (!verdicts.has(id)) { return id; }
   }
   return null;
+}
+
+
+/* --- modal background ---------------------------------------------------
+   Both overlays declare aria-modal="true" and neither made the page behind
+   them inert, so a keyboard user could Tab straight out of the dialog into
+   the queue underneath and operate it - which is exactly the thing
+   aria-modal promises a screen reader is not possible. `inert` is the one
+   line that makes the promise true, and it removes the background from the
+   tab order and the accessibility tree together. */
+function setModalOpen(open) {
+  var main = document.querySelector('main');
+  var bar = $('topbar');
+  [main, bar].forEach(function (n) {
+    if (!n) { return; }
+    if (open) { n.setAttribute('inert', ''); }
+    else { n.removeAttribute('inert'); }
+  });
 }
 
 /* =========================================================================
@@ -2450,11 +2472,13 @@ function askEndShift() {
         ' not arrived yet; ending now forfeits them the same way.'
       : '');
   $('overlay-end').hidden = false;
+  setModalOpen(true);
   $('btn-end-cancel').focus();
 }
 function cancelEndShift() {
   if (state.phase !== 'confirm-end') { return; }
   $('overlay-end').hidden = true;
+  setModalOpen(false);
   state.phase = 'play';
 }
 $('btn-endshift').addEventListener('click', askEndShift);
@@ -2462,6 +2486,7 @@ $('btn-end-cancel').addEventListener('click', cancelEndShift);
 $('btn-end-confirm').addEventListener('click', function () {
   if (state.phase !== 'confirm-end') { return; }
   $('overlay-end').hidden = true;
+  setModalOpen(false);
   finishShift(true);
 });
 $('btn-continue').addEventListener('click', continueFromInterstitial);

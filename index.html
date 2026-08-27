@@ -144,7 +144,11 @@ main { flex: 1; display: flex; flex-direction: column; }
 #queue-list button[aria-current="true"] { background: var(--panel-2); border-color: var(--accent); }
 #queue-list .qid { font-family: var(--mono); }
 #queue-list .qmeta { font-size: 12px; color: var(--muted); display: flex; gap: 8px; }
-#queue-list .done { opacity: 0.55; }
+/* Not opacity: this row already uses --muted, and .55 on top of it measured
+   2.49 against the panel, well under AA. Colour and a strike-through carry
+   "decided" on their own and both stay legible. */
+#queue-list .done .aid, #queue-list .done .qid { text-decoration: line-through; }
+#queue-list .done { color: var(--muted); }
 #queue-list .qverdict { font-family: var(--mono); font-size: 11px; }
 #queue-list .qverdict.v-ban { color: var(--ban); }
 #queue-list .qverdict.v-monitor { color: var(--warn); }
@@ -244,6 +248,9 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
 }
 .seqstrip i.cat-off { background: var(--ban); }
 .seqstrip i.cat-recon { background: var(--warn); }
+/* The strip is not text, so opacity is fine here - but category must not be
+   carried by colour alone: each tick keeps a title, and the benign ticks are
+   drawn shorter as well as paler. */
 .seqstrip i.cat-benign { background: var(--clear); opacity: .55; }
 .tl { width: 100%; height: 56px; display: block; }
 .tl .axis { stroke: var(--line); }
@@ -266,18 +273,18 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
   position: fixed; inset: 0; background: rgba(0,0,0,.6);
   display: flex; align-items: center; justify-content: center; z-index: 40; padding: 16px;
 }
-#interstitial {
+.interstitial {
   background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
   max-width: 560px; width: 100%; padding: 20px 24px;
 }
-#interstitial h2 { margin: 0 0 4px; font-size: 20px; }
-#interstitial h2.good { color: var(--clear); }
-#interstitial h2.bad { color: var(--ban); }
-#interstitial h2.mid { color: var(--warn); }
-#interstitial .delta { font-family: var(--mono); font-size: 22px; }
-#interstitial .provenance { border-left: 3px solid var(--line); padding-left: 12px;
+.interstitial h2 { margin: 0 0 4px; font-size: 20px; }
+.interstitial h2.good { color: var(--clear); }
+.interstitial h2.bad { color: var(--ban); }
+.interstitial h2.mid { color: var(--warn); }
+.interstitial .delta { font-family: var(--mono); font-size: 22px; }
+.interstitial .provenance { border-left: 3px solid var(--line); padding-left: 12px;
   color: var(--muted); font-size: 13px; }
-#int-actions { margin-top: 16px; display: flex; justify-content: flex-end; }
+.int-actions { margin-top: 16px; display: flex; justify-content: flex-end; }
 
 /* report */
 #screen-report section { margin-bottom: 28px; }
@@ -339,7 +346,10 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
   color: var(--text);
 }
 button.shift-card:hover { border-color: var(--accent); }
-.shift-card.locked { opacity: .55; }
+/* Same reason. A locked card is signalled by its colour and by the line
+   that says which shift unlocks it, not by fading text under AA. */
+.shift-card.locked { color: var(--muted); border-color: var(--line); }
+.shift-card.locked .sc-title { color: var(--muted); font-weight: 600; }
 .shift-card .sc-title { font-weight: 700; }
 .sc-meta { color: var(--muted); }
 .sc-status { margin-top: 2px; }
@@ -548,18 +558,23 @@ footer {
 
 </main>
 
+<!-- Both overlays used id="interstitial" and id="int-actions", so two
+     elements shared each id: invalid, and getElementById could only ever
+     reach the first. They are classes now. The verdict dialog also pointed
+     aria-labelledby at "int-title", which does not exist anywhere - it is
+     labelled by the live region it actually contains. -->
 <div id="overlay" hidden>
-  <div id="interstitial" role="dialog" aria-modal="true" aria-labelledby="int-title">
+  <div class="interstitial" role="dialog" aria-modal="true" aria-labelledby="int-body">
     <div id="int-body" aria-live="polite"></div>
-    <div id="int-actions"><button id="btn-continue">Continue <kbd>Enter</kbd></button></div>
+    <div class="int-actions"><button id="btn-continue">Continue <kbd>Enter</kbd></button></div>
   </div>
 </div>
 
 <div id="overlay-end" hidden>
-  <div id="interstitial" role="dialog" aria-modal="true" aria-labelledby="end-title" style="max-width:460px">
+  <div class="interstitial" role="dialog" aria-modal="true" aria-labelledby="end-title" style="max-width:460px">
     <h2 id="end-title">End the shift early</h2>
     <p id="end-msg"></p>
-    <div id="int-actions">
+    <div class="int-actions">
       <button id="btn-end-cancel">Back to the queue <kbd>Esc</kbd></button>
       <button id="btn-end-confirm" class="btn-ban" style="margin-left:8px">End shift</button>
     </div>
@@ -1128,7 +1143,9 @@ function loadShift(shiftId) {
   SHIFTS.forEach(function (s) { if (s.id === shiftId) { sh = s; } });
   if (!sh) { throw new Error('no such shift: ' + shiftId); }
   $('overlay').hidden = true;
+  setModalOpen(false);
   $('overlay-end').hidden = true;
+  setModalOpen(false);
   $('screen-play').hidden = true;
   $('screen-report').hidden = true;
   $('hud').hidden = true;
@@ -2337,12 +2354,14 @@ function showInterstitial(id, verdict, points, truth, rec) {
   }
 
   $('overlay').hidden = false;
+  setModalOpen(true);
   $('btn-continue').focus();
 }
 
 function continueFromInterstitial() {
   if (state.phase !== 'interstitial') { return; }
   $('overlay').hidden = true;
+  setModalOpen(false);
   var next = nextUndecided();
   if (next === null) { finishShift(false); return; }
   state.phase = 'play';
@@ -2360,6 +2379,24 @@ function nextUndecided() {
     if (!verdicts.has(id)) { return id; }
   }
   return null;
+}
+
+
+/* --- modal background ---------------------------------------------------
+   Both overlays declare aria-modal="true" and neither made the page behind
+   them inert, so a keyboard user could Tab straight out of the dialog into
+   the queue underneath and operate it - which is exactly the thing
+   aria-modal promises a screen reader is not possible. `inert` is the one
+   line that makes the promise true, and it removes the background from the
+   tab order and the accessibility tree together. */
+function setModalOpen(open) {
+  var main = document.querySelector('main');
+  var bar = $('topbar');
+  [main, bar].forEach(function (n) {
+    if (!n) { return; }
+    if (open) { n.setAttribute('inert', ''); }
+    else { n.removeAttribute('inert'); }
+  });
 }
 
 /* =========================================================================
@@ -3038,11 +3075,13 @@ function askEndShift() {
         ' not arrived yet; ending now forfeits them the same way.'
       : '');
   $('overlay-end').hidden = false;
+  setModalOpen(true);
   $('btn-end-cancel').focus();
 }
 function cancelEndShift() {
   if (state.phase !== 'confirm-end') { return; }
   $('overlay-end').hidden = true;
+  setModalOpen(false);
   state.phase = 'play';
 }
 $('btn-endshift').addEventListener('click', askEndShift);
@@ -3050,6 +3089,7 @@ $('btn-end-cancel').addEventListener('click', cancelEndShift);
 $('btn-end-confirm').addEventListener('click', function () {
   if (state.phase !== 'confirm-end') { return; }
   $('overlay-end').hidden = true;
+  setModalOpen(false);
   finishShift(true);
 });
 $('btn-continue').addEventListener('click', continueFromInterstitial);
