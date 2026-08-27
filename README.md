@@ -43,13 +43,17 @@ The landing says it before you play a single account. Every account in the
 first shift's queue, one row each, one square per session — then collapsed
 to the single verdict a content filter would reach:
 
-![The landing screen with the queue collapsed: every account reduced to one verdict bar, twelve of them red, above a caption saying nine of the twenty-three are threat actors.](docs/figures/landing.png)
+![The landing screen with the queue collapsed: every account reduced to one verdict bar, twelve red, two amber, nine green, above a caption saying nine of the twenty-three are threat actors and they are not the same accounts.](docs/figures/landing.png)
 
-<sub>Twelve accounts fail on content. Nine are threat actors. The two
-numbers do not match, and nothing on this screen tells you where they
-differ — which is the job. The strip is drawn from the shift's own
-fixtures; the counts and the word "nine" are computed from them, so a
-change to the queue cannot leave the sentence lying.</sub>
+<sub>Twelve accounts fail on content outright and two more read as
+reconnaissance. Nine of the twenty-three are threat actors — and they are
+**not the same accounts**: four of the twelve are innocent, and one actor
+is not flagged by content at all. Nothing on this screen says which is
+which, and that is the job. Every number is counted off the shift's own
+fixtures rather than typed beside them; the one clause that cannot be
+counted in the browser — that the two groups differ — is asserted against
+the labels by `scripts/check_readme.py`, because the page has no access to
+them and must not.</sub>
 
 You play ten shifts, in the order the job gets harder. The queue starts
 obvious, then starts moving, then starts arriving the way a real queue

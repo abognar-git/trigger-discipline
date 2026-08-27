@@ -207,6 +207,40 @@ def main() -> int:
                         fail(f"palette: {name} {fg} on {bgname} is {r:.2f}, "
                              f"under the 4.5 AA floor")
 
+    # --- the landing's one uncomputed claim ---------------------------------
+    # The landing counts everything it states off the fixture except one
+    # clause: that the accounts a content filter flags and the accounts that
+    # are actually threat actors are NOT the same accounts. The page cannot
+    # check that - it has no access to the labels and must not - so it is
+    # checked here. It is also the sentence the design study got wrong: it
+    # said nine of the flagged accounts were actors, and eight are.
+    first = payload["shifts"][0]
+    off_cats = {"malware_dev", "exploit_help", "phishing_content", "spam_content"}
+    flagged, actors = set(), set()
+    for acc in first.get("accounts") or []:
+        cats = [x.get("category") for x in (acc.get("sessions") or [])]
+        if any(c in off_cats for c in cats):
+            flagged.add(acc["id"])
+        rev = acc.get("reveal") or {}
+        if rev.get("truth") == "malicious" or rev.get("actor"):
+            actors.add(acc["id"])
+    if not flagged or not actors:
+        fail("landing: the first shift has no content-flagged accounts or no "
+             "actors, so the landing's whole argument is vacuous")
+    else:
+        if not (actors - flagged):
+            fail("landing: every threat actor in the first shift also fails "
+                 "on content, so 'not the same accounts' is false - content "
+                 "would be sufficient and the screen would be lying")
+        if not (flagged - actors):
+            fail("landing: every content-flagged account in the first shift "
+                 "is a threat actor, so 'not the same accounts' is false")
+        n_mal = (first.get("counts") or {}).get("malicious")
+        if n_mal is not None and n_mal != len(actors):
+            fail(f"landing: counts.malicious says {n_mal} but {len(actors)} "
+                 f"accounts carry an actor label; the landing renders the "
+                 f"former")
+
     # --- scoring table -----------------------------------------------------
     want = {
         "Ban a threat-actor account": meta["scoring"]["ban_actor"],
@@ -440,7 +474,7 @@ def main() -> int:
         for f in FAILURES:
             print(f"  - {f}")
         return 1
-    print("check_readme: OK (shift count, subtitles, ordinals, palette, scoring, tabs, bands, refusal copy, "
+    print("check_readme: OK (shift count, subtitles, ordinals, landing, palette, scoring, tabs, bands, refusal copy, "
           "bulletin stories, leak guard, figures, links, page data, "
           "identifiers, offline)")
     return 0

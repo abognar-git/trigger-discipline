@@ -443,7 +443,12 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
   opacity: 0; transform: translateY(-3px); animation: lp-settle .4s ease forwards;
   transition: width .34s cubic-bezier(.4, 0, .2, 1), background-color .34s ease;
 }
-.lp-tick.off { background: var(--ban); }
+.lp-tick.cat-off { background: var(--ban); }
+/* Recon is its own category in this game and its own colour everywhere
+   else on the page. The strip painted it green until someone counted the
+   squares: eighteen sessions of pure reconnaissance were reading as
+   eighteen sessions of ordinary code. */
+.lp-tick.cat-recon { background: var(--warn); }
 @keyframes lp-settle { to { opacity: 1; transform: none; } }
 /* The collapsed state: every account becomes the one verdict a content
    filter would reach. The lead square takes the row's aggregate ONLY here -
@@ -451,7 +456,8 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
    lie about the account that starts benign and drifts. */
 .lp-rows.collapsed .lp-tick { width: 0; }
 .lp-rows.collapsed .lp-tick.lead { width: 58px; }
-.lp-rows.collapsed .lp-row.flagged .lp-tick.lead { background: var(--ban); }
+.lp-rows.collapsed .lp-row.worst-off .lp-tick.lead { background: var(--ban); }
+.lp-rows.collapsed .lp-row.worst-recon .lp-tick.lead { background: var(--warn); }
 .lp-cap { margin: 26px 0 0; max-width: 58ch; font-size: 14px; color: var(--muted); }
 .lp-cap b { color: var(--text); font-weight: 600; }
 .lp-cap .n { font-family: var(--mono); color: var(--warn); font-weight: 600; }

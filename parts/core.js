@@ -2858,11 +2858,11 @@ UI = {
   renderIntro: renderIntro,
   openAccount: openAccount,
   openTab: openTab,
-  /* The landing colours its queue strip by category, and there must be one
-     definition of which categories are offensive. Exported rather than
-     copied, because a copy in career.js would drift the first time the
-     closed set changed. */
-  offensive: OFFENSIVE
+  /* The landing colours its queue strip by category and must use the same
+     three-way split the dossier does. Exported rather than copied: a copy
+     in career.js is how the landing came to paint recon as benign, which
+     is neither what the taxonomy says nor what the rest of the page shows. */
+  catClass: catClass
 };
 initShift(SHIFTS[0]);
 renderIntro();

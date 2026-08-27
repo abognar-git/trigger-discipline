@@ -152,25 +152,34 @@ function ensureBackButton() {
 function queueStrip() {
   var sh = shifts[0];
   if (!sh || !sh.accounts || !sh.accounts.length) { return null; }
-  var off = (ui && ui.offensive) || {};
+  var cls = (ui && ui.catClass) || function () { return 'cat-benign'; };
+  var RANK = { 'cat-benign': 0, 'cat-recon': 1, 'cat-off': 2 };
   var rows = sh.accounts.map(function (a) {
     var ss = (a.sessions || []).slice().sort(function (x, y) {
       return String(x.ts || '').localeCompare(String(y.ts || ''));
     });
-    var marks = ss.map(function (x) { return off[x.category] ? 1 : 0; });
-    return { marks: marks, flagged: marks.indexOf(1) >= 0 };
+    var marks = ss.map(function (x) { return cls(x.category); });
+    var worst = marks.reduce(function (w, m) {
+      return RANK[m] > RANK[w] ? m : w;
+    }, 'cat-benign');
+    return { marks: marks, worst: worst };
   }).filter(function (r) { return r.marks.length; });
   if (!rows.length) { return null; }
   /* longest first, and within one length the clean strips before the
      flagged ones - the shape of the queue, read top to bottom */
   rows.sort(function (x, y) {
     if (y.marks.length !== x.marks.length) { return y.marks.length - x.marks.length; }
-    return (x.flagged ? 1 : 0) - (y.flagged ? 1 : 0);
+    return RANK[x.worst] - RANK[y.worst];
   });
+  function count(w) {
+    return rows.filter(function (r) { return r.worst === w; }).length;
+  }
   var c = sh.counts || {};
   return {
     rows: rows,
-    flagged: rows.filter(function (r) { return r.flagged; }).length,
+    offensive: count('cat-off'),
+    recon: count('cat-recon'),
+    total: rows.length,
     actors: c.malicious != null ? c.malicious : null,
     title: sh.title || ''
   };
@@ -196,11 +205,12 @@ function nextShift() {
 function renderStrip(box, cap, data) {
   box.textContent = '';
   data.rows.forEach(function (r, i) {
-    var row = ui.el('div', 'lp-row' + (r.flagged ? ' flagged' : ''));
-    var idx = ui.el('span', 'lp-idx', (i + 1 < 10 ? '0' : '') + (i + 1));
-    row.appendChild(idx);
+    var worst = r.worst === 'cat-off' ? ' worst-off'
+              : (r.worst === 'cat-recon' ? ' worst-recon' : '');
+    var row = ui.el('div', 'lp-row' + worst);
+    row.appendChild(ui.el('span', 'lp-idx', (i + 1 < 10 ? '0' : '') + (i + 1)));
     r.marks.forEach(function (m, j) {
-      var t = ui.el('span', 'lp-tick' + (m ? ' off' : '') + (j === 0 ? ' lead' : ''));
+      var t = ui.el('span', 'lp-tick ' + m + (j === 0 ? ' lead' : ''));
       t.style.animationDelay = (i * 26 + j * 9) + 'ms';
       row.appendChild(t);
     });
@@ -208,37 +218,50 @@ function renderStrip(box, cap, data) {
   });
   box.setAttribute('role', 'img');
   box.setAttribute('aria-label',
-    plural(data.rows.length, 'account') + ' in the first shift\'s queue, one ' +
-    'row each, one square per session. ' + plural(data.flagged, 'account') +
-    ' have at least one session in an offensive content category' +
-    (data.actors != null ? '; ' + data.actors + ' of the ' + data.rows.length +
-      ' are threat actors' : '') + '.');
+    plural(data.total, 'account') + ' in the first shift\'s queue, one row ' +
+    'each, one square per session. ' + data.offensive + ' have at least one ' +
+    'session in an offensive content category and ' + data.recon +
+    ' are reconnaissance without one' +
+    (data.actors != null ? '; ' + data.actors + ' of the ' + data.total +
+      ' are threat actors, and they are not the same accounts' : '') + '.');
   capOpen(cap);
 }
 
 function capOpen(cap) {
   cap.textContent = '';
   cap.appendChild(document.createTextNode(
-    'One row per account, one square per session. Red where the content fell ' +
-    'in an offensive category. '));
+    'One row per account, one square per session. Red where the content ' +
+    'fell in an offensive category, amber where it was reconnaissance. '));
   cap.appendChild(ui.el('b', null, 'Content is free to look at, and it misleads.'));
 }
+/* Every number here is counted off the fixture. The study this screen comes
+   from typed them beside the drawing and had one wrong: it said nine of the
+   accounts that fail on content are threat actors. Eight are. The ninth is
+   the account that does not fail on content at all - which is the argument
+   the screen exists to make, stated backwards.
+   The one clause that is not computed - that the two groups are not the
+   same accounts - is asserted by scripts/check_readme.py against the
+   labels, because this page cannot read them and must not. */
 function capShut(cap, data) {
   cap.textContent = '';
-  cap.appendChild(ui.el('span', 'n', String(data.flagged)));
-  cap.appendChild(document.createTextNode(' accounts fail on content. '));
+  cap.appendChild(ui.el('span', 'n', String(data.offensive)));
+  cap.appendChild(document.createTextNode(' accounts fail on content'));
+  if (data.recon) {
+    cap.appendChild(document.createTextNode(', and '));
+    cap.appendChild(ui.el('span', 'n', String(data.recon)));
+    cap.appendChild(document.createTextNode(' more read as reconnaissance'));
+  }
+  cap.appendChild(document.createTextNode('. '));
   if (data.actors == null) {
-    cap.appendChild(document.createTextNode('Some of them are threat actors. '));
-    cap.appendChild(ui.el('b', null, 'Which?'));
+    cap.appendChild(ui.el('b', null, 'Some of them are threat actors.'));
   } else {
     cap.appendChild(ui.el('span', 'n', String(data.actors)));
-    cap.appendChild(document.createTextNode(' of them are threat actors. '));
-    /* the word comes off the count, never typed beside it: a hand-written
-       "nine" starts lying the moment the fixture changes */
-    cap.appendChild(ui.el('b', null, 'Which ' + word(data.actors) + '?'));
+    cap.appendChild(document.createTextNode(' of the ' + data.total +
+      ' are threat actors — '));
+    cap.appendChild(ui.el('b', null, 'not the same accounts.'));
   }
   cap.appendChild(document.createTextNode(
-    ' Content will not tell you. Behavior will.'));
+    ' Content will not tell you which. Behavior will.'));
 }
 
 function renderLanding() {

@@ -222,7 +222,9 @@ SCENARIOS: dict[str, dict] = {
     "landing": dict(
         caption="The landing, with the queue collapsed to what a content "
                 "filter sees.",
-        size=(1240, 1000),
+        # tall enough to hold the whole argument: hero, strip, the counted
+        # caption under it, and the control that starts the shift
+        size=(1240, 1140),
         js="""
         /* The collapsed state on purpose: it is the project's whole claim in
            one screen. Every account in the first shift's queue reduced to
@@ -231,7 +233,8 @@ SCENARIOS: dict[str, dict] = {
         document.querySelector('.lp-toggle').click();
         """,
         must_show=["The ban you", "accounts fail on content",
-                   "Content will not tell you"],
+                   "not the same accounts", "Behavior will",
+                   "Start the shift"],
     ),
     "shift_select": dict(
         caption="The ten shifts, in the order the job gets harder.",
