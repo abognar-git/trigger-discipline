@@ -5341,9 +5341,37 @@ def main(argv: list[str] | None = None) -> int:
         if not want.is_file():
             problems.append(f"{want} does not exist")
         elif want.read_text() != payload + "\n":
-            problems.append(
-                f"{want} is not what this generator produces from "
-                f"{data['meta'].get('source_commit', '?')[:12]}")
+            # Name what differs. The common case is not a corrupted payload:
+            # it is a build against a hunt checkout other than the one the
+            # data records, where every field is identical except the
+            # provenance stamp - and "is not what this generator produces"
+            # sends the reader looking for a data bug that is not there.
+            try:
+                on_disk = json.loads(want.read_text())
+                fresh = json.loads(payload)
+                diff = sorted(k for k in set(on_disk.get("meta", {}))
+                              | set(fresh.get("meta", {}))
+                              if on_disk.get("meta", {}).get(k)
+                              != fresh.get("meta", {}).get(k))
+                same_game = on_disk.get("shifts") == fresh.get("shifts")
+            except Exception:
+                diff, same_game = [], False
+            if same_game and diff and set(diff) <= {"source_commit", "built"}:
+                problems.append(
+                    f"{want} records {on_disk['meta'].get('source_commit','?')[:12]} "
+                    f"({on_disk['meta'].get('built','?')}) and this build sees "
+                    f"{fresh['meta'].get('source_commit','?')[:12]} "
+                    f"({fresh['meta'].get('built','?')}). The shifts are "
+                    f"byte-identical - only the provenance stamp moved, so "
+                    f"the hunt checkout is not the one the data pins. "
+                    f"Re-run --out and --inject to re-pin, or verify against "
+                    f"the recorded commit.")
+            else:
+                problems.append(
+                    f"{want} is not what this generator produces from "
+                    f"{data['meta'].get('source_commit', '?')[:12]}"
+                    + (f" (meta differs on {', '.join(diff)})" if diff else "")
+                    + ("" if same_game else "; the shift data differs too"))
         page = REPO_ROOT / "index.html"
         if page.is_file():
             m = DATA_BLOCK_RE.search(page.read_text())

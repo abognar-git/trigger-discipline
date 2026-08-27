@@ -2,8 +2,8 @@
  "meta": {
   "contract": 3,
   "source_repo": "github.com/abognar-git/model-abuse-hunt",
-  "source_commit": "e650b4ab49e251aee071d1f835dae61243b613e2",
-  "built": "2026-08-25",
+  "source_commit": "60df88b09efdff78c66a3f5620ea489addbab7f7",
+  "built": "2026-08-27",
   "generator": "scripts/build_data.py",
   "scorer": "hunt src/signals.py (imported, not restated)",
   "linker": "hunt src/attribute.py (imported, not restated)",
