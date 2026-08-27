@@ -1024,6 +1024,15 @@ function renderTabPanel() {
   panel.textContent = '';
   if (!a) { return; }
   var owned = state.unlocked.get(a.id);
+  /* On a clockless shift every panel renders open and nothing was charged -
+     but nothing was RECORDED either, so the record said the player had
+     opened none of them. A mouse player who read all five on the first day
+     was told at the end of the shift that they had "banned on the free view
+     alone - not one evidence panel opened", which was the opposite of what
+     they did. What is on screen and free is open, and the record says so. */
+  if (!clockRunning()) {
+    TABS.forEach(function (t) { owned.add(t.key); });
+  }
   TABS.forEach(function (t, i) {
     var open = t.hours === 0 || owned.has(t.key) || !clockRunning();
     var sec = el('section', 'ev-panel' + (open ? '' : ' locked'));
@@ -1587,16 +1596,34 @@ function tabPipeline(a) {
   var cl = pl.cluster;
   if (cl) {
     var box = el('div', 'cluster-box');
+    /* Only the research run's own clusters carry a model assessment. The
+       generated rosters are linked by hunt's offline linker, which returns
+       members and link reasons and no verdict - and this printed the missing
+       verdict straight out as the string "null (no band) · policy: " on 33
+       clusters across nine shifts. What the linker actually found is the
+       members and why; that is what it says now. */
+    var hasRead = !!cl.assessment;
+    var what = hasRead ? cl.assessment : 'no model assessment';
     var headRow = el('div', 'overlap-row');
     headRow.appendChild(citeBox(a, 'pipeline', 'cluster',
-      'pipeline — cluster ' + cl.assessment + ' (' + (cl.confidence_band || 'no band') +
-      '), policy ' + (cl.decision || '—')));
+      'pipeline — cluster ' + what +
+      (hasRead ? ' (' + (cl.confidence_band || 'no band') + '), policy ' +
+        (cl.decision || '—') : '; linked on ' +
+        plural((cl.members || []).length, 'account'))));
     var headBody = el('div', 'overlap-body');
     var head = el('p');
-    head.appendChild(el('span', 'mono', cl.assessment + ' '));
-    head.appendChild(el('span', 'dim small', '(' + (cl.confidence_band || 'no band') + ') · policy: '));
-    head.appendChild(el('span', cl.decision === 'enforce' ? 'dec-enforce' : 'dec-monitor',
-      String(cl.decision || '').toUpperCase()));
+    if (hasRead) {
+      head.appendChild(el('span', 'mono', cl.assessment + ' '));
+      head.appendChild(el('span', 'dim small', '(' + (cl.confidence_band || 'no band') + ') · policy: '));
+      head.appendChild(el('span', cl.decision === 'enforce' ? 'dec-enforce' : 'dec-monitor',
+        String(cl.decision || '').toUpperCase()));
+    } else {
+      head.appendChild(el('span', 'mono', 'linkage only '));
+      head.appendChild(el('span', 'dim small',
+        'the linker grouped ' + plural((cl.members || []).length, 'account') +
+        '; no model read this cluster, so there is no assessment and no ' +
+        'policy decision to cite'));
+    }
     headBody.appendChild(head);
     /* Finding #24 — the same assessment, run 12 times. The decision column
        held every run on every cluster; the band is the part that moves, and
@@ -2036,7 +2063,11 @@ function nextUndecided() {
 function setModalOpen(open) {
   var main = document.querySelector('main');
   var bar = $('topbar');
-  [main, bar].forEach(function (n) {
+  /* The footer was left out, so Tab from inside an aria-modal dialog
+     reached the licence links behind it and kept going. Everything that is
+     not the dialog goes inert. */
+  var foot = document.querySelector('footer');
+  [main, bar, foot].forEach(function (n) {
     if (!n) { return; }
     if (open) { n.setAttribute('inert', ''); }
     else { n.removeAttribute('inert'); }
@@ -2394,11 +2425,20 @@ function renderReport(rep) {
     plural(cardBans, 'account') + ' (' + plural(cardTP, 'actor') + ', ' + cardFP +
     ' innocent) and monitors ' + cardMon + ' for a score of ' + fmtScore(cardScore) +
     ', without opening one evidence panel.'));
-  sCard.appendChild(el('p', null,
-    'You opened ' + plural(rep.tabsOpened, 'evidence panel') + ' and scored ' +
-    fmtScore(rep.score) +
-    '. The difference between those two numbers is what looking bought. On this queue the cards happen ' +
-    'to be sound; the card-only reviewer’s method cannot tell you when they are not.'));
+  /* On a clockless shift there is no such number to give. Every panel is
+     open on every account and none of them cost anything, so "you opened N"
+     is not a measure of what the player did - it is the roster size times
+     four. The sentence says what is actually true of the day instead. */
+  sCard.appendChild(el('p', null, clockRunning()
+    ? 'You opened ' + plural(rep.tabsOpened, 'evidence panel') + ' and scored ' +
+      fmtScore(rep.score) +
+      '. The difference between those two numbers is what looking bought. On this queue the cards happen ' +
+      'to be sound; the card-only reviewer’s method cannot tell you when they are not.'
+    : 'Today the clock was off, so every panel was open on every account and ' +
+      'looking cost you nothing. You scored ' + fmtScore(rep.score) +
+      '. From the next shift on, that difference is a budget. On this queue ' +
+      'the cards happen to be sound; the card-only reviewer’s method cannot ' +
+      'tell you when they are not.'));
   root.appendChild(sCard);
 
   /* --- the base-rate kicker (finding #16) --- */
@@ -2781,6 +2821,20 @@ if (startFoot) { startFoot.addEventListener('click', startShift); }
 ========================================================================= */
 document.addEventListener('keydown', function (e) {
   if (e.metaKey || e.ctrlKey || e.altKey) { return; }
+  /* A single letter here commits a verdict that the shift does not let you
+     take back, and the listener is on the document. Anything the user is
+     typing into keeps its keystrokes: without this, a reader who tabbed to
+     the share box on the report and typed anything containing a c was
+     issuing verdicts at a desk they thought they had left. */
+  var tgt = e.target;
+  if (tgt && tgt !== document.body) {
+    var tag = (tgt.tagName || '').toLowerCase();
+    var typ = (tgt.type || '').toLowerCase();
+    var typing = tag === 'textarea' || tag === 'select' || tgt.isContentEditable
+      || (tag === 'input' && typ !== 'checkbox' && typ !== 'radio'
+          && typ !== 'button' && typ !== 'submit');
+    if (typing) { return; }
+  }
   var k = e.key;
   if (state.phase === 'intro') {
     if (k === 'Enter') { e.preventDefault(); startShift(); }

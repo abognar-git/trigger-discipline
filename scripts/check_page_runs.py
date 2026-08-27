@@ -91,12 +91,83 @@ HARNESS = """
           for (var d = 1; d <= 5; d++) {
             document.dispatchEvent(new KeyboardEvent('keydown',
               {key: String(d), bubbles: true}));
-            if (document.querySelectorAll('#tabpanel .ev-body > *').length) {
-              panels += 1;
-            }
+            /* Count THIS panel's body, not the document's. The first version
+               asked whether any '#tabpanel .ev-body > *' existed, which is
+               true as soon as the free Content panel has rendered - so it
+               counted five per account unconditionally and reported a
+               constant 300 whatever the panels did. */
+            var sec = document.getElementById('tabpanel')
+              .querySelectorAll('.ev-panel')[d - 1];
+            var body = sec && sec.querySelector('.ev-body');
+            if (body && body.children.length) { panels += 1; }
           }
         }
         row.panels = panels;
+
+        /* The enforcement path. Everything above reads; the play-through
+           below only ever clears. Until this ran, BAN, the policy refusals,
+           the confidence band, MONITOR, the policy-gap flag and the whole
+           case board were never exercised by any gate - the half of the
+           game the project is actually about. */
+        var acts = { refused: 0, banned: 0, monitored: 0, flagged: 0, cased: 0 };
+        /* Its own load, and only as much waiting as it takes for a queue to
+           exist. The panel pass above spends forty hours, which on a 32-hour
+           shift ends the day before a verdict can be reached - the first
+           version of this sweep silently did nothing on nine shifts out of
+           ten. */
+        Game.loadShift(id);
+        document.getElementById('btn-start').click();
+        for (var aw = 0; aw < 24; aw++) {
+          if (document.querySelectorAll('#queue-list li button').length >= 3) { break; }
+          document.dispatchEvent(new KeyboardEvent('keydown', {key: 'w', bubbles: true}));
+          tick();
+        }
+        var seats2 = document.querySelectorAll('#queue-list li button');
+        for (var t = 0; t < seats2.length && t < 4; t++) {
+          seats2[t].click();
+          var before = document.getElementById('notice').textContent;
+          /* a ban with nothing cited must be refused by the policy */
+          document.dispatchEvent(new KeyboardEvent('keydown', {key: 'b', bubbles: true}));
+          if (document.getElementById('notice').textContent !== before) { acts.refused += 1; }
+          /* Buy a non-content panel first. On a live shift only Content is
+             open, and a ban citing content alone is refused - correctly - so
+             the sweep never reached the band picker on nine shifts. Cite
+             from Behavior, which is what the policy actually asks for. */
+          document.dispatchEvent(new KeyboardEvent('keydown', {key: '3', bubbles: true}));
+          var body = document.getElementById('panelbody-behavior');
+          var boxes = body ? [].slice.call(
+            body.querySelectorAll('input[type=checkbox]'))
+            .filter(function (c) { return c.offsetParent !== null; }) : [];
+          for (var bi = 0; bi < boxes.length && bi < 3; bi++) { boxes[bi].click(); }
+          document.dispatchEvent(new KeyboardEvent('keydown', {key: 'b', bubbles: true}));
+          var picker = document.getElementById('band-picker');
+          if (picker && !picker.hidden) {
+            document.dispatchEvent(new KeyboardEvent('keydown', {key: '1', bubbles: true}));
+            acts.banned += 1;
+          }
+          document.dispatchEvent(new KeyboardEvent('keydown', {key: 'g', bubbles: true}));
+          if (document.querySelector('.btn-flag.on')) { acts.flagged += 1; }
+          tick();
+        }
+        if (seats2.length > 4) {
+          seats2[4].click();
+          document.dispatchEvent(new KeyboardEvent('keydown', {key: 'm', bubbles: true}));
+          if (document.querySelector('#queue-list .verdict-chip, #queue-list .v-monitor')
+              || document.getElementById('hud-progress').textContent.indexOf('0/') !== 0) {
+            acts.monitored += 1;
+          }
+          tick();
+        }
+        var caseBtn = document.getElementById('casebar');
+        if (caseBtn && !caseBtn.hidden) {
+          var seats3 = document.querySelectorAll('#queue-list li button');
+          for (var ci = 0; ci < seats3.length && ci < 2; ci++) {
+            seats3[ci].click();
+            document.dispatchEvent(new KeyboardEvent('keydown', {key: 'a', bubbles: true}));
+          }
+          if (caseBtn.textContent.indexOf('Case 1') >= 0) { acts.cased += 1; }
+        }
+        row.acts = acts;
 
         Game.loadShift(id);
         document.getElementById('btn-start').click();
@@ -217,6 +288,15 @@ def main() -> int:
             failures.append(f"{sid}: only {row.get('panels', 0)} evidence "
                             f"panels rendered during the coverage pass; the "
                             f"panel renderers are going untested")
+        acts = row.get("acts") or {}
+        if not acts.get("refused"):
+            failures.append(f"{sid}: a ban citing nothing was not refused - "
+                            f"the policy's first rule went unexercised")
+        if not acts.get("banned"):
+            failures.append(f"{sid}: no ban reached the confidence band "
+                            f"picker; the enforcement path is untested")
+        if not acts.get("flagged"):
+            failures.append(f"{sid}: the policy-gap flag never engaged")
 
     if failures:
         print(f"check_page_runs: {len(failures)} FAILURE(S)\n", file=sys.stderr)
@@ -227,7 +307,9 @@ def main() -> int:
     n = len(report.get("shifts", []))
     print(f"check_page_runs: OK ({n} shifts played to a report from file://, "
           f"no console errors, no uncaught exceptions; "
-          f"{sum(r.get('panels', 0) for r in report.get('shifts', []))} evidence panels rendered)")
+          f"{sum(r.get('panels', 0) for r in report.get('shifts', []))} evidence panels, "
+          f"{sum((r.get('acts') or {}).get('banned', 0) for r in report.get('shifts', []))} bans, "
+          f"{sum((r.get('acts') or {}).get('refused', 0) for r in report.get('shifts', []))} policy refusals)")
     return 0
 
 

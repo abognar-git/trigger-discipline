@@ -241,6 +241,24 @@ def main() -> int:
                  f"accounts carry an actor label; the landing renders the "
                  f"former")
 
+    # --- unrendered templates ----------------------------------------------
+    # Four prompts shipped to the player reading "for the {org} bug-bounty
+    # submission": a pool string used without .format(). Nothing caught it,
+    # because a brace is valid text everywhere else in the payload.
+    braces = []
+    for sh in payload["shifts"]:
+        for acc in sh.get("accounts") or []:
+            for sess in acc.get("sessions") or []:
+                for k, v in sess.items():
+                    if isinstance(v, str) and re.search(r"\{[a-z_]+\}", v):
+                        braces.append(f"{sh['id']}/{acc['id']}/{k}: {v[:60]}")
+            for k in ("notes",):
+                v = (acc.get("reveal") or {}).get(k) or ""
+                if isinstance(v, str) and re.search(r"\{[a-z_]+\}", v):
+                    braces.append(f"{sh['id']}/{acc['id']}/reveal.{k}")
+    for b in braces[:6]:
+        fail(f"an unrendered template placeholder ships to the player - {b}")
+
     # --- scoring table -----------------------------------------------------
     want = {
         "Ban a threat-actor account": meta["scoring"]["ban_actor"],
@@ -474,7 +492,7 @@ def main() -> int:
         for f in FAILURES:
             print(f"  - {f}")
         return 1
-    print("check_readme: OK (shift count, subtitles, ordinals, landing, palette, scoring, tabs, bands, refusal copy, "
+    print("check_readme: OK (shift count, subtitles, ordinals, templates, landing, palette, scoring, tabs, bands, refusal copy, "
           "bulletin stories, leak guard, figures, links, page data, "
           "identifiers, offline)")
     return 0

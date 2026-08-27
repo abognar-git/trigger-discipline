@@ -3846,7 +3846,10 @@ def roster_s9(hunt: Hunt) -> Roster:
         outside = (j == 4)
         r.sess("acct_s9_OB01", hunt=hunt, at_min=30 + 95 * j, channel="api",
                category="exploit_help",
-               excerpt=PROMPTS[("exploit_help", "benign")][j % 3],
+               # .format, because one prompt in this pool carries {org} and
+               # without it the placeholder itself shipped to the player
+               excerpt=PROMPTS[("exploit_help", "benign")][j % 3].format(
+                   org=out_of_range if outside else in_range),
                disposition="refused" if j == 5 else "completed",
                ip=ev_ip, asn=hunt.benign_asns[2], country="GB",
                target_ref=out_of_range if outside else in_range)
@@ -3862,7 +3865,8 @@ def roster_s9(hunt: Hunt) -> Roster:
     for j in range(6):
         r.sess("acct_s9_NEG_eval", hunt=hunt, at_min=38 + 95 * j, channel="api",
                category="exploit_help",
-               excerpt=PROMPTS[("exploit_help", "benign")][j % 3],
+               excerpt=PROMPTS[("exploit_help", "benign")][j % 3].format(
+                   org=in_range),
                disposition="refused" if j == 5 else "completed",
                ip=lk_ip, asn=hunt.benign_asns[4], country="IE",
                target_ref=in_range)

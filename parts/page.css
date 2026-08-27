@@ -108,7 +108,16 @@ main { flex: 1; display: flex; flex-direction: column; }
 .small { font-size: 13px; }
 
 /* play layout — the third (case board) column is empty off case shifts */
+/* Below ~1040px the two rails leave the dossier under 250px of usable
+   width - narrower than the evidence tables inside it - while the mobile
+   rules do not start until 800px. The rails give way first. */
 #screen-play { flex: 1; display: grid; grid-template-columns: 264px minmax(0,1fr) 300px; gap: 0; }
+@media (max-width: 1040px) and (min-width: 801px) {
+  #screen-play { grid-template-columns: 200px minmax(0, 1fr) 236px; }
+  #decision { padding: 12px 12px 24px; }
+  #queue { font-size: 13px; }
+  .tl-lane { grid-template-columns: 120px minmax(0, 1fr); gap: 8px; }
+}
 #decision {
   border-left: 1px solid var(--line); background: var(--panel);
   overflow-y: auto; max-height: calc(100vh - 46px); padding: 14px 16px 28px;
@@ -256,11 +265,14 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
 .ev-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .tl-lanes { display: flex; flex-direction: column; gap: 2px; margin: 8px 0 4px; }
-.tl-lane { display: grid; grid-template-columns: 190px minmax(0, 1fr); align-items: center; gap: 10px; }
+/* minmax on the label, not a fixed 190px: at narrow dossier widths the
+   label kept its column and the track it labels collapsed to nothing. */
+.tl-lane { display: grid; grid-template-columns: minmax(90px, 190px) minmax(0, 1fr);
+  align-items: center; gap: 10px; }
+.tl-track-wrap { min-width: 60px; }
 .tl-lane .tl-name { font-size: 12px; color: var(--muted); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
 .tl-lane.is-subject .tl-name { color: var(--text); }
-.tl-track-wrap { min-width: 0; }
 .tl-track { width: 100%; height: 18px; display: block; }
 .tl-track .axis { stroke: var(--line); }
 .tl-track .tick { stroke: var(--clear); opacity: .8; }
@@ -319,7 +331,13 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
    sideways: the clock table has one column per evidence tab and overflowed
    a 320px viewport, and a page that scrolls horizontally on a phone is a
    page where the reader loses the left edge of every line. */
-#screen-report table, #screen-play table { display: block; overflow-x: auto; max-width: 100%; }
+/* Every screen that renders a table, not two of them: the career dashboard
+   and the appeals round were left out, and the dashboard's row-per-shift
+   table pushed the whole document sideways at every phone width. */
+#screen-report table, #screen-play table,
+#screen-career table, #screen-appeals table {
+  display: block; overflow-x: auto; max-width: 100%;
+}
 #screen-report section { margin-bottom: 28px; }
 #screen-report h2 { border-bottom: 1px solid var(--line); padding-bottom: 4px; }
 .score-line { font-size: 26px; font-family: var(--mono); }
@@ -439,16 +457,35 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
   font-variant-numeric: tabular-nums;
 }
 .lp-tick {
-  width: 13px; height: 13px; flex: none; background: var(--clear);
+  width: 13px; height: 13px; flex: none; background-color: var(--clear);
   opacity: 0; transform: translateY(-3px); animation: lp-settle .4s ease forwards;
   transition: width .34s cubic-bezier(.4, 0, .2, 1), background-color .34s ease;
 }
-.lp-tick.cat-off { background: var(--ban); }
+/* Colour is not the only channel here, and it cannot be: measured, --ban
+   against --clear is 1.27:1 in dark and 1.02:1 in light, so to a red-green
+   dichromat - and to anyone on a bad screen - the whole figure was 23
+   identical bars. WCAG 1.4.11 asks 3:1 for a graphic that carries meaning
+   and 1.4.1 asks for a cue that is not hue. Each category also carries a
+   fill pattern, declared once here and referenced by both the per-session
+   ticks and the collapsed lead bar.
+
+   background-COLOR throughout, never the background shorthand: the first
+   attempt set the pattern on the category class and the colour on the
+   collapsed rule, and the shorthand in the second reset the image from the
+   first, so the collapsed bars - the state this exists for - came out
+   flat. Measured after the fix: 1 distinct colour per bar before, 2 after. */
+.lp-rows {
+  --hatch-off: repeating-linear-gradient(135deg,
+    rgba(0, 0, 0, .38) 0 2px, rgba(0, 0, 0, 0) 2px 5px);
+  --hatch-recon: repeating-linear-gradient(90deg,
+    rgba(0, 0, 0, .38) 0 1px, rgba(0, 0, 0, 0) 1px 4px);
+}
+.lp-tick.cat-off { background-color: var(--ban); background-image: var(--hatch-off); }
 /* Recon is its own category in this game and its own colour everywhere
    else on the page. The strip painted it green until someone counted the
    squares: eighteen sessions of pure reconnaissance were reading as
    eighteen sessions of ordinary code. */
-.lp-tick.cat-recon { background: var(--warn); }
+.lp-tick.cat-recon { background-color: var(--warn); background-image: var(--hatch-recon); }
 @keyframes lp-settle { to { opacity: 1; transform: none; } }
 /* The collapsed state: every account becomes the one verdict a content
    filter would reach. The lead square takes the row's aggregate ONLY here -
@@ -456,8 +493,12 @@ td.citecell { width: 1%; white-space: nowrap; text-align: center; }
    lie about the account that starts benign and drifts. */
 .lp-rows.collapsed .lp-tick { width: 0; }
 .lp-rows.collapsed .lp-tick.lead { width: 58px; }
-.lp-rows.collapsed .lp-row.worst-off .lp-tick.lead { background: var(--ban); }
-.lp-rows.collapsed .lp-row.worst-recon .lp-tick.lead { background: var(--warn); }
+.lp-rows.collapsed .lp-row.worst-off .lp-tick.lead {
+  background-color: var(--ban); background-image: var(--hatch-off);
+}
+.lp-rows.collapsed .lp-row.worst-recon .lp-tick.lead {
+  background-color: var(--warn); background-image: var(--hatch-recon);
+}
 .lp-cap { margin: 26px 0 0; max-width: 58ch; font-size: 14px; color: var(--muted); }
 .lp-cap b { color: var(--text); font-weight: 600; }
 .lp-cap .n { font-family: var(--mono); color: var(--warn); font-weight: 600; }
