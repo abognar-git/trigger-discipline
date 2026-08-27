@@ -142,6 +142,71 @@ def main() -> int:
              f"{ordinals[first_appeal]} shift'; appeals first run on shift "
              f"{first_appeal + 1}")
 
+    # --- palette -----------------------------------------------------------
+    # The light palette is written twice - once for prefers-color-scheme and
+    # once for the manual toggle - because a rule inside a media query and a
+    # rule outside it cannot be merged. Two copies of thirteen colours is a
+    # standing invitation to change one; this asserts they stay identical,
+    # that neither theme is missing a token the other has, and that every
+    # foreground still clears AA on both grounds. The last one is not
+    # theoretical: --warn shipped at 4.49 in light and was found by
+    # measuring, not by looking.
+    css = (ROOT / "parts" / "page.css").read_text(encoding="utf-8")
+
+    def tokens(block: str) -> dict[str, str]:
+        return dict(re.findall(r"(--[a-z0-9-]+)\s*:\s*([^;}]+?)\s*[;}]", block))
+
+    def block_after(pattern: str) -> str:
+        m = re.search(pattern + r"\s*\{(.*?)\}", css, re.S | re.M)
+        return m.group(1) if m else ""
+
+    dark = tokens(block_after(r"^:root(?=\s*\{)"))
+    light_media = tokens(block_after(r':root:not\(\[data-theme="dark"\]\)'))
+    light_attr = tokens(block_after(r':root\[data-theme="light"\]'))
+
+    if not dark or not light_media or not light_attr:
+        fail("palette: could not read the three :root blocks in page.css")
+    else:
+        if light_media != light_attr:
+            diff = sorted(set(light_media.items()) ^ set(light_attr.items()))
+            fail("palette: the two light blocks disagree - "
+                 + ", ".join(f"{k}={v}" for k, v in diff[:6]))
+        colours = {k for k in dark if k not in ("--mono", "--sans")}
+        if colours != set(light_media):
+            only_dark = sorted(colours - set(light_media))
+            only_light = sorted(set(light_media) - colours)
+            fail("palette: themes define different tokens - "
+                 f"dark only {only_dark}, light only {only_light}")
+
+        def lum(hexv: str) -> float | None:
+            m = re.fullmatch(r"#([0-9a-fA-F]{6})", hexv.strip())
+            if not m:
+                return None
+            v = m.group(1)
+            out = []
+            for i in (0, 2, 4):
+                c = int(v[i:i + 2], 16) / 255
+                out.append(c / 12.92 if c <= 0.03928
+                           else ((c + 0.055) / 1.055) ** 2.4)
+            return 0.2126 * out[0] + 0.7152 * out[1] + 0.0722 * out[2]
+
+        def ratio(a: str, b: str) -> float | None:
+            la, lb = lum(a), lum(b)
+            if la is None or lb is None:
+                return None
+            hi, lo = max(la, lb), min(la, lb)
+            return (hi + 0.05) / (lo + 0.05)
+
+        for name, pal in (("dark", dark), ("light", light_media)):
+            for fg in ("--text", "--muted", "--accent", "--ban", "--clear", "--warn"):
+                for bgname in ("--bg", "--panel"):
+                    r = ratio(pal.get(fg, ""), pal.get(bgname, ""))
+                    if r is None:
+                        fail(f"palette: {name} {fg} or {bgname} is not a 6-digit hex")
+                    elif r < 4.5:
+                        fail(f"palette: {name} {fg} on {bgname} is {r:.2f}, "
+                             f"under the 4.5 AA floor")
+
     # --- scoring table -----------------------------------------------------
     want = {
         "Ban a threat-actor account": meta["scoring"]["ban_actor"],
@@ -375,7 +440,7 @@ def main() -> int:
         for f in FAILURES:
             print(f"  - {f}")
         return 1
-    print("check_readme: OK (shift count, subtitles, ordinals, scoring, tabs, bands, refusal copy, "
+    print("check_readme: OK (shift count, subtitles, ordinals, palette, scoring, tabs, bands, refusal copy, "
           "bulletin stories, leak guard, figures, links, page data, "
           "identifiers, offline)")
     return 0

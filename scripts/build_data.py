@@ -5128,6 +5128,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="replace the <script id=game-data> block in this HTML")
     ap.add_argument("--check", action="store_true",
                     help="run every assertion, write nothing")
+    ap.add_argument("--verify", action="store_true",
+                    help="regenerate and compare against the committed "
+                         "data/game_data.json and the page's injected block; "
+                         "write nothing")
     ap.add_argument("--facts", action="store_true",
                     help="print the per-account fact sheet and exit")
     ap.add_argument("--built", default=None,
@@ -5184,6 +5188,40 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  file:       {len(payload) + 1} bytes (indented, for review)")
     print(f"  payload:    {len(page_payload)} bytes injected "
           f"({100 * len(page_payload) / (900 * 1024):.0f}% of budget)")
+
+    if args.verify:
+        # The committed payload says which hunt commit it came from. Nothing
+        # checked that regenerating from that commit reproduces it, so a
+        # hand-edit anywhere in 875 KB of JSON - or a generator change that
+        # was never re-run - was indistinguishable from provenance.
+        problems = []
+        want = REPO_ROOT / "data" / "game_data.json"
+        if not want.is_file():
+            problems.append(f"{want} does not exist")
+        elif want.read_text() != payload + "\n":
+            problems.append(
+                f"{want} is not what this generator produces from "
+                f"{data['meta'].get('source_commit', '?')[:12]}")
+        page = REPO_ROOT / "index.html"
+        if page.is_file():
+            m = DATA_BLOCK_RE.search(page.read_text())
+            if not m:
+                problems.append("index.html has no game-data block")
+            # inject() wraps the block in newlines; strip them, not
+            # the payload, so a change in whitespace INSIDE the JSON
+            # still fails.
+            elif m.group(2).strip("\n") != page_payload:
+                problems.append("index.html's injected block is not what "
+                                "this generator produces")
+        if problems:
+            print("--verify: FAILED", file=sys.stderr)
+            for pr in problems:
+                print(f"  - {pr}", file=sys.stderr)
+            return 1
+        print(f"--verify: OK (data and page reproduce from "
+              f"{data['meta'].get('source_repo', '?')} "
+              f"{data['meta'].get('source_commit', '?')[:12]})")
+        return 0
 
     if args.check:
         print("--check: nothing written")

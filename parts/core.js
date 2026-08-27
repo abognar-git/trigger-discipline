@@ -684,6 +684,33 @@ function renderIntro() {
     (SHIFT.flags && SHIFT.flags.cases)
       ? ' \u00b7 A add the open account to a case, or remove it'
       : '');
+  /* The rules that only some shifts have. Stated where the rest of the
+     rules are, and only where they apply. */
+  var modes = $('intro-modes');
+  if (modes) {
+    modes.textContent = '';
+    var fl = SHIFT.flags || {};
+    if (fl.cases) {
+      modes.appendChild(el('h2', null, 'Cases'));
+      modes.appendChild(el('p', 'small dim',
+        'Accounts that belong to one operator are one case, and a case is ' +
+        'banned once: one link reason, one confidence band, every member. ' +
+        'The link reason is computed from what the members actually share, ' +
+        'never typed, and the picker offers only the reasons that hold. ' +
+        'Shared infrastructure alone is not one of them.'));
+    }
+    if (fl.appeals) {
+      modes.appendChild(el('h2', null, 'Appeals'));
+      modes.appendChild(el('p', 'small dim',
+        'When the shift ends, every account you banned files an appeal ' +
+        'before you see the report: one nominated fact, and what ' +
+        'independent verification returned on it. You uphold or reverse ' +
+        'each ban. Reversing a wrongful ban recovers part of its penalty; ' +
+        'reversing a correct one forfeits the credit. Some appeals verify ' +
+        'and are lies anyway, and at least one cannot be resolved in ' +
+        'either direction.'));
+    }
+  }
   setText('intro-seed', String(SEED));
 }
 
@@ -970,7 +997,17 @@ function openTab(key) {
   }
   state.activeTab = key;
   setNotice('');
+  var wasKeyboard = document.activeElement
+    && document.activeElement !== document.body;
   renderDossier();
+  /* Only when the activation came from something focused. Restoring focus
+     after a mouse click would scroll the panel into view under a player who
+     did not ask to go there. */
+  if (wasKeyboard) {
+    var sec = document.getElementById('panel-' + key);
+    var head = sec && sec.querySelector('.ev-head');
+    if (head && head.focus) { head.focus(); }
+  }
   emit('tabOpened', { id: a.id, tab: key, hours: tab.hours, paid: paidNow });
   CLOCK.endIfOver();
 }
@@ -993,6 +1030,11 @@ function renderTabPanel() {
     sec.id = 'panel-' + t.key;
 
     var head = el(open ? 'div' : 'button', 'ev-head');
+    /* An open panel's header is not a control, but it has to be reachable:
+       buying a panel rebuilds the dossier, which destroys the button the
+       keyboard was standing on, and focus falls to the document. This is
+       where openTab() puts it back. */
+    if (open) { head.tabIndex = -1; }
     head.appendChild(el('kbd', 'ev-k', String(i + 1)));
     head.appendChild(el('span', 'ev-name', t.label));
     var price = el('span', 'ev-price');

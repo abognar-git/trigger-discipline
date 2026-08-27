@@ -26,12 +26,19 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 PARTS_DIR = REPO_ROOT / "parts"
 
 # marker -> (part filename, required)
+# The mode parts were optional while they were being written, one at a time,
+# against a shell that had to build without them. They all exist now, and
+# "optional" stopped meaning "not written yet" and started meaning "deleting
+# this file removes a quarter of the game and the build stays green". Each
+# part is required and carries a floor on its size, because a part truncated
+# to a stub is the same failure as a part deleted, and passes an is-file
+# check.
 PARTS = [
-    ("<!--PART:CSS-->", "page.css", True),
-    ("<!--PART:CORE-->", "core.js", True),
-    ("<!--PART:LIVE-->", "live.js", False),
-    ("<!--PART:CASES-->", "cases.js", False),
-    ("<!--PART:CAREER-->", "career.js", False),
+    ("<!--PART:CSS-->", "page.css", 8_000),
+    ("<!--PART:CORE-->", "core.js", 60_000),
+    ("<!--PART:LIVE-->", "live.js", 4_000),
+    ("<!--PART:CASES-->", "cases.js", 15_000),
+    ("<!--PART:CAREER-->", "career.js", 15_000),
 ]
 
 # Same pattern build_data.py uses for --inject; keep the two in lockstep.
@@ -40,13 +47,17 @@ DATA_BLOCK_RE = re.compile(
     re.DOTALL)
 
 
-def read_part(name: str, required: bool) -> str:
+def read_part(name: str, floor: int) -> str:
     path = PARTS_DIR / name
     if not path.is_file():
-        if required:
-            raise SystemExit(f"build_page: missing required part {path}")
-        return ""  # §0: absent mode parts are empty
-    return path.read_text()
+        raise SystemExit(f"build_page: missing part {path}")
+    text = path.read_text()
+    if len(text) < floor:
+        raise SystemExit(
+            f"build_page: {path} is {len(text)} bytes, under its {floor}-byte "
+            f"floor. A part that has been emptied or truncated builds a page "
+            f"that loads, runs, and is missing whatever was in it.")
+    return text
 
 
 def assemble(out_path: Path, allow_placeholder: bool = False) -> str:
@@ -55,13 +66,13 @@ def assemble(out_path: Path, allow_placeholder: bool = False) -> str:
         raise SystemExit(f"build_page: missing {shell_path}")
     html = shell_path.read_text()
 
-    for marker, fname, required in PARTS:
+    for marker, fname, floor in PARTS:
         n = html.count(marker)
         if n != 1:
             raise SystemExit(
                 f"build_page: marker {marker} appears {n} times in "
                 f"parts/shell.html; expected exactly once")
-        content = read_part(fname, required).rstrip("\n")
+        content = read_part(fname, floor).rstrip("\n")
         html = html.replace(marker, content)
 
     if not DATA_BLOCK_RE.search(html):

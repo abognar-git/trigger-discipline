@@ -17,7 +17,26 @@ jobs:
         run: python3 scripts/build_page.py --check
       - name: README matches the data
         run: python3 scripts/check_readme.py
-      # Both gates above read source. Neither loads the artifact, so a
+      # The payload declares which hunt commit it was generated from, and
+      # until this step nothing checked that regenerating from that commit
+      # reproduces it: a hand-edit anywhere in 875 KB of JSON, or a
+      # generator change that was never re-run, was indistinguishable from
+      # provenance. hunt is checked out at the pinned commit, so hunt moving
+      # on cannot turn this repo red on its own.
+      - name: read the hunt commit the data claims
+        id: hunt
+        run: |
+          sha=$(python3 -c "import json;print(json.load(open('data/game_data.json'))['meta']['source_commit'])")
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: abognar-git/model-abuse-hunt
+          ref: ${{ steps.hunt.outputs.sha }}
+          path: hunt-src
+      - name: the data reproduces from hunt
+        run: python3 scripts/build_data.py --hunt hunt-src --verify
+
+      # The gates above read source. None loads the artifact, so a
       # rendering-fatal one-liner shipped green until this step existed.
       # Chrome is installed on the GitHub runner image; on a machine without
       # one the script SKIPS loudly rather than passing quietly.
