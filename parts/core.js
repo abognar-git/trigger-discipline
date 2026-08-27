@@ -245,7 +245,15 @@ function mulberry32(a) {
   };
 }
 var seedParam = parseInt(new URLSearchParams(location.search).get('seed'), 10);
-var SEED = Number.isFinite(seedParam) ? seedParam : 1337;
+/* Clamped to 32 bits, because the seed has to survive its own round trip.
+   parseInt happily returns 1e21 for a long enough digit string; String()
+   then prints "1e+21", which is what the intro shows and what "Replay this
+   seed" puts in the URL - and parseInt("1e+21", 10) stops at the 'e' and
+   returns 1. The player got a different queue from the one they asked to
+   replay, and the link they shared was wrong. */
+var SEED = Number.isFinite(seedParam)
+  ? Math.abs(Math.trunc(seedParam)) % 2147483647
+  : 1337;
 function shuffled(ids, seed) {
   var rng = mulberry32(seed);
   var arr = ids.slice();
@@ -837,7 +845,15 @@ function citeBox(a, tab, key, label) {
   cb.addEventListener('change', function () {
     toggleCite(a.id, tab, key, label, cb.checked);
   });
-  return cb;
+  /* Wrapped, because every ban in the game goes through one of these and
+     the target was the bare 13x13 native checkbox. A label forwards its
+     clicks to the input it contains, so the padding around it is a real hit
+     area - 26px, over WCAG 2.5.8's 24. The evidence row itself is
+     deliberately NOT the target: a player dragging to select an excerpt
+     would cite it by accident. */
+  var hit = el('label', 'cite-hit');
+  hit.appendChild(cb);
+  return hit;
 }
 function renderCiteCount() {
   var n = $('cite-count');
@@ -1787,11 +1803,19 @@ function chooseBand(id, bandName) {
 function renderBandPicker() {
   var box = $('band-picker');
   var id = state.pendingBanId;
+  var wasOpen = !box.hidden;
   box.textContent = '';
   if (id === null || id !== state.currentId) { box.hidden = true; return; }
   box.hidden = false;
-  box.appendChild(el('p', 'bp-title',
-    'How confident is this ban? The band is a claim; the shift report scores it.'));
+  /* A ban cannot be committed without this step, and opening it used to
+     move nothing and say nothing: focus stayed on BAN, the only live region
+     in the rail stayed empty, and the picker had no role and no name. */
+  box.setAttribute('role', 'group');
+  box.setAttribute('aria-labelledby', 'bp-title');
+  var title = el('p', 'bp-title',
+    'How confident is this ban? The band is a claim; the shift report scores it.');
+  title.id = 'bp-title';
+  box.appendChild(title);
   var row = el('div', 'bp-bands');
   BAND_LIST.forEach(function (b, i) {
     var btn = el('button');
@@ -1809,6 +1833,11 @@ function renderBandPicker() {
   box.appendChild(el('p', 'bp-floor', 'Policy floor: “' +
     FLOOR_BAND.replace(/_/g, ' ') + '” (P ' + FLOOR_P.toFixed(2) +
     '). Below it, the ban is refused.'));
+  if (!wasOpen) {
+    setNotice('The ban is pending: choose a confidence band, or Esc to cancel.');
+    var first = row.querySelector('button');
+    if (first && first.focus) { first.focus(); }
+  }
 }
 
 /* =========================================================================

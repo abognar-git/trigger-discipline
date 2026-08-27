@@ -236,7 +236,15 @@ main { flex: 1; display: flex; flex-direction: column; }
 .stat .v { font-family: var(--mono); font-size: 16px; }
 
 /* citation checkboxes — every evidence row in an opened tab is citable */
-.cite-box { accent-color: var(--accent); margin: 3px 8px 0 0; flex: 0 0 auto; }
+/* The label is the hit area: 26px, over WCAG 2.5.8's 24, around a checkbox
+   that was a bare 13px. Every ban in the game is committed through one of
+   these. */
+.cite-hit {
+  display: inline-flex; align-items: flex-start; justify-content: center;
+  padding: 6px; margin: -3px 2px 0 -6px; cursor: pointer; flex: 0 0 auto;
+}
+.cite-box { accent-color: var(--accent); width: 14px; height: 14px;
+  margin: 0; flex: 0 0 auto; cursor: pointer; }
 td.citecell { width: 1%; white-space: nowrap; text-align: center; }
 .sess { display: flex; gap: 0; align-items: flex-start; }
 .sess > .sess-body { flex: 1; min-width: 0; }

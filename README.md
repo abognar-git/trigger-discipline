@@ -20,8 +20,9 @@ and the table at the bottom says which.</sub>
 
 ![The ban rule, start to finish: a ban on content alone is refused, the Behavior panel is opened and cited, a confidence band is given, and the verdict lands.](docs/figures/ban_rule.gif)
 
-<sub>Six real states of the running game, shift 2. Every figure in this file
-is captured from the committed `index.html` by `scripts/make_figures.py`,
+<sub>Six frames, all captured on the second shift — the count is the
+animation's, not the career's; there are ten shifts. Every figure in this
+file comes out of the committed `index.html` via `scripts/make_figures.py`,
 driven through the game's own handlers. Nothing here is mocked or
 retouched.</sub>
 
@@ -197,7 +198,7 @@ is not scored. It is just true.
   account to a case). A case with two or more members is banned once — one
   link reason, one band, every member. The policy refuses a case linked only
   by shared infrastructure ("an overlap is an observation, not a link"),
-  and it is right to: one of the innocents shares a VPN with three actors.
+  and it is right to: one of the innocents shares a VPN with five actors.
   Ban half a cluster and the operator returns on a fresh burner with new
   infrastructure — and the same objective, because money buys anonymity,
   not a different objective.
@@ -258,7 +259,7 @@ the queue · `?seed=N` in the URL reorders a shift's queue.
 **Shift 1 is [`model-abuse-hunt`](https://github.com/abognar-git/model-abuse-hunt)'s
 canonical queue, account for account** — a research project that built and
 then attacked an abuse-hunting pipeline for an AI platform. Every later
-shift is composed here, from that project's five archetypes plus four taken
+shift is composed here, from that project's four archetypes plus five taken
 from published threat reports, and says so in its own data: each planted
 actor carries a `provenance` block naming the report its behaviour is
 modelled on, and an `extension` flag where the scenario extrapolates beyond
@@ -274,7 +275,7 @@ real company.
 
 Each mechanic below is a measured finding there, not a game-design
 invention. The archetypes are a mixed set and the data says which is which:
-five come from `hunt` itself and four are modelled on published threat
+four come from `hunt` itself and five are modelled on published threat
 reports, each carrying its citation and an `extension` flag in
 `reveal.provenance`. They are not named here, for the same reason the
 answer key is not: finding out what a queue contains is the game.

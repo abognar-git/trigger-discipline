@@ -265,7 +265,15 @@ main { flex: 1; display: flex; flex-direction: column; }
 .stat .v { font-family: var(--mono); font-size: 16px; }
 
 /* citation checkboxes — every evidence row in an opened tab is citable */
-.cite-box { accent-color: var(--accent); margin: 3px 8px 0 0; flex: 0 0 auto; }
+/* The label is the hit area: 26px, over WCAG 2.5.8's 24, around a checkbox
+   that was a bare 13px. Every ban in the game is committed through one of
+   these. */
+.cite-hit {
+  display: inline-flex; align-items: flex-start; justify-content: center;
+  padding: 6px; margin: -3px 2px 0 -6px; cursor: pointer; flex: 0 0 auto;
+}
+.cite-box { accent-color: var(--accent); width: 14px; height: 14px;
+  margin: 0; flex: 0 0 auto; cursor: pointer; }
 td.citecell { width: 1%; white-space: nowrap; text-align: center; }
 .sess { display: flex; gap: 0; align-items: flex-start; }
 .sess > .sess-body { flex: 1; min-width: 0; }
@@ -1179,7 +1187,15 @@ function mulberry32(a) {
   };
 }
 var seedParam = parseInt(new URLSearchParams(location.search).get('seed'), 10);
-var SEED = Number.isFinite(seedParam) ? seedParam : 1337;
+/* Clamped to 32 bits, because the seed has to survive its own round trip.
+   parseInt happily returns 1e21 for a long enough digit string; String()
+   then prints "1e+21", which is what the intro shows and what "Replay this
+   seed" puts in the URL - and parseInt("1e+21", 10) stops at the 'e' and
+   returns 1. The player got a different queue from the one they asked to
+   replay, and the link they shared was wrong. */
+var SEED = Number.isFinite(seedParam)
+  ? Math.abs(Math.trunc(seedParam)) % 2147483647
+  : 1337;
 function shuffled(ids, seed) {
   var rng = mulberry32(seed);
   var arr = ids.slice();
@@ -1771,7 +1787,15 @@ function citeBox(a, tab, key, label) {
   cb.addEventListener('change', function () {
     toggleCite(a.id, tab, key, label, cb.checked);
   });
-  return cb;
+  /* Wrapped, because every ban in the game goes through one of these and
+     the target was the bare 13x13 native checkbox. A label forwards its
+     clicks to the input it contains, so the padding around it is a real hit
+     area - 26px, over WCAG 2.5.8's 24. The evidence row itself is
+     deliberately NOT the target: a player dragging to select an excerpt
+     would cite it by accident. */
+  var hit = el('label', 'cite-hit');
+  hit.appendChild(cb);
+  return hit;
 }
 function renderCiteCount() {
   var n = $('cite-count');
@@ -2721,11 +2745,19 @@ function chooseBand(id, bandName) {
 function renderBandPicker() {
   var box = $('band-picker');
   var id = state.pendingBanId;
+  var wasOpen = !box.hidden;
   box.textContent = '';
   if (id === null || id !== state.currentId) { box.hidden = true; return; }
   box.hidden = false;
-  box.appendChild(el('p', 'bp-title',
-    'How confident is this ban? The band is a claim; the shift report scores it.'));
+  /* A ban cannot be committed without this step, and opening it used to
+     move nothing and say nothing: focus stayed on BAN, the only live region
+     in the rail stayed empty, and the picker had no role and no name. */
+  box.setAttribute('role', 'group');
+  box.setAttribute('aria-labelledby', 'bp-title');
+  var title = el('p', 'bp-title',
+    'How confident is this ban? The band is a claim; the shift report scores it.');
+  title.id = 'bp-title';
+  box.appendChild(title);
   var row = el('div', 'bp-bands');
   BAND_LIST.forEach(function (b, i) {
     var btn = el('button');
@@ -2743,6 +2775,11 @@ function renderBandPicker() {
   box.appendChild(el('p', 'bp-floor', 'Policy floor: “' +
     FLOOR_BAND.replace(/_/g, ' ') + '” (P ' + FLOOR_P.toFixed(2) +
     '). Below it, the ban is refused.'));
+  if (!wasOpen) {
+    setNotice('The ban is pending: choose a confidence band, or Esc to cancel.');
+    var first = row.querySelector('button');
+    if (first && first.focus) { first.focus(); }
+  }
 }
 
 /* =========================================================================
@@ -5085,14 +5122,26 @@ function renderStrip(box, cap, data) {
     box.appendChild(row);
   });
   box.setAttribute('role', 'img');
-  box.setAttribute('aria-label',
-    plural(data.total, 'account') + ' in the first shift\'s queue, one row ' +
-    'each, one square per session. ' + data.offensive + ' have at least one ' +
-    'session in an offensive content category and ' + data.recon +
-    ' are reconnaissance without one' +
-    (data.actors != null ? '; ' + data.actors + ' of the ' + data.total +
-      ' are threat actors, and they are not the same accounts' : '') + '.');
+  box.setAttribute('aria-label', stripLabel(data, false));
+  cap.setAttribute('aria-live', 'polite');
   capOpen(cap);
+}
+
+function stripLabel(data, collapsed) {
+  var head = plural(data.total, 'account') + ' in the first shift\'s queue, ';
+  var tail = (data.actors != null
+    ? ' ' + data.actors + ' of the ' + data.total + ' are threat actors, and '
+      + 'they are not the same accounts.'
+    : '');
+  if (collapsed) {
+    return head + 'each collapsed to the single verdict a content filter ' +
+      'would reach: ' + data.offensive + ' offensive, ' + data.recon +
+      ' reconnaissance, ' + (data.total - data.offensive - data.recon) +
+      ' clean.' + tail;
+  }
+  return head + 'one row each, one square per session. ' + data.offensive +
+    ' have at least one session in an offensive content category and ' +
+    data.recon + ' are reconnaissance without one.' + tail;
 }
 
 function capOpen(cap) {
@@ -5165,8 +5214,11 @@ function renderLanding() {
     var head = ui.el('div', 'lp-fieldhead');
     head.appendChild(ui.el('span', null, 'The first day’s queue'));
     head.appendChild(ui.el('span', 'spacer'));
+    /* No aria-pressed: this button's NAME changes with the state, so a
+       pressed state on top of it announces "Back to sessions, pressed",
+       which says the opposite of what just happened. The name describes the
+       next action and the caption below reports the result. */
     var tg = ui.el('button', 'lp-toggle', 'What a content filter sees');
-    tg.setAttribute('aria-pressed', 'false');
     head.appendChild(tg);
     field.appendChild(head);
 
@@ -5177,20 +5229,29 @@ function renderLanding() {
     box.appendChild(field);
     renderStrip(rowsBox, cap, strip);
 
+    var collapsed = false;
     tg.addEventListener('click', function () {
-      var on = tg.getAttribute('aria-pressed') === 'true';
-      tg.setAttribute('aria-pressed', String(!on));
-      if (!on) { rowsBox.className = 'lp-rows collapsed'; capShut(cap, strip); }
+      collapsed = !collapsed;
+      if (collapsed) { rowsBox.className = 'lp-rows collapsed'; capShut(cap, strip); }
       else { rowsBox.className = 'lp-rows'; capOpen(cap); }
-      tg.textContent = !on ? 'Back to sessions' : 'What a content filter sees';
+      tg.textContent = collapsed ? 'Back to sessions' : 'What a content filter sees';
+      /* The picture changed; say so, because the caption is a live region
+         and the strip's own name has to describe what is now drawn. */
+      rowsBox.setAttribute('aria-label', stripLabel(strip, collapsed));
     });
   }
 
   var acts = ui.el('div', 'lp-actions');
   var ni = nextShift();
   var played = completedCount();
+  /* "Continue" only where there is something to continue. With every shift
+     completed, nextShift() falls back to the first one, and the button read
+     "Continue — shift 1" over the tutorial. */
+  var allDone = played >= shifts.length;
   var start = ui.el('button', 'lp-start',
-    played ? 'Continue — shift ' + (ni + 1) : 'Start the shift');
+    !played ? 'Start the shift'
+      : (allDone ? 'Replay — shift ' + (ni + 1) + ', ' + (shifts[ni].title || '')
+                 : 'Continue — shift ' + (ni + 1)));
   start.addEventListener('click', function () { selectShift(shifts[ni].id); });
   acts.appendChild(start);
   acts.appendChild(ui.el('span', 'lp-meta',

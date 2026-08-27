@@ -269,6 +269,66 @@ def main() -> int:
     for b in braces[:6]:
         fail(f"an unrendered template placeholder ships to the player - {b}")
 
+    # --- the GIF's own numbers ---------------------------------------------
+    # The sub-caption states a frame count and a shift beside a career that
+    # has a different number of shifts, which reads as a stale claim even
+    # when it is true. Both halves are checked against the artifact and the
+    # scenario list so it can be trusted at a glance.
+    gif = ROOT / "docs" / "figures" / "ban_rule.gif"
+    if gif.is_file():
+        try:
+            from PIL import Image
+            im = Image.open(gif)
+            frames = 0
+            try:
+                while True:
+                    im.seek(frames)
+                    frames += 1
+            except EOFError:
+                pass
+        except Exception:
+            frames = 0
+        if frames:
+            wordn = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+                     7: "seven", 8: "eight"}.get(frames, str(frames))
+            if f"{wordn} frames" not in low:
+                fail(f"README's GIF caption must say '{wordn} frames' - "
+                     f"ban_rule.gif has {frames}")
+        figs = (ROOT / "scripts" / "make_figures.py").read_text(encoding="utf-8")
+        shifts_used = set(re.findall(r"start\('(s\d+)'\)",
+                                     figs[figs.find('"gif_1_content"'):]))
+        if len(shifts_used) == 1:
+            n = int(shifts_used.pop()[1:])
+            name = ordinals[n - 1] if n - 1 < len(ordinals) else str(n)
+            if f"on the {name} shift" not in low:
+                fail(f"README's GIF caption must say the frames come from "
+                     f"the {name} shift")
+
+    # --- the archetype split -----------------------------------------------
+    # The README stated it twice and had it backwards both times: "five come
+    # from hunt itself and four are modelled on published threat reports",
+    # while reveal.provenance.extension says four and five. The data knows;
+    # the prose has to agree with it.
+    own, ext = set(), set()
+    for sh in payload["shifts"]:
+        for acc in sh.get("accounts") or []:
+            rev = acc.get("reveal") or {}
+            name, prov = rev.get("actor"), rev.get("provenance")
+            if not name or not prov:
+                continue
+            (ext if prov.get("extension") else own).add(name)
+    if own and ext:
+        w = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
+             7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+        n_own, n_ext = w.get(len(own), str(len(own))), w.get(len(ext), str(len(ext)))
+        if f"{n_own} come from `hunt` itself and {n_ext} are modelled" not in readme:
+            fail(f"README must say '{n_own} come from `hunt` itself and "
+                 f"{n_ext} are modelled on published threat reports' - the "
+                 f"provenance flags say {len(own)} and {len(ext)}")
+        if f"that project's {n_own} archetypes plus {n_ext} taken" not in flat:
+            fail(f"README must say \"that project's {n_own} archetypes plus "
+                 f"{n_ext} taken from published threat reports\"")
+
     # --- scoring table -----------------------------------------------------
     want = {
         "Ban a threat-actor account": meta["scoring"]["ban_actor"],
@@ -537,7 +597,7 @@ def main() -> int:
         for f in FAILURES:
             print(f"  - {f}")
         return 1
-    print("check_readme: OK (shift count, subtitles, ordinals, templates, landing, palette, scoring, tabs, bands, refusal copy, "
+    print("check_readme: OK (shift count, subtitles, ordinals, archetypes, gif, templates, landing, palette, scoring, tabs, bands, refusal copy, "
           "bulletin stories, leak guard, figures, links, page data, "
           "identifiers, offline)")
     return 0

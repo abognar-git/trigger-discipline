@@ -217,14 +217,26 @@ function renderStrip(box, cap, data) {
     box.appendChild(row);
   });
   box.setAttribute('role', 'img');
-  box.setAttribute('aria-label',
-    plural(data.total, 'account') + ' in the first shift\'s queue, one row ' +
-    'each, one square per session. ' + data.offensive + ' have at least one ' +
-    'session in an offensive content category and ' + data.recon +
-    ' are reconnaissance without one' +
-    (data.actors != null ? '; ' + data.actors + ' of the ' + data.total +
-      ' are threat actors, and they are not the same accounts' : '') + '.');
+  box.setAttribute('aria-label', stripLabel(data, false));
+  cap.setAttribute('aria-live', 'polite');
   capOpen(cap);
+}
+
+function stripLabel(data, collapsed) {
+  var head = plural(data.total, 'account') + ' in the first shift\'s queue, ';
+  var tail = (data.actors != null
+    ? ' ' + data.actors + ' of the ' + data.total + ' are threat actors, and '
+      + 'they are not the same accounts.'
+    : '');
+  if (collapsed) {
+    return head + 'each collapsed to the single verdict a content filter ' +
+      'would reach: ' + data.offensive + ' offensive, ' + data.recon +
+      ' reconnaissance, ' + (data.total - data.offensive - data.recon) +
+      ' clean.' + tail;
+  }
+  return head + 'one row each, one square per session. ' + data.offensive +
+    ' have at least one session in an offensive content category and ' +
+    data.recon + ' are reconnaissance without one.' + tail;
 }
 
 function capOpen(cap) {
@@ -297,8 +309,11 @@ function renderLanding() {
     var head = ui.el('div', 'lp-fieldhead');
     head.appendChild(ui.el('span', null, 'The first day’s queue'));
     head.appendChild(ui.el('span', 'spacer'));
+    /* No aria-pressed: this button's NAME changes with the state, so a
+       pressed state on top of it announces "Back to sessions, pressed",
+       which says the opposite of what just happened. The name describes the
+       next action and the caption below reports the result. */
     var tg = ui.el('button', 'lp-toggle', 'What a content filter sees');
-    tg.setAttribute('aria-pressed', 'false');
     head.appendChild(tg);
     field.appendChild(head);
 
@@ -309,20 +324,29 @@ function renderLanding() {
     box.appendChild(field);
     renderStrip(rowsBox, cap, strip);
 
+    var collapsed = false;
     tg.addEventListener('click', function () {
-      var on = tg.getAttribute('aria-pressed') === 'true';
-      tg.setAttribute('aria-pressed', String(!on));
-      if (!on) { rowsBox.className = 'lp-rows collapsed'; capShut(cap, strip); }
+      collapsed = !collapsed;
+      if (collapsed) { rowsBox.className = 'lp-rows collapsed'; capShut(cap, strip); }
       else { rowsBox.className = 'lp-rows'; capOpen(cap); }
-      tg.textContent = !on ? 'Back to sessions' : 'What a content filter sees';
+      tg.textContent = collapsed ? 'Back to sessions' : 'What a content filter sees';
+      /* The picture changed; say so, because the caption is a live region
+         and the strip's own name has to describe what is now drawn. */
+      rowsBox.setAttribute('aria-label', stripLabel(strip, collapsed));
     });
   }
 
   var acts = ui.el('div', 'lp-actions');
   var ni = nextShift();
   var played = completedCount();
+  /* "Continue" only where there is something to continue. With every shift
+     completed, nextShift() falls back to the first one, and the button read
+     "Continue — shift 1" over the tutorial. */
+  var allDone = played >= shifts.length;
   var start = ui.el('button', 'lp-start',
-    played ? 'Continue — shift ' + (ni + 1) : 'Start the shift');
+    !played ? 'Start the shift'
+      : (allDone ? 'Replay — shift ' + (ni + 1) + ', ' + (shifts[ni].title || '')
+                 : 'Continue — shift ' + (ni + 1)));
   start.addEventListener('click', function () { selectShift(shifts[ni].id); });
   acts.appendChild(start);
   acts.appendChild(ui.el('span', 'lp-meta',
