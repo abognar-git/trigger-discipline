@@ -6,13 +6,30 @@ wrong is a person.**
 
 <sub>**How to read this.** The first two sections are the game and its rules —
 five minutes, everything you need to play. The rest is where the game comes
-from: its mechanics are measured findings from a sibling research project,
-and the table at the bottom says which.</sub>
+from: every mechanic is a measured finding from
+[`model-abuse-hunt`](https://github.com/abognar-git/model-abuse-hunt), and the
+table at the bottom says which.</sub>
 
 > ### ▶ [Play it in the browser](https://abognar-git.github.io/trigger-discipline/)
 >
 > No install, no account, nothing to run. One file, ten shifts, about fifteen
 > minutes for the first one.
+
+> ### This is one argument in two forms
+>
+> **[`model-abuse-hunt`](https://github.com/abognar-git/model-abuse-hunt)** builds
+> an abuse-hunting pipeline for an AI platform, attacks it, and measures what
+> breaks — including predictions of the author's own that the measurements
+> refuted, which are recorded there rather than quietly dropped. It is the
+> argument stated and tested.
+>
+> This is the same argument in the form you can only get by doing it. The queue
+> is that project's, account for account; the scorer, the linker, the confidence
+> bands and the policy constants are imported from its source rather than
+> restated, so the two cannot drift apart. Reading that a content filter cannot
+> separate a criminal from a researcher takes a minute. Being handed twelve
+> accounts that fail on content, told that nine of the twenty-three are actors,
+> and asked which — that is the part the prose cannot do for you.
 
 ---
 

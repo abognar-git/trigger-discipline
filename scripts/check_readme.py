@@ -32,6 +32,14 @@ DATA_BLOCK_RE = re.compile(
 def main() -> int:
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     flat = " ".join(readme.split())
+    # Same text with blockquote markers stripped. Flattening alone turns a
+    # wrapped line inside a "> " block into "twelve > accounts", which no
+    # sentence-level check can match - the framing box at the top is a
+    # blockquote, and the first check written against it failed on its own
+    # correct text.
+    prose = " ".join(
+        re.sub(r"^\s*>\s?", "", ln) for ln in readme.splitlines()).split()
+    prose = " ".join(prose)
     payload = json.loads((ROOT / "data" / "game_data.json").read_text(encoding="utf-8"))
     meta = payload["meta"]
 
@@ -245,6 +253,23 @@ def main() -> int:
         if not (flagged - actors):
             fail("landing: every content-flagged account in the first shift "
                  "is a threat actor, so 'not the same accounts' is false")
+        # The README's own copy of the same two numbers, in the framing
+        # box at the top. Typed prose beside a generated fixture is the
+        # failure this whole file exists to prevent, and writing that box
+        # created two more instances of it.
+        n_words = {12: "twelve", 23: "twenty-three", 9: "nine", 8: "eight",
+                   14: "fourteen", 13: "thirteen", 11: "eleven", 10: "ten"}
+        w_flag = n_words.get(len(flagged), str(len(flagged)))
+        w_act = n_words.get(len(actors), str(len(actors)))
+        w_all = n_words.get(len(first.get("accounts") or []),
+                            str(len(first.get("accounts") or [])))
+        if f"{w_flag} accounts that fail on content" not in prose:
+            fail(f"README's framing box must say '{w_flag} accounts that "
+                 f"fail on content' - the first shift has {len(flagged)}")
+        if f"{w_act} of the {w_all} are actors" not in prose:
+            fail(f"README's framing box must say '{w_act} of the {w_all} "
+                 f"are actors' - the first shift has {len(actors)} of "
+                 f"{len(first.get('accounts') or [])}")
         n_mal = (first.get("counts") or {}).get("malicious")
         if n_mal is not None and n_mal != len(actors):
             fail(f"landing: counts.malicious says {n_mal} but {len(actors)} "
