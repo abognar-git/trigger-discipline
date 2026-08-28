@@ -613,10 +613,28 @@ button.shift-card:hover { border-color: var(--accent); }
   color: var(--muted);
 }
 
+/* The footer is the only way out of the page, and it used to be one flat
+   grey line at 12px in which the link differed from the prose by hue alone.
+   Hierarchy inside it instead: the way back to the write-up reads as
+   something you act on, the provenance behind it stays quiet. */
 footer {
-  border-top: 1px solid var(--line); color: var(--muted); font-size: 12px;
-  padding: 10px 16px; background: var(--panel);
+  border-top: 1px solid var(--line); color: var(--muted); font-size: 13px;
+  padding: 14px 16px 18px; background: var(--panel);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
 }
+footer a { font-weight: 600; }
+footer .out {
+  font-size: 14px; letter-spacing: .01em;
+  border-bottom: 1px solid var(--accent); text-decoration: none;
+  /* 22px unpadded, and WCAG 2.5.8 asks 24 */
+  display: inline-block; padding: 3px 0;
+}
+footer .out::before {
+  content: ""; display: inline-block; width: 6px; height: 6px;
+  background: var(--warn); margin-right: 8px; vertical-align: middle;
+}
+footer .out:hover { border-bottom-color: var(--text); color: var(--text); }
+footer .out:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 /* mobile: single column, queue collapses to a strip */
 @media (max-width: 800px) {
