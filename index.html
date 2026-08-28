@@ -920,7 +920,13 @@ footer {
   </div>
 </div>
 
-<footer>Every account here is synthetic; the machinery is
+<!-- Two links, and the first one is the one that was missing: a visitor who
+     arrives on the game and wants to know what they just played had nowhere
+     to go but the research repo. The rules in full, the provenance of every
+     mechanic and the findings table are in this project's own README. -->
+<footer><a href="https://github.com/abognar-git/trigger-discipline">How this
+was built</a> — every mechanic is a measured finding, and the README says
+which. Every account here is synthetic; the machinery is
 <a href="https://github.com/abognar-git/model-abuse-hunt">model-abuse-hunt</a>'s
 and shift 1 is its own queue. Identifiers are RFC-reserved. MIT.</footer>
 
@@ -5318,6 +5324,10 @@ function renderLanding() {
   }
 
   var foot = ui.el('p', 'lp-foot');
+  /* No repo link here: the page footer carries it and sits directly below
+     this line, so putting it in both rendered the same link twice, thirty
+     pixels apart. The footer is on every screen, including the shift report
+     - which is when someone is most likely to want the write-up. */
   foot.appendChild(document.createTextNode(
     'Every account here is a synthetic fixture · identifiers are ' +
     'RFC-reserved · add ?seed=N to reorder a queue, ?shift=sN to open ' +

@@ -413,6 +413,10 @@ function renderLanding() {
   }
 
   var foot = ui.el('p', 'lp-foot');
+  /* No repo link here: the page footer carries it and sits directly below
+     this line, so putting it in both rendered the same link twice, thirty
+     pixels apart. The footer is on every screen, including the shift report
+     - which is when someone is most likely to want the write-up. */
   foot.appendChild(document.createTextNode(
     'Every account here is a synthetic fixture · identifiers are ' +
     'RFC-reserved · add ?seed=N to reorder a queue, ?shift=sN to open ' +

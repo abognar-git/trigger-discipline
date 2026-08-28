@@ -647,6 +647,18 @@ def main() -> int:
             fail(f"index.html contains {token} - the page must make no "
                  f"requests at all, and nothing in it needs one")
 
+    # --- the page has to point back at its own write-up ---------------------
+    # The shipped page carried exactly one outbound link and it went to the
+    # research repo. A visitor arriving on the game - which is what a Show HN
+    # or any shared link delivers - had nowhere to go to find out what they
+    # had just played. The rules in full, the provenance of every mechanic
+    # and the findings table are in THIS project's README.
+    own = "github.com/abognar-git/trigger-discipline"
+    hrefs = re.findall(r'<a[^>]*href="([^"]+)"', DATA_BLOCK_RE.sub("", page))
+    if not any(own in h for h in hrefs):
+        fail(f"index.html never links to {own} - a player who wants to know "
+             f"what they just played has nowhere to go")
+
     # --- cross-links -------------------------------------------------------
     for url in ("github.com/abognar-git/model-abuse-hunt",
                 "github.com/abognar-git/alert-triage-copilot",
